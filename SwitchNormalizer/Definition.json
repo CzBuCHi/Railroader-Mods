@@ -6,7 +6,7 @@
     "requires": [
         {
             "id": "railloader",
-            "notBefore": "1.9.6.8"
+            "notBefore": "1.9.6.14"
         }
     ],
     "assemblies": [

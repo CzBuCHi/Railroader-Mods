@@ -41,7 +41,5 @@
       <GameAssembly Include="Newtonsoft.Json" />   
       <GameAssembly Include="StrangeCustoms" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\TurntableControl\TurntableControl.csproj" />
-  </ItemGroup>
+  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 </Project>

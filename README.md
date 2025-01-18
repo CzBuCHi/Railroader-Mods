@@ -8,6 +8,8 @@ A straightforward mod that adds button to normalize all switches on entire map.
 
 Alt mode: when button clicked with SHIFT key it will save current switch state so you can have some switches thrown by default.
 
+![SwitchNormalizer](Docs/SwitchNormalizer.webp)
+
 ## Teleporter 
 
 A straightforward mod that introduces a window for saving teleport locations on the map, enabling quick and convenient navigation across the map.
@@ -20,7 +22,6 @@ A straightforward mod that allows player to rotate turntable by clicking on trac
 (Known issue: rotation is instant and do not check fouling track)
 
 ![TurntableControl](Docs/TurntableControl.webp)
-
 
 ## Project Setup
 

@@ -3,6 +3,12 @@
     "id": "CzBuCHi.TurntableControl",
     "name": "Turntable Control",
     "version": "1.0",
+    "requires": [
+        {
+            "id": "railloader",
+            "notBefore": "1.9.6.14"
+        }
+    ],
     "assemblies": [
         "CzBuCHi.TurntableControl"
     ]

@@ -41,10 +41,8 @@ public static class ConsistManage {
                 }
             });
 
-            if (mode == AutoEngineerMode.Off) {
-                strip.AddButton("Refresh", strip.Rebuild)!
-                     .Tooltip("Refresh dialog", "Refreshes this dialog");
-            }
+            strip.AddButton("Refresh", strip.Rebuild)!
+                 .Tooltip("Refresh dialog", "Refreshes this dialog");
 
             if (cars.Any(c => c.air!.handbrakeApplied)) {
                 strip.AddButton($"{TextSprites.HandbrakeWheel}", () => {

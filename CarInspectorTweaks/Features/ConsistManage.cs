@@ -23,10 +23,10 @@ public static class ConsistManage {
     [HarmonyPatch(typeof(CarInspector), nameof(PopulateCarPanel))]
     public static void PopulateCarPanel(UIPanelBuilder builder, CarInspector __instance, Car ____car, Window ____window) {
         var persistence = new AutoEngineerPersistence(____car.KeyValueObject!);
-        var locomotive  = (BaseLocomotive)____car;
+
+        var locomotive  = ____car as BaseLocomotive;
         var helper      = new AutoEngineerOrdersHelper(locomotive, persistence);
         var mode        = helper.Mode;
-
 
         builder.ButtonStrip(strip => {
             var cars = ____car.EnumerateCoupled()!.ToList();
@@ -67,6 +67,24 @@ public static class ConsistManage {
                      .Tooltip("Jump to low oil car", "Jump the overhead camera to car with lowest oil in bearing.");
             }
         });
+
+        if (locomotive != null) {
+            builder.ButtonStrip(strip => {
+                strip.AddButtonSelectable("Manual", mode == AutoEngineerMode.Off, UpdateMode(AutoEngineerMode.Off));
+                strip.AddButtonSelectable("Road", mode == AutoEngineerMode.Road, UpdateMode(AutoEngineerMode.Road));
+                strip.AddButtonSelectable("Yard", mode == AutoEngineerMode.Yard, UpdateMode(AutoEngineerMode.Yard));
+                strip.AddButtonSelectable("WP", mode == AutoEngineerMode.Waypoint, UpdateMode(AutoEngineerMode.Waypoint));
+            });
+        }
+
+        return;
+
+        Action UpdateMode(AutoEngineerMode newMode) {
+            return () => {
+                helper.SetOrdersValue(newMode);
+                builder.Rebuild();
+            };
+        }
     }
 
     private static bool IsAirConnected(List<Car> consist) {

@@ -1,0 +1,7 @@
+{
+    "manifestVersion": 1,
+    "id": "CzBuCHi.CarInspectorTweaks",
+    "name": "Car Inspector Tweaks",
+    "version": "$(AssemblyVersion)",
+    "assemblies": [ "CzBuCHi.CarInspectorTweaks" ]
+}

@@ -17,6 +17,6 @@ public class CarInspectorHeight
     public static void Show(Car car, CarInspector ____instance) {
         var window = ____instance.GetComponent<Window>();
         var size = window.GetContentSize();
-        window.SetContentSize(new Vector2(size.x - 2, CarInspectorTweaksPlugin.Settings.CarInspectorHeight));
+        window.SetContentSize(new Vector2(size.x, CarInspectorTweaksPlugin.Settings.CarInspectorHeight));
     }
 }

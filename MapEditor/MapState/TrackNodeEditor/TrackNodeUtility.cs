@@ -180,7 +180,7 @@ public static class TrackNodeUtility
             var nid = IdGenerators.TrackNodes.Next();
 
             var par   = Math.Min(trackSegment.GetLength(), 5);
-            trackSegment.GetPositionRotationAtDistance(par, endIsA ? TrackSegment.End.A : TrackSegment.End.B, out var position, out _);
+            trackSegment.GetPositionRotationAtDistance(par, endIsA ? TrackSegment.End.A : TrackSegment.End.B, PositionAccuracy.Standard, out var position, out _);
             
             var point = position.GameToWorld();
 

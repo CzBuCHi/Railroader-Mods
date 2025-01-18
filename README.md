@@ -3,6 +3,8 @@
 ## MapEditor
 Alpha version of Editor
 
+![MapEditor](Docs/MapEditor.webp)
+
 ## SwitchNormalizer
 A straightforward mod that adds button to normalize all switches on entire map.
 

@@ -1,0 +1,15 @@
+{
+    "manifestVersion": 1,
+    "id": "CzBuCHi.SwitchNormalizer",
+    "name": "Switch Normalizer",
+    "version": "$(AssemblyVersion)",
+    "requires": [
+        {
+            "id": "railloader",
+            "notBefore": "1.9.6.8"
+        }
+    ],
+    "assemblies": [
+        "CzBuCHi.SwitchNormalizer"
+    ]
+}

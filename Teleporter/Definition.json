@@ -1,0 +1,9 @@
+{
+    "manifestVersion": 1,
+    "id": "CzBuCHi.Teleporter",
+    "name": "Teleporter",
+    "version": "1.0",
+    "assemblies": [
+        "CzBuCHi.Teleporter"
+    ]
+}

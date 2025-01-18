@@ -1,0 +1,19 @@
+{
+    "manifestVersion": 1,
+    "id": "CzBuCHi.MapEditor",
+    "name": "Map Editor",
+    "version": "$(AssemblyVersion)",
+    "requires": [
+        {
+            "id": "railloader",
+            "notBefore": "1.9.6.8"
+        },
+        {
+            "id": "Zamu.StrangeCustoms",
+            "notBefore": "1.9.24308.1443"
+        }
+    ],
+    "assemblies": [
+        "CzBuCHi.MapEditor"
+    ]
+}

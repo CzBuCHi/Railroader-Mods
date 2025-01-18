@@ -1,0 +1,9 @@
+{
+    "manifestVersion": 1,
+    "id": "CzBuCHi.TurntableControl",
+    "name": "Turntable Control",
+    "version": "1.0",
+    "assemblies": [
+        "CzBuCHi.TurntableControl"
+    ]
+}

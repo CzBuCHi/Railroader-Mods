@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<assembly name="Assembly-CSharp">
+  <member name="F:CameraSelector.character">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="F:CameraSelector.strategyCamera">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="F:Track.TrackNode.id">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="F:Track.TrackSegment.a">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="F:Track.TrackSegment.b">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="F:Track.TrackSegment.id">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:Track.Graph.SegmentsConnectedTo(Track.TrackNode)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:Track.TrackSpan.GetSegments">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.RectTransformLayoutExtensions.Height(UnityEngine.RectTransform,System.Single)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.AddButton(System.String,System.Action)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.AddButtonCompact(System.String,System.Action)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.AddDropdown(System.Collections.Generic.List{System.String},System.Int32,System.Action{System.Int32})">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.AddField(System.String,UnityEngine.RectTransform)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.AddInputField(System.String,System.Action{System.String},System.String,System.Nullable{System.Int32})">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.AddLabel(System.String)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.ButtonStrip(System.Action{UI.Builder.UIPanelBuilder},System.Int32)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="M:UI.Builder.UIPanelBuilder.HStack(System.Action{UI.Builder.UIPanelBuilder},System.Single)">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:CameraSelector.shared">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:GalaSoft.MvvmLight.Messaging.Messenger.Default">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:Track.Graph.Nodes">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:Track.Graph.Segments">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:Track.Graph.Shared">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:Track.TrackObjectManager.Instance">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+  <member name="P:UI.Console.Console.shared">
+    <attribute ctor="M:JetBrains.Annotations.NotNullAttribute.#ctor" />
+  </member>
+</assembly>

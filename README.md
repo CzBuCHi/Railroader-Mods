@@ -19,6 +19,8 @@ A straightforward mod that introduces a window for saving teleport locations on 
 A straightforward mod that allows player to rotate turntable by clicking on track node.
 (Known issue: rotation is instant and do not check fouling track)
 
+![TurntableControl](Docs/TurntableControl.webp)
+
 
 ## Project Setup
 

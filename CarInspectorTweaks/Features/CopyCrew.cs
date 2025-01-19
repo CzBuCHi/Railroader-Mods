@@ -26,12 +26,8 @@ public static class CopyCrew
         }
 
         builder.ButtonStrip(strip => {
-            strip.AddButton("<sprite name=Copy><sprite name=Coupled>", SetCarTrainCrew)!.Tooltip("Copy crew", "Copy this car's crew to the other cars in consist.");
-
-            if (car.TryGetTimetableTrain(out var timetableTrain)) {
-                strip.AddButton("Copy from Timetable", () => CopyStopsFromTimetable(car, timetableTrain))
-                     .Tooltip("Set from Timetable", "Copy the passenger stops from the timetable for " + timetableTrain.Name + ".");
-            }
+            strip.AddButton("<sprite name=Copy><sprite name=Coupled>", SetCarTrainCrew)!
+                 .Tooltip("Copy crew", "Copy this car's crew to the other cars in consist.");
         });
         return;
 

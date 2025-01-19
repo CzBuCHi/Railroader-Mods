@@ -31,7 +31,7 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
         builder.ButtonStrip(strip => {
             strip.AddButton("Save current", Add())!
                  .Tooltip("Save current position", "Save current location under new name");
-            strip.AddFieldToggle("Close after teleport", () => TeleporterPlugin.Settings.CloseAfter, UpdateSettings);
+            strip.AddFieldToggle("Close after", () => TeleporterPlugin.Settings.CloseAfter, UpdateSettings);
         });
         builder.AddField("New location name", builder.AddInputField(_NewLocationName, UpdateNewLocationName, "Unique name for new location")!);
         builder.VScrollView(scroll => {

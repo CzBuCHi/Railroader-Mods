@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Helpers;
 using MapEditor.Extensions;
 using MapEditor.MapState.TrackSegmentEditor;
@@ -15,20 +14,17 @@ namespace MapEditor.MapState.TrackNodeEditor;
 
 public static class TrackNodeUtility
 {
-    public static void Show() {
-        CameraSelector.shared.ZoomToPoint(EditorState.TrackNode!.transform.localPosition);
-    }
+    public static void Show(TrackNode trackNode) => CameraSelector.shared.ZoomToPoint(trackNode.transform.localPosition);
 
-    public static void Remove() {
-        var connectSegments = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-        var node            = EditorState.TrackNode!;
-        Log.Information($"Remove node {node.id}; connectSegments = {connectSegments}");
+    public static void Remove(TrackNode trackNode) {
+        var connectSegments = InputHelper.GetShift();
+        Log.Information($"Remove node {trackNode.id}; connectSegments = {connectSegments}");
 
-        EditorState.Update(state => state with { SelectedAsset = null });
+        EditorState.RemoveFromSelection(trackNode);
 
-        var steps = Graph.Shared.DecodeSwitchAt(node, out var enter, out var segmentA, out var segmentB)
-            ? RemoveSwitch(connectSegments, node, enter!, segmentA!, segmentB!)
-            : RemoveSimple(connectSegments, node);
+        var steps = Graph.Shared.DecodeSwitchAt(trackNode, out var enter, out var segmentA, out var segmentB)
+            ? RemoveSwitch(connectSegments, trackNode, enter!, segmentA!, segmentB!)
+            : RemoveSimple(connectSegments, trackNode);
 
         MapStateEditor.NextStep(new CompoundSteps(steps.ToArray()));
         UnityHelpers.CallOnNextFrame(TrackObjectManager.Instance.Rebuild);
@@ -108,32 +104,29 @@ public static class TrackNodeUtility
         yield return new TrackNodeDestroy(node.id);
     }
 
-    public static void Add() {
-        var withoutSegment = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+    public static void Add(TrackNode trackNode) {
+        var withoutSegment = InputHelper.GetShift();
 
-        var node = EditorState.TrackNode!;
-
-        if (!Graph.Shared.NodeIsDeadEnd(node, out var direction)) {
-            direction = Vector3.Cross(node.transform.forward, Vector3.up);
+        if (!Graph.Shared.NodeIsDeadEnd(trackNode, out var direction)) {
+            direction = Vector3.Cross(trackNode.transform.forward, Vector3.up);
         }
 
         var        nid  = IdGenerators.TrackNodes.Next();
-        IStateStep step = new TrackNodeCreate(nid, new TrackNodeData(node.transform.position + direction * 2.5f, node.transform.eulerAngles));
+        IStateStep step = new TrackNodeCreate(nid, new TrackNodeData(trackNode.transform.position + direction * 2.5f, trackNode.transform.eulerAngles));
 
         if (!withoutSegment) {
             var sid           = IdGenerators.TrackSegments.Next();
-            var createSegment = new TrackSegmentCreate(sid, new TrackSegmentData(Vector3.zero, Vector3.zero, nid, node.id));
+            var createSegment = new TrackSegmentCreate(sid, new TrackSegmentData(Vector3.zero, Vector3.zero, nid, trackNode.id));
             step = new CompoundSteps(step, createSegment);
         }
 
         MapStateEditor.NextStep(step);
         var newNode = Graph.Shared.GetNode(nid)!;
-        EditorState.Update(state => state with { SelectedAsset = newNode });
-
+        EditorState.ReplaceSelection(newNode);
         UnityHelpers.CallOnNextFrame(() => TrackObjectManager.Instance.Rebuild());
     }
 
-    public static void Split() {
+    public static void Split(TrackNode trackNode) {
         // simple track node split:
         // NODE_A --- NODE --- NODE_B
         // result:
@@ -148,18 +141,18 @@ public static class TrackNodeUtility
         // NODE_A --- NODE
         // NODE_B --- NEW_NODE_1
         //            NEW_NODE_2 --- NODE_C
-        var node = EditorState.TrackNode!;
+        
 
-        var segments = Graph.Shared.SegmentsConnectedTo(node).ToList();
+        var segments = Graph.Shared.SegmentsConnectedTo(trackNode).ToList();
 
         List<IStateStep> actions = new();
 
-        if (Graph.Shared.DecodeSwitchAt(node, out _, out var segmentA, out var segmentB)) {
-            var left = Vector3.Cross(node.transform.forward, Vector3.up) * 0.75f;
+        if (Graph.Shared.DecodeSwitchAt(trackNode, out _, out var segmentA, out var segmentB)) {
+            var left = Vector3.Cross(trackNode.transform.forward, Vector3.up) * 0.75f;
 
-            var a = node.transform.position;
-            var b = segmentA!.GetOtherNode(node)!.transform.position;
-            var c = segmentB!.GetOtherNode(node)!.transform.position;
+            var a = trackNode.transform.position;
+            var b = segmentA!.GetOtherNode(trackNode)!.transform.position;
+            var c = segmentB!.GetOtherNode(trackNode)!.transform.position;
 
             if (Intersect(b, a + left, c, a - left)) {
                 left = -left;
@@ -175,7 +168,7 @@ public static class TrackNodeUtility
         return;
 
         void UpdateSegment(TrackSegment trackSegment, bool isSwitch, Vector3 offset) {
-            var endIsA = trackSegment.EndForNode(node) == TrackSegment.End.A;
+            var endIsA = trackSegment.EndForNode(trackNode) == TrackSegment.End.A;
 
             var nid = IdGenerators.TrackNodes.Next();
 
@@ -184,12 +177,12 @@ public static class TrackNodeUtility
             
             var point = position.GameToWorld();
 
-            var forward = node.transform.forward * (isSwitch ? 2 : 5);
-            if (Vector3.Angle(node.transform.forward, point - node.transform.position) > Math.PI) {
+            var forward = trackNode.transform.forward * (isSwitch ? 2 : 5);
+            if (Vector3.Angle(trackNode.transform.forward, point - trackNode.transform.position) > Math.PI) {
                 forward = -forward;
             }
 
-            actions.Add(new TrackNodeCreate(nid, new TrackNodeData(node.transform.position + forward + offset, node.transform.eulerAngles)));
+            actions.Add(new TrackNodeCreate(nid, new TrackNodeData(trackNode.transform.position + forward + offset, trackNode.transform.eulerAngles)));
 
             var a = endIsA ? trackSegment.b.id : nid;
             var b = endIsA ? nid : trackSegment.a.id;
@@ -238,22 +231,5 @@ public static class TrackNodeUtility
         Graph.Shared.AddNode(trackNode);
         MapEditorPlugin.PatchEditor!.AddOrUpdateNode(trackNode);
         return trackNode;
-    }
-
-    public static void TryConnectToCurrent(TrackNode trackNode) {
-        var currentSegments = Graph.Shared.SegmentsConnectedTo(EditorState.TrackNode!);
-        var segments        = Graph.Shared.SegmentsConnectedTo(trackNode);
-        if (segments.Count < 3 && currentSegments.Count < 3) {
-            var step = new TrackSegmentCreate(IdGenerators.TrackSegments.Next(),
-                new TrackSegmentData(currentSegments.First()) {
-                    StartId = EditorState.TrackNode!.id,
-                    EndId = trackNode.id
-                });
-
-            MapStateEditor.NextStep(step);
-            UnityHelpers.CallOnNextFrame(TrackObjectManager.Instance.Rebuild);
-        }
-
-        EditorState.Update(state => state with { SelectedAsset = trackNode });
     }
 }

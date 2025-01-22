@@ -5,24 +5,24 @@ using MapEditor.MapState;
 using Serilog;
 using UI.Builder;
 
-namespace MapEditor.UI;
+namespace MapEditor.UI.Controls;
 
-public sealed partial class EditorWindow
+public static class SelectGraph
 {
-    private readonly Dictionary<string, List<string>> _Graphs =
+    private static readonly Dictionary<string, List<string>> _Graphs =
         MapEditorPlugin.Shared!.Context.GetMixintos("game-graph")
                        .GroupBy(o => o.Source.ToString(), o => o.Mixinto)
                        .ToDictionary(o => o.Key, o => o.ToList());
 
-    private List<string>? _Mods;
-    private List<string>  Mods => _Mods ??= ["Select ...", .._Graphs.Keys];
+    private static List<string>? _Mods;
+    private static List<string>  Mods => _Mods ??= ["Select ...", .._Graphs.Keys];
 
-    private int _ModIndex;
-    private int _GraphIndex;
+    private static int _ModIndex;
+    private static int _GraphIndex;
 
-    private List<string> GetModGraphs() => _Graphs[Mods[_ModIndex]]!;
+    private static List<string> GetModGraphs() => _Graphs[Mods[_ModIndex]]!;
 
-    private void BuildModSelector(UIPanelBuilder builder) {
+    public static void Build(UIPanelBuilder builder) {
         builder
             .AddField("Mod",
                 builder.AddDropdown(Mods, _ModIndex, o => {
@@ -43,6 +43,7 @@ public sealed partial class EditorWindow
             .Disable(MapStateEditor.Count > 0);
 
         if (_ModIndex == 0) {
+            EditorState.Reset();
             return;
         }
 

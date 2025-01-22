@@ -8,7 +8,7 @@ public sealed record TrackNodeCreate(string Id, TrackNodeData Data) : IStateStep
 {
     public void Do() {
         var node = TrackNodeUtility.Create(Id, Data);
-        EditorState.Update(state => state with { SelectedAsset = node });
+        EditorState.ReplaceSelection(node);
         UnityHelpers.CallOnNextFrame(() => TrackNodeVisualizer.CreateVisualizer(node));
     }
 
@@ -18,10 +18,7 @@ public sealed record TrackNodeCreate(string Id, TrackNodeData Data) : IStateStep
             return;
         }
 
-        if (EditorState.TrackNode == trackNode) {
-            EditorState.Update(state => state with { SelectedAsset = null });
-        }
-
+        EditorState.RemoveFromSelection(trackNode);
         TrackNodeUtility.Destroy(trackNode);
     }
 

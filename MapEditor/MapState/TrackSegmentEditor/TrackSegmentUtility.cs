@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using HarmonyLib;
 using Helpers;
 using MapEditor.Extensions;
 using MapEditor.MapState.AutoTrestleEditor;
 using MapEditor.MapState.TrackNodeEditor;
 using MapEditor.Utility;
-using MapEditor.Visualizers;
 using Serilog;
 using Track;
+using UI.Common;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -17,12 +15,11 @@ namespace MapEditor.MapState.TrackSegmentEditor;
 
 internal static class TrackSegmentUtility
 {
-    public static void InjectNode() {
+    public static void InjectNode(TrackSegment trackSegment) {
         // inject node in center of segment:
         // NODE_A  --- NODE_B
         // result:
         // NODE_A  --- NEW_NODE --- NODE_B
-        var trackSegment = EditorState.TrackSegment!;
 
         var nodeA = trackSegment.a.id;
         var nodeB = trackSegment.b.id;
@@ -30,7 +27,7 @@ internal static class TrackSegmentUtility
         var position    = trackSegment.Curve.GetPoint(0.5f).GameToWorld();
         var eulerAngles = trackSegment.Curve.GetRotation(0.5f).eulerAngles;
 
-        EditorState.Update(state => state with { SelectedAsset = null });
+        EditorState.ClearSelection();
 
         var nid = IdGenerators.TrackNodes.Next();
         var sid = IdGenerators.TrackSegments.Next();
@@ -42,11 +39,7 @@ internal static class TrackSegmentUtility
         };
 
         MapStateEditor.NextStep(new CompoundSteps(actions.ToArray()));
-        UnityHelpers.CallOnNextFrame(() => {
-            EditorState.Update(state => state with {
-                SelectedAsset = Graph.Shared.GetNode(nid)
-            });
-        });
+        UnityHelpers.CallOnNextFrame(() => { EditorState.ReplaceSelection(Graph.Shared.GetNode(nid)); });
     }
 
     public static TrackSegmentData Destroy(TrackSegment trackSegment) {
@@ -85,9 +78,8 @@ internal static class TrackSegmentUtility
         MapEditorPlugin.PatchEditor!.AddOrUpdateSegment(trackSegment);
     }
 
-    public static void UpdateSegment(string? groupId, int? priority, int? speedLimit, TrackClass? trackClass, TrackSegment.Style? style, bool? trestle, AutoTrestle.AutoTrestle.EndStyle trestleHead, AutoTrestle.AutoTrestle.EndStyle trestleTail) {
-        var segment = EditorState.TrackSegment;
-        IStateStep step = new TrackSegmentUpdate(segment!.id) {
+    public static void UpdateSegment(TrackSegment trackSegment, string? groupId, int? priority, int? speedLimit, TrackClass? trackClass, TrackSegment.Style? style, bool? trestle, AutoTrestle.AutoTrestle.EndStyle trestleHead, AutoTrestle.AutoTrestle.EndStyle trestleTail) {
+        IStateStep step = new TrackSegmentUpdate(trackSegment!.id) {
             GroupId = groupId,
             Priority = priority,
             SpeedLimit = speedLimit,
@@ -95,7 +87,7 @@ internal static class TrackSegmentUtility
             Style = style
         };
 
-        var oldStyle = segment.style;
+        var oldStyle = trackSegment.style;
 
         if (style != null && style != oldStyle) {
             Log.Information("Style changed: " + oldStyle + " -> " + style);
@@ -103,16 +95,16 @@ internal static class TrackSegmentUtility
             if (style == TrackSegment.Style.Bridge && trestle == true) {
                 Log.Information("Bridge w trestle -> AutoTrestleCreate");
 
-                var autoTrestleCreate = new AutoTrestleCreate(segment.id, AutoTrestleUtility.CreateAutoTrestleData(segment, trestleHead, trestleTail));
+                var autoTrestleCreate = new AutoTrestleCreate(trackSegment.id, AutoTrestleUtility.CreateAutoTrestleData(trackSegment, trestleHead, trestleTail));
                 step = new CompoundSteps(step, autoTrestleCreate);
             } else {
                 Log.Information("not bridge -> AutoTrestleDestroy");
-                var autoTrestleDestroy = new AutoTrestleDestroy(segment.id);
+                var autoTrestleDestroy = new AutoTrestleDestroy(trackSegment.id);
                 step = new CompoundSteps(step, autoTrestleDestroy);
             }
         } else if (oldStyle == TrackSegment.Style.Bridge) {
             Log.Information("Same Bridge: AutoTrestleUpdate");
-            var autoTrestleUpdate = new AutoTrestleUpdate(segment.id) {
+            var autoTrestleUpdate = new AutoTrestleUpdate(trackSegment.id) {
                 HeadStyle = trestleHead,
                 TailStyle = trestleTail
             };
@@ -123,29 +115,15 @@ internal static class TrackSegmentUtility
         UnityHelpers.CallOnNextFrame(TrackObjectManager.Instance.Rebuild);
     }
 
-    public static void Remove() {
-        var trackSegment = EditorState.TrackSegment!;
-        EditorState.Update(state => state with { SelectedAsset = null });
+    public static void Remove(TrackSegment trackSegment) {
+        EditorState.ClearSelection();
         MapStateEditor.NextStep(new TrackSegmentDestroy(trackSegment.id));
     }
 
-    public static void MoveByA(Vector3 startPosition, Quaternion startRotation) {
-        var trackSegment     = EditorState.TrackSegment!;
-        var deltaRotation    = trackSegment.a.transform.localRotation * Quaternion.Inverse(startRotation);
-        var relativePosition = trackSegment.b.transform.localPosition - startPosition;
-        var newPosition      = deltaRotation * relativePosition + trackSegment.a.transform.localPosition;
-        var newRotation      = deltaRotation * trackSegment.b.transform.localRotation;
-
-        trackSegment.b.transform.localPosition = newPosition;
-        trackSegment.b.transform.localRotation = newRotation;
-    }
-
-    public static void Straighten() {
-        var trackSegment = EditorState.TrackSegment!;
-
+    public static void Straighten(TrackSegment trackSegment) {
         var forwardDirection = trackSegment.a.transform.forward.normalized;
 
-        var positionA = trackSegment.a.transform.localPosition;
+        var positionA    = trackSegment.a.transform.localPosition;
         var distance     = (trackSegment.b.transform.localPosition - positionA).magnitude;
         var newPositionB = positionA + forwardDirection * distance;
 
@@ -156,7 +134,22 @@ internal static class TrackSegmentUtility
             Rotation = trackSegment.a.transform.localRotation
         });
     }
+
+    public static void CreateBetween(TrackNode a, TrackNode b) {
+        var aSegments = Graph.Shared.SegmentsConnectedTo(a);
+        var bSegments = Graph.Shared.SegmentsConnectedTo(b);
+        if (bSegments.Count < 3 && aSegments.Count < 3) {
+            var step = new TrackSegmentCreate(IdGenerators.TrackSegments.Next(),
+                new TrackSegmentData(aSegments.First()) {
+                    StartId = a.id,
+                    EndId = b.id
+                });
+
+            MapStateEditor.NextStep(step);
+            UnityHelpers.CallOnNextFrame(TrackObjectManager.Instance.Rebuild);
+            EditorState.ReplaceSelection(b);
+        } else {
+            Toast.Present($"Cannot connect nodes - too many existing segments ({aSegments.Count}, {bSegments.Count})");
+        }
+    }
 }
-
-
-

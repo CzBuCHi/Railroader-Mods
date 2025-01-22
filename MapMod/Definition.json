@@ -1,0 +1,19 @@
+{
+    "manifestVersion": 1,
+    "id": "CzBuCHi.MapMod",
+    "name": "Map Mod",
+    "version": "$(AssemblyVersion)",
+    "requires": [
+        {
+            "id": "railloader",
+            "notBefore": "1.8.0"
+        },
+        {
+            "id": "Zamu.StrangeCustoms",
+            "notBefore": "1.7.24194.2259"
+        }
+    ],
+    "assemblies": [
+        "CzBuCHi.MapMod"
+    ]
+}

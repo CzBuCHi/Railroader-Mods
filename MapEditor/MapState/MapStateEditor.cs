@@ -21,7 +21,7 @@ public static class MapStateEditor
     public static void Undo() {
         --_Index;
 #if DEBUG
-        Log.Information($"MapEditor.Undo: [{_Index}] {_Steps[_Index]!.UndoText}");
+        Log.Information($"MapEditor <<< [{_Index}] {_Steps[_Index]!.UndoText}");
 #endif
         _Steps[_Index]!.Undo();
         Notify();
@@ -29,7 +29,7 @@ public static class MapStateEditor
 
     public static void Redo() {
 #if DEBUG
-        Log.Information($"MapEditor.Redo: [{_Index}] {_Steps[_Index]!.DoText}");
+        Log.Information($"MapEditor >>> [{_Index}] {_Steps[_Index]!.DoText}");
 #endif
         _Steps[_Index]!.Do();
         ++_Index;
@@ -40,7 +40,7 @@ public static class MapStateEditor
         while (_Index > 0) {
             --_Index;
 #if DEBUG
-            Log.Information($"MapEditor.Undo: [{_Index}] {_Steps[_Index]!.UndoText}");
+            Log.Information($"MapEditor <<< [{_Index}] {_Steps[_Index]!.UndoText}");
 #endif
             _Steps[_Index]!.Undo();
         }
@@ -51,7 +51,7 @@ public static class MapStateEditor
     public static void RedoAll() {
         while (_Index < _Steps.Count - 1) {
 #if DEBUG
-            Log.Information($"MapEditor.Redo: [{_Index}] {_Steps[_Index]!.DoText}");
+            Log.Information($"MapEditor >>> [{_Index}] {_Steps[_Index]!.DoText}");
 #endif
             _Steps[_Index]!.Do();
             ++_Index;

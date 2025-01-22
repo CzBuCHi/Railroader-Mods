@@ -233,10 +233,10 @@ public sealed class SceneWindow : MonoBehaviour, IProgrammaticWindow
     private static Action Show(GameObject gameObject) => () => CameraSelector.shared.ZoomToPoint(gameObject.transform.position.WorldToGame());
 
     private static Action Select(GameObject gameObject, MoveableObjectMode mode) => () => {
-        MoveableObject.Create(gameObject, mode, (_, _) => {
-            MoveableObject.Destroy();
-            Messenger.Default.Send(new RebuildSceneViewDialog());
-        });
+        //MoveableObject.Create(gameObject, mode, null, null, (_, _) => {
+        //    MoveableObject.Destroy();
+        //    Messenger.Default.Send(new RebuildSceneViewDialog());
+        //});
     };
 
     private static string GetPath(GameObject gameObject) {

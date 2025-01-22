@@ -1,6 +1,8 @@
 using Helpers;
 using JetBrains.Annotations;
 using MapEditor.MapState.TrackNodeEditor;
+using MapEditor.MapState.TrackSegmentEditor;
+using MapEditor.Utility;
 using Track;
 using UnityEngine;
 
@@ -69,16 +71,18 @@ internal sealed class TrackNodeVisualizer : MonoBehaviour, IPickable
         boxCollider.size = new Vector3(0.4f, 0.4f, 0.8f);
     }
 
-    public void Update() => _LineRenderer!.material.color = EditorState.TrackNode == _TrackNode ? Color.magenta : Color.cyan;
+    public void Update() => _LineRenderer!.material.color = EditorState.IsTrackNodeSelected(_TrackNode) ? Color.magenta : Color.cyan;
 
     #region IPickable
 
     public void Activate(PickableActivateEvent evt) {
-        var connectToPrevious = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-        if (connectToPrevious) {
-            TrackNodeUtility.TryConnectToCurrent(_TrackNode);
+        var selectedTrackNode = EditorState.TrackNode;
+        if (selectedTrackNode != null && InputHelper.GetShift()) {
+            TrackSegmentUtility.CreateBetween(selectedTrackNode, _TrackNode);
+        } else if (InputHelper.GetControl()) {
+            EditorState.AddToSelection(_TrackNode);
         } else {
-            EditorState.Update(state => state with { SelectedAsset = _TrackNode });
+            EditorState.ReplaceSelection(_TrackNode);
         }
     }
 

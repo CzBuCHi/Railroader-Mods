@@ -1,17 +1,14 @@
 using System.Linq;
 using System.Text;
 using Core;
-using HarmonyLib;
 using Helpers;
 using JetBrains.Annotations;
-using MapEditor.Behaviours;
 using MapEditor.MapState.AutoTrestleEditor;
 using MapEditor.MapState.AutoTrestleEditor.StrangeCustoms;
 using MapEditor.Utility;
 using Serilog;
 using Track;
 using UnityEngine;
-using static InfinityCode.RealWorldTerrain.Utils.RealWorldTerrainGPXObject;
 using TrackSegment = Track.TrackSegment;
 
 namespace MapEditor.Visualizers;
@@ -102,7 +99,7 @@ public sealed class TrackSegmentVisualizer : MonoBehaviour, IPickable
     }
 
     public void Update() {
-        var isSelected = EditorState.TrackSegment == _TrackSegment;
+        var isSelected = EditorState.IsTrackSegmentSelected(_TrackSegment);
         _LineMaterial.color = isSelected ? Color.green : _Yellow;
 
         if (PendingRebuild) {
@@ -229,7 +226,12 @@ public sealed class TrackSegmentVisualizer : MonoBehaviour, IPickable
 
     public void Activate(PickableActivateEvent evt) {
         Log.Information("SelectedAsset = " + _TrackSegment);
-        EditorState.Update(state => state with { SelectedAsset = _TrackSegment });
+
+        if (InputHelper.GetControl()) {
+            EditorState.AddToSelection(_TrackSegment);
+        } else {
+            EditorState.ReplaceSelection(_TrackSegment);
+        }
     }
 
     public void Deactivate() {

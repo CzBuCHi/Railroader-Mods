@@ -1,4 +1,9 @@
+using System.Linq;
+using Helpers;
 using JetBrains.Annotations;
+using MapEditor.Utility;
+using Serilog;
+using UnityEngine;
 
 namespace MapEditor.Visualizers;
 
@@ -8,7 +13,11 @@ internal sealed class TelegraphPoleVisualizer : ArrowVisualizer, IPickable
     #region IPickable
 
     public void Activate(PickableActivateEvent evt) {
-        EditorState.Update(state => state with { SelectedAsset = new TelegraphPoleId(NodeId) });
+        if (InputHelper.GetControl()) {
+            EditorState.AddToSelection(new TelegraphPoleId(NodeId));
+        } else {
+            EditorState.ReplaceSelection(new TelegraphPoleId(NodeId));
+        }
     }
 
     public void Deactivate() {
@@ -24,11 +33,22 @@ internal sealed class TelegraphPoleVisualizer : ArrowVisualizer, IPickable
     public override void Awake() {
         base.Awake();
         VerticalOffset = 10f;
+
+        gameObject.layer = Layers.Clickable;
+
+        var boxCollider = gameObject.AddComponent<BoxCollider>();
+        boxCollider.center = new Vector3(0, 8.9f, 0);
+        boxCollider.size = Vector3.one;
     }
 
     public int NodeId;
 
     public void Update() {
-        LineRenderer.enabled = EditorState.TelegraphPole?.Id == NodeId;
+        if (EditorState.SelectedAssets == null) {
+            return;
+        }
+
+        LineRenderer.enabled = EditorState.SelectedAssets.OfType<TelegraphPoleId>().Select(o => o.Id).Contains(NodeId);
+        Log.Information("TelegraphPoleVisualizer: " + LineRenderer.enabled);
     }
 }

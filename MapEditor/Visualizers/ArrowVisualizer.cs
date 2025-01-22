@@ -1,4 +1,3 @@
-using Helpers;
 using UnityEngine;
 
 namespace MapEditor.Visualizers;
@@ -9,18 +8,12 @@ internal class ArrowVisualizer : MonoBehaviour
 
     protected float VerticalOffset = 0;
 
-    protected LineRenderer LineRenderer   = null!;
+    protected LineRenderer LineRenderer = null!;
 
     public virtual void Awake() {
-        gameObject.layer = Layers.Clickable;
-
-        var boxCollider = gameObject.AddComponent<BoxCollider>();
-        boxCollider.center = new Vector3(0, 8.9f, 0);
-        boxCollider.size = Vector3.one;
-
         LineRenderer = CreateLineRenderer();
     }
-    
+
     private LineRenderer CreateLineRenderer() {
         var lineRenderer = gameObject.AddComponent<LineRenderer>();
         lineRenderer.material = _LineMaterial;

@@ -4,6 +4,7 @@ using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
 using HarmonyLib;
 using JetBrains.Annotations;
+using MapEditor.Utility;
 using Railloader;
 using Track;
 using UnityEngine;
@@ -39,7 +40,7 @@ public sealed class SwitchNormalizerPlugin(IModdingContext context, IUIHelper ui
     }
 
     private void OnButtonClick() {
-        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) {
+        if (InputHelper.GetShift()) {
             _Settings.ThrownSwitches = _Switches.Where(o => o.isThrown).Select(o => o.id).ToArray();
         } else {
             _Switches.Do(node => node.isThrown = _Settings.ThrownSwitches.Contains(node.id));

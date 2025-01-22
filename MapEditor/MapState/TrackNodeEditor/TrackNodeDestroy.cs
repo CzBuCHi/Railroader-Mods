@@ -14,10 +14,7 @@ public sealed record TrackNodeDestroy(string Id) : IStateStep
             return;
         }
 
-        if (EditorState.TrackNode == node) {
-            EditorState.Update(state => state with { SelectedAsset = null });
-        }
-
+        EditorState.RemoveFromSelection(node);
         _Data = TrackNodeUtility.Destroy(node);
     }
 

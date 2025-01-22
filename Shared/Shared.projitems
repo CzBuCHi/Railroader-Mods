@@ -16,5 +16,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)System\Runtime\CompilerServices\RequiredMemberAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\ProgrammaticWindowBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\TopRightArea.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utility\InputHelper.cs" />
   </ItemGroup>
 </Project>

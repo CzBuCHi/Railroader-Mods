@@ -22,8 +22,12 @@ public abstract class ProgrammaticWindowBase : MonoBehaviour, IProgrammaticWindo
         _Panel = null;
     }
 
+    protected virtual void BeforeShowWindow() {
+    }
+
     public void ShowWindow() {
         Populate();
+        BeforeShowWindow();
         Window.ShowWindow();
     }
 

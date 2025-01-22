@@ -12,10 +12,7 @@ public sealed record TrackSegmentDestroy(string Id) : IStateStep
             return;
         }
 
-        if (EditorState.TrackSegment == segment) {
-            EditorState.Update(state => state with { SelectedAsset = null });
-        }
-
+        EditorState.RemoveFromSelection(segment);
         _Data = TrackSegmentUtility.Destroy(segment);
     }
 

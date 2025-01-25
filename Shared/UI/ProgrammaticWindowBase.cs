@@ -15,19 +15,25 @@ public abstract class ProgrammaticWindowBase : MonoBehaviour, IProgrammaticWindo
     protected       Window          Window           { get; private set; } = null!;
     private         UIPanel?        _Panel;
 
-    public virtual void Awake() => Window = GetComponent<Window>()!;
+    public virtual void Awake() {
+        Window = GetComponent<Window>()!;
+        Window.OnShownDidChange += WindowOnOnShownDidChange;
+    }
+
+    public virtual void OnDestroy() {
+        Window.OnShownDidChange -= WindowOnOnShownDidChange;
+    }
+
+    protected virtual void WindowOnOnShownDidChange(bool isShown) {
+    }
 
     public virtual void OnDisable() {
         _Panel?.Dispose();
         _Panel = null;
     }
 
-    protected virtual void BeforeShowWindow() {
-    }
-
     public void ShowWindow() {
         Populate();
-        BeforeShowWindow();
         Window.ShowWindow();
     }
 

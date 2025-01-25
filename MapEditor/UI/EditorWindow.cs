@@ -27,18 +27,27 @@ public sealed class EditorWindow : ProgrammaticWindowBase
 
     public static EditorWindow Shared => WindowManager.Shared!.GetWindow<EditorWindow>()!;
 
-    protected override void BeforeShowWindow() {
-        var rectTransform = Window.GetComponent<RectTransform>()!;
-        rectTransform.position = new Vector2(Screen.width, Screen.height - 30).Round();
+    protected override void WindowOnOnShownDidChange(bool isShown) {
+        base.WindowOnOnShownDidChange(isShown);
+        if (isShown) {
+            var rectTransform = Window.GetComponent<RectTransform>()!;
+            rectTransform.position = new Vector2(Screen.width, Screen.height - 30).Round();
+        } else {
+            EditorState.Reset();
+        }
     }
 
     public static void Toggle() {
         if (Shared.Window.IsShown) {
             Shared.Window.CloseWindow();
-            EditorState.Reset();
         } else {
             Shared.ShowWindow();
         }
+    }
+
+    public override void OnDisable() {
+        base.OnDisable();
+        EditorState.Reset();
     }
 
     private UIState<string?> _SelectedItem = new(null);

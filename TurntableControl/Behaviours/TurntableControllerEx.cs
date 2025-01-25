@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using JetBrains.Annotations;
+using Serilog;
 //using KeyValue.Runtime;
 using Track;
 using UnityEngine;
@@ -18,12 +20,24 @@ public class TurntableControllerEx : MonoBehaviour
         //_KeyValueObject = _Controller.GetComponent<KeyValueObject>()!;
 
         var nodes = Traverse.Create(_Controller.turntable!)!.Field<List<TrackNode>>("nodes")!.Value!;
-        foreach (var node in nodes) {
-            if (Graph.Shared!.SegmentsConnectedTo(node)!.Count == 0) {
+
+        var activeIndexes = new HashSet<int>();
+        for (var i = 0; i < nodes.Count; i++) {
+            var j = (i + nodes.Count / 2) % nodes.Count;
+            if (Graph.Shared.SegmentsConnectedTo(nodes[i]!).Count == 0 &&
+                Graph.Shared.SegmentsConnectedTo(nodes[j]!).Count == 0
+                ) {
+                Log.Information("Node: " + nodes[i] + " - SKIP " + i + ", " + j);
                 continue;
             }
 
-            node.gameObject!.AddComponent<TurntableTrackNode>()!.Controller = this;
+            Log.Information("Node: " + nodes[i] + " - TAKE " + i + ", " + j);
+            activeIndexes.Add(i);
+            activeIndexes.Add(j);
+        }
+
+        foreach (var i in activeIndexes) {
+            nodes[i]!.gameObject.AddComponent<TurntableTrackNode>().Controller = this;
         }
     }
 

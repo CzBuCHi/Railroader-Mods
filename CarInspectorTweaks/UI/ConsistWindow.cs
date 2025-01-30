@@ -51,7 +51,7 @@ public class ConsistWindow : ProgrammaticWindowBase
         var displayName = car.DisplayName +
                           (isAirConnected ? " " + TextSprites.Warning : "") +
                           (car.air!.handbrakeApplied ? " " + TextSprites.HandbrakeWheel : "") +
-                          (car.NeedsOiling ? " " + TextSprites.Hotbox : "");
+                          (car.EnableOiling && car.Oiled < CarInspectorTweaksPlugin.Settings.OilThreshold ? " " + TextSprites.Hotbox : "");
 
         return new UIPanelBuilder.ListItem<Car>(car.id, car, car.Archetype.ToString(), displayName);
     }

@@ -42,6 +42,8 @@ public static class ConsistManage {
                 }
             });
 
+            
+
             strip.AddButton("Refresh", strip.Rebuild)!
                  .Tooltip("Refresh dialog", "Refreshes this dialog");
 

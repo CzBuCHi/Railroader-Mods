@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using CzBuCHi.Shared.UI;
-using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
-using Game.Messages;
-using Game.State;
 using HarmonyLib;
-using KeyValue.Runtime;
 using Model;
-using Serilog;
 using UI.Builder;
 using UI.CarInspector;
 using UI.Common;
@@ -21,7 +15,7 @@ namespace CarInspectorTweaks.UI;
 
 public class ConsistWindow : ProgrammaticWindowBase
 {
-    public override Window.Sizing Sizing => Window.Sizing.Fixed(new Vector2Int(700, 400));
+    public override Window.Sizing Sizing => Window.Sizing.Fixed(new Vector2Int(700, 450));
 
     private readonly UIState<string?> _SelectedItem = new(null);
 
@@ -57,7 +51,7 @@ public class ConsistWindow : ProgrammaticWindowBase
                           (car.air!.handbrakeApplied ? " " + TextSprites.HandbrakeWheel : "") +
                           (car.EnableOiling && car.Oiled < CarInspectorTweaksPlugin.Settings.OilThreshold ? " " + TextSprites.Hotbox : "");
 
-        return new UIPanelBuilder.ListItem<Car>(car.id, car, car.Archetype.ToString(), displayName);
+        return new UIPanelBuilder.ListItem<Car>(car.id, car, "", displayName);
     }
 
     private static bool CheckAir(Car car, Car.EndGear endGear, Car.LogicalEnd end) {
@@ -81,7 +75,6 @@ public class ConsistWindow : ProgrammaticWindowBase
             builder.AddLabel("No car selected.");
             return;
         }
-        builder.RebuildOnInterval(1);
 
         _CarInspector ??= new CarInspector();
         var setter = _CarSetter ??= CreatePrivateSetter();

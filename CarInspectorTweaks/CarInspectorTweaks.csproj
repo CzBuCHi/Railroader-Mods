@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- Optionally, set a few things to your liking -->
     <MajorVersion>3</MajorVersion>
-    <MinorVersion>5</MinorVersion>
+    <MinorVersion>6</MinorVersion>
     <IsMod>true</IsMod>
     <PackageMod>enable</PackageMod>
     <Nullable>enable</Nullable>
@@ -20,9 +20,12 @@
     <GameAssembly Include="Definition" />
     <GameAssembly Include="UnityEngine.CoreModule" />
     <GameAssembly Include="UnityEngine.PhysicsModule" />
+    <GameAssembly Include="UnityEngine.InputLegacyModule" />
+    <GameAssembly Include="UnityEngine.ImageConversionModule" />
     <GameAssembly Include="UnityEngine.UI" />
     <GameAssembly Include="Unity.TextMeshPro" />
     <GameAssembly Include="Railloader.Interchange" />
     <GameAssembly Include="Serilog" />    
   </ItemGroup>
+  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 </Project>

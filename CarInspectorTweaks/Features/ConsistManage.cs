@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using CarInspectorTweaks.UI;
 using Game.Messages;
 using Game.State;
 using HarmonyLib;
@@ -40,6 +41,11 @@ public static class ConsistManage {
                     lowOilCar = car;
                 }
             });
+
+            if (CarInspectorTweaksPlugin.Settings.ConsistWindow) {
+                strip.AddButton("Consist", ConsistWindow.Shared.ShowWindow)
+                     .Tooltip("Consist", "Opens consist window");
+            }
 
             strip.AddButton("Refresh", strip.Rebuild)!
                  .Tooltip("Refresh dialog", "Refreshes this dialog");

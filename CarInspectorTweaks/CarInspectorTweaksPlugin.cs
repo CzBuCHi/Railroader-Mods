@@ -1,3 +1,5 @@
+using CarInspectorTweaks.UI;
+using CzBuCHi.Shared.Harmony;
 using HarmonyLib;
 using JetBrains.Annotations;
 using KeyValue.Runtime;
@@ -22,6 +24,8 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
         Context = context;
         UiHelper = uiHelper;
         Settings = Context.LoadSettingsData<Settings>(ModIdentifier) ?? new Settings();
+
+        ProgrammaticWindowCreatorPatches.RegisterWindow<ConsistWindow>();
     }
 
     public override void OnEnable() {
@@ -97,6 +101,9 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
         builder.AddField("Copy crew", builder.AddToggle(() => Settings.CopyCrew, o => Settings.CopyCrew = o)!)!
                .Tooltip("Copy crew", "Copy car's crew to the other cars in consist.");
 
+        builder.AddField("Consist window", builder.AddToggle(() => Settings.ConsistWindow, o => Settings.ConsistWindow = o)!)!
+               .Tooltip("Consist window", "Custom window with consist-related functions.");
+
         builder.AddButton("Save", ModTabDidClose);
     }
 
@@ -152,6 +159,10 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
         if (Settings.CopyCrew) {
             harmony.PatchCategory("CopyCrew");
+        }
+
+        if (Settings.ConsistWindow) {
+            harmony.PatchCategory("ConsistWindow");
         }
     }
 }

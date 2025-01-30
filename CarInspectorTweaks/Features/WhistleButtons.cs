@@ -1,15 +1,14 @@
-﻿using Model;
-
-namespace CarInspectorTweaks.Features;
-
+﻿using System.Linq;
 using HarmonyLib;
 using JetBrains.Annotations;
+using Model;
 using Model.Definition.Components;
 using Model.Definition.Data;
 using RollingStock.Steam;
-using System.Linq;
 using UI.Builder;
 using UI.CarCustomizeWindow;
+
+namespace CarInspectorTweaks.Features;
 
 [PublicAPI]
 [HarmonyPatch]

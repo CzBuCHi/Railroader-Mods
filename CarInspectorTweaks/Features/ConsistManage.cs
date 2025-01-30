@@ -42,11 +42,6 @@ public static class ConsistManage {
                 }
             });
 
-            if (CarInspectorTweaksPlugin.Settings.ConsistWindow) {
-                strip.AddButton("Consist", ConsistWindow.Shared.ShowWindow)
-                     .Tooltip("Consist", "Opens consist window");
-            }
-
             strip.AddButton("Refresh", strip.Rebuild)!
                  .Tooltip("Refresh dialog", "Refreshes this dialog");
 

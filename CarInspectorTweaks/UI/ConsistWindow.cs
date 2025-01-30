@@ -1,12 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using CzBuCHi.Shared.UI;
 using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
+using Game.Messages;
 using Game.State;
 using HarmonyLib;
+using KeyValue.Runtime;
 using Model;
 using Serilog;
 using UI.Builder;
@@ -24,11 +27,10 @@ public class ConsistWindow : ProgrammaticWindowBase
 
     public static ConsistWindow Shared => WindowManager.Shared!.GetWindow<ConsistWindow>()!;
 
-    private BaseLocomotive? _Locomotive;
+    private BaseLocomotive?                 _Locomotive;
+    
     protected override void Build(UIPanelBuilder builder) {
-        //builder.RebuildOnEvent<SelectedCarChanged>();
-        builder.RebuildOnInterval(1);
-        
+        builder.RebuildOnEvent<SelectedCarChanged>();
         var locomotive = TrainController.Shared.SelectedLocomotive;
         if (locomotive == null) {
             builder.AddLabel("No locomotive selected.");
@@ -40,7 +42,9 @@ public class ConsistWindow : ProgrammaticWindowBase
             _Locomotive = locomotive;
         }
 
-        var cars = locomotive.EnumerateCoupled().ToList();
+        var cars = locomotive.EnumerateCoupled(Car.End.F).ToList();
+        builder.AddButton("Refresh", builder.Rebuild);
+
         Window.Title = "Train " + locomotive.DisplayName;
         builder.AddListDetail(cars.Select(GetListItem), _SelectedItem, BuildDetail);
     }
@@ -70,16 +74,19 @@ public class ConsistWindow : ProgrammaticWindowBase
         return true;
     }
 
+    private CarInspector? _CarInspector;
+
     private void BuildDetail(UIPanelBuilder builder, Car? car) {
         if (car == null) {
             builder.AddLabel("No car selected.");
             return;
         }
+        builder.RebuildOnInterval(1);
 
+        _CarInspector ??= new CarInspector();
         var setter = _CarSetter ??= CreatePrivateSetter();
-        var carInspector = new CarInspector();
-        setter(carInspector, car);
-        carInspector.PopulatePanel(builder);
+        setter(_CarInspector, car);
+        _CarInspector.PopulatePanel(builder);
     }
 
     private static Action<CarInspector, Car>? _CarSetter;
@@ -105,6 +112,17 @@ public static class CarInspectorPatches
     [HarmonyReversePatch]
     [HarmonyPatch(typeof(CarInspector), "PopulatePanel")]
     public static void PopulatePanel(this CarInspector carInspector, UIPanelBuilder builder) => throw new NotImplementedException("It's a stub: CarInspector.PopulatePanel");
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(CarInspector), "Show")]
+    public static bool Show(Car car) {
+        if (car == TrainController.Shared.SelectedLocomotive) {
+            ConsistWindow.Shared.ShowWindow();
+            return false;
+        }
+
+        return true;
+    }
 }
 
 

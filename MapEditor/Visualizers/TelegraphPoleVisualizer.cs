@@ -49,6 +49,5 @@ internal sealed class TelegraphPoleVisualizer : ArrowVisualizer, IPickable
         }
 
         LineRenderer.enabled = EditorState.SelectedAssets.OfType<TelegraphPoleId>().Select(o => o.Id).Contains(NodeId);
-        Log.Information("TelegraphPoleVisualizer: " + LineRenderer.enabled);
     }
 }

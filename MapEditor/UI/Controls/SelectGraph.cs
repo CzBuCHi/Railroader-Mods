@@ -4,6 +4,7 @@ using System.Linq;
 using MapEditor.MapState;
 using Serilog;
 using UI.Builder;
+using UI.Common;
 using UnityEngine.UI;
 
 namespace MapEditor.UI.Controls;
@@ -104,8 +105,8 @@ public static class SelectGraph
         """
         {
           "manifestVersion": 5,
-          "id": "SimpleMod",
-          "name": "SimpleMod",
+          "id": "#id#",
+          "name": "#id#",
           "version": "1.0",
           "requires": [
             "Zamu.StrangeCustoms",
@@ -117,19 +118,22 @@ public static class SelectGraph
         """;
 
     private static void CreateNewMod() {
-        var baseDir = Path.Combine(MapEditorPlugin.Shared!.Context.ModsBaseDirectory, "MapEditor.SimpleMod");
-        if (Directory.Exists(baseDir)) {
-            global::UI.Console.Console.shared.AddLine("Mod 'MapEditor.SimpleMod' already exists. Aborting.");
-            return;
+        var basePath = Path.Combine(MapEditorPlugin.Shared!.Context.ModsBaseDirectory, "MapEditor.SimpleMod");
+
+        var modPath = basePath;
+        var i       = 0;
+        while (Directory.Exists(modPath)) {
+            modPath = $"{basePath}.{++i}";
         }
 
-        Directory.CreateDirectory(baseDir);
+        var modName = Path.GetFileName(modPath);
 
-        File.WriteAllText(Path.Combine(baseDir, "Definition.json"), DefinitionJson);
-        File.WriteAllText(Path.Combine(baseDir, "game-graph.json"), "{}");
-        File.WriteAllText(Path.Combine(baseDir, "README.txt"), Readme);
+        Directory.CreateDirectory(modPath);
 
-        global::UI.Console.Console.shared.AddLine("Created new mod 'MapEditor.SimpleMod'. Game needs to be restarted.");
-        global::UI.Console.Console.shared.AddLine("Open mods/MapEditor.SimpleMod/README.txt file for more instructions.");
+        File.WriteAllText(Path.Combine(modPath, "Definition.json"), DefinitionJson.Replace("#id#", modName));
+        File.WriteAllText(Path.Combine(modPath, "game-graph.json"), "{}");
+        File.WriteAllText(Path.Combine(modPath, "README.txt"), Readme);
+
+        Toast.Present($"Created new mod '{modName}'. Open README.txt file for more instructions.");
     }
 }

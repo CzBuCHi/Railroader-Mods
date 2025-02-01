@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using CzBuCHi.Shared.UI;
-using HarmonyLib;
 using Helpers;
 using JetBrains.Annotations;
-using MapEditor.Behaviours;
 using MapEditor.Events;
-using MapEditor.MapState;
-using MapEditor.MapState.TrackNodeEditor;
 using MapEditor.UI.Controls;
-using MapEditor.Visualizers;
-using Serilog;
 using Track;
 using UI.Builder;
 using UI.Common;
@@ -62,8 +55,11 @@ public sealed class EditorWindow : ProgrammaticWindowBase
 
         if (EditorState.SelectedAssets != null) {
             AssetsEditor.Build(builder, EditorState.SelectedAssets);
+            var data = EditorState.SelectedAssets.Select(o => new UIPanelBuilder.ListItem<object>(o.ToString(), o, "", GetAssetTitle(o))).ToList();
+            if (data.All(o => o.Identifier != _SelectedItem.Value)) {
+                _SelectedItem.Value = data[0].Identifier;
+            }
 
-            var data = EditorState.SelectedAssets.Select(o => new UIPanelBuilder.ListItem<object>(o.ToString(), o, "", o.GetType().Name)).ToList();
             builder.AddListDetail(data, _SelectedItem, BuildAssetEditor);
         } else if (EditorState.SelectedPatch != null) {
             EmptyEditor.Build(builder);
@@ -89,5 +85,15 @@ public sealed class EditorWindow : ProgrammaticWindowBase
                 SceneryAssetInstanceEditor.Build(builder, sceneryAssetInstance);
                 break;
         }
+    }
+
+    private string GetAssetTitle(object asset) {
+        return asset switch {
+            TrackNode trackNode                       => "TrackNode " + trackNode.id,
+            TrackSegment trackSegment                 => "TrackSegment " + trackSegment.id,
+            TelegraphPoleId telegraphPoleId           => "TelegraphPole " + telegraphPoleId.Id,
+            SceneryAssetInstance sceneryAssetInstance => "SceneryAsset " + sceneryAssetInstance.name,
+            _                                         => throw new NotSupportedException()
+        };
     }
 }

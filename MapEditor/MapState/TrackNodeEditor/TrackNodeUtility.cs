@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Helpers;
+using MapEditor.Behaviours;
 using MapEditor.Extensions;
 using MapEditor.MapState.TrackSegmentEditor;
 using MapEditor.Utility;
@@ -17,6 +18,8 @@ public static class TrackNodeUtility
     public static void Show(TrackNode trackNode) => CameraSelector.shared.ZoomToPoint(trackNode.transform.localPosition);
 
     public static void Remove(TrackNode trackNode) {
+        MoveableObject.Destroy();
+
         var connectSegments = InputHelper.GetShift();
         Log.Information($"Remove node {trackNode.id}; connectSegments = {connectSegments}");
 
@@ -105,6 +108,8 @@ public static class TrackNodeUtility
     }
 
     public static void Add(TrackNode trackNode) {
+        MoveableObject.Destroy();
+
         var withoutSegment = InputHelper.GetShift();
 
         if (!Graph.Shared.NodeIsDeadEnd(trackNode, out var direction)) {
@@ -141,8 +146,9 @@ public static class TrackNodeUtility
         // NODE_A --- NODE
         // NODE_B --- NEW_NODE_1
         //            NEW_NODE_2 --- NODE_C
-        
 
+        MoveableObject.Destroy();
+        
         var segments = Graph.Shared.SegmentsConnectedTo(trackNode).ToList();
 
         List<IStateStep> actions = new();
@@ -208,6 +214,8 @@ public static class TrackNodeUtility
     }
 
     public static TrackNodeData Destroy(TrackNode trackNode) {
+        MoveableObject.Destroy();
+
         var trackNodeData = new TrackNodeData(trackNode);
         Object.Destroy(trackNode.gameObject);
         MapEditorPlugin.PatchEditor!.RemoveNode(trackNode.id);
@@ -215,6 +223,8 @@ public static class TrackNodeUtility
     }
 
     public static TrackNode Create(string id, TrackNodeData trackNodeData) {
+        MoveableObject.Destroy();
+
         var gameObject = new GameObject(id);
         gameObject.SetActive(false);
         gameObject.transform.parent = Graph.Shared.transform;
@@ -231,5 +241,24 @@ public static class TrackNodeUtility
         Graph.Shared.AddNode(trackNode);
         MapEditorPlugin.PatchEditor!.AddOrUpdateNode(trackNode);
         return trackNode;
+    }
+
+    private static Quaternion? _SavedRotation;
+
+    public static void CopyRotation(TrackNode trackNode) {
+        MoveableObject.Destroy();
+        _SavedRotation = trackNode.transform.localRotation;
+    }
+
+    public static void SetRotation(TrackNode trackNode) {
+        if (_SavedRotation == null) {
+            return;
+        }
+
+        MoveableObject.Destroy();
+        MapStateEditor.NextStep(new TrackNodeUpdate(trackNode.id) {
+            OriginalRotation = trackNode.transform.localRotation,
+            Rotation = _SavedRotation.Value
+        });
     }
 }

@@ -1,4 +1,5 @@
 ﻿// ReSharper disable once CheckNamespace
+
 namespace CzBuCHi.Shared.Harmony;
 
 using HarmonyLib;

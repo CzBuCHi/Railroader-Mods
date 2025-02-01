@@ -1,121 +1,156 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
+using CarInspectorTweaks.Harmony;
 using CzBuCHi.Shared.UI;
 using Game.Events;
+using Game.Messages;
+using Game.State;
 using HarmonyLib;
+using KeyValue.Runtime;
 using Model;
+using Model.AI;
+using Model.Definition;
 using UI.Builder;
 using UI.CarInspector;
 using UI.Common;
+using UI.EngineControls;
 using UnityEngine;
 
 namespace CarInspectorTweaks.UI;
 
-public class ConsistWindow : ProgrammaticWindowBase
+public sealed class ConsistWindow : ProgrammaticWindowBase
 {
-    public override Window.Sizing Sizing => Window.Sizing.Fixed(new Vector2Int(700, 450));
-
-    private readonly UIState<string?> _SelectedItem = new(null);
+    public override Window.Sizing Sizing => Window.Sizing.Fixed(new Vector2Int(300, 150));
 
     public static ConsistWindow Shared => WindowManager.Shared!.GetWindow<ConsistWindow>()!;
 
-    private BaseLocomotive?                 _Locomotive;
-    
+    public override void Awake() {
+        base.Awake();
+        Window.Title = "Consist Window";
+    }
+
     protected override void Build(UIPanelBuilder builder) {
         builder.RebuildOnEvent<SelectedCarChanged>();
+
         var locomotive = TrainController.Shared.SelectedLocomotive;
         if (locomotive == null) {
             builder.AddLabel("No locomotive selected.");
             return;
         }
 
-        if (_Locomotive != locomotive) {
-            _SelectedItem.Value = locomotive.id;
-            _Locomotive = locomotive;
-        }
+        builder.AddTitle(CarInspectorPatches.TitleForCar(locomotive), CarInspectorPatches.SubtitleForCar(locomotive));
 
-        var cars = locomotive.EnumerateCoupled(Car.End.F).ToList();
-        builder.AddButton("Refresh", builder.Rebuild);
+        var persistence = new AutoEngineerPersistence(locomotive.KeyValueObject!);
+        var helper      = new AutoEngineerOrdersHelper(locomotive, persistence);
+        var mode        = helper.Mode;
 
-        Window.Title = "Train " + locomotive.DisplayName;
-        builder.AddListDetail(cars.Select(GetListItem), _SelectedItem, BuildDetail);
-    }
+        builder.ButtonStrip(strip => {
+            var cars = locomotive.EnumerateCoupled()!.ToList();
 
-    private UIPanelBuilder.ListItem<Car> GetListItem(Car car) {
-        var isAirConnected = !CheckAir(car, car.EndGearA!, Car.LogicalEnd.A) || !CheckAir(car, car.EndGearB!, Car.LogicalEnd.B);
+            var hasCylinderPressure = false;
+            var lowOilCar           = cars[0]!;
+            cars.Do(car => {
+                strip.AddObserver(car.KeyValueObject!.Observe(PropertyChange.KeyForControl(PropertyChange.Control.Handbrake)!, _ => strip.Rebuild(), false)!);
+                strip.AddObserver(car.KeyValueObject.Observe(PropertyChange.KeyForControl(PropertyChange.Control.CylinderCock)!, _ => strip.Rebuild(), false)!);
+                strip.AddObserver(car.KeyValueObject.Observe("oiled", _ => strip.Rebuild(), false)!);
 
-        var displayName = car.DisplayName +
-                          (isAirConnected ? " " + TextSprites.Warning : "") +
-                          (car.air!.handbrakeApplied ? " " + TextSprites.HandbrakeWheel : "") +
-                          (car.EnableOiling && car.Oiled < CarInspectorTweaksPlugin.Settings.OilThreshold ? " " + TextSprites.Hotbox : "");
+                hasCylinderPressure = car.Archetype is not (CarArchetype.LocomotiveDiesel or CarArchetype.LocomotiveSteam or CarArchetype.Tender) &&
+                                      car.air.BrakeCylinder.Pressure > 0;
 
-        return new UIPanelBuilder.ListItem<Car>(car.id, car, "", displayName);
-    }
+                if (lowOilCar.Oiled > car.Oiled) {
+                    lowOilCar = car;
+                }
+            });
 
-    private static bool CheckAir(Car car, Car.EndGear endGear, Car.LogicalEnd end) {
-        if (car.CoupledTo(end)) {
-            if (car.AirConnectedTo(end) == null || endGear.AnglecockSetting < 0.999f) {
-                return false;
+            strip.AddButton("Refresh", strip.Rebuild)
+                 .Tooltip("Refresh dialog", "Refreshes this dialog");
+
+            if (cars.Any(c => c.air!.handbrakeApplied)) {
+                strip.AddButton($"{TextSprites.HandbrakeWheel}", () => {
+                         ReleaseAllHandbrakes(cars);
+                         strip.Rebuild();
+                     })
+                     .Tooltip("Release handbrakes", $"Iterates over cars in this consist and releases {TextSprites.HandbrakeWheel}.");
             }
-        } else {
-            if (endGear.AnglecockSetting > 0.001f) {
-                return false;
+
+            if (hasCylinderPressure) {
+                strip.AddButton("Bleed All", BleedAllCars)!
+                     .Tooltip("Bleed All Valves", "Bleed the brakes to release pressure from the train's brake system.");
             }
-        }
 
-        return true;
-    }
+            if (!IsAirConnected(cars)) {
+                strip.AddButton("Fix Air", () => {
+                         ConnectAir(cars);
+                         strip.Rebuild();
+                     })
+                     .Tooltip("Connect Consist Air", "Iterates over each car in this consist and connects gladhands and opens anglecocks.");
+            }
 
-    private CarInspector? _CarInspector;
+            if (lowOilCar.Oiled < CarInspectorTweaksPlugin.Settings.OilThreshold) {
+                strip.AddButton($"Low oil: {lowOilCar.Oiled:0%})", () => CameraSelector.shared!.FollowCar(lowOilCar))!
+                     .Tooltip("Jump to low oil car", "Jump the overhead camera to car with lowest oil in bearing.");
+            }
 
-    private void BuildDetail(UIPanelBuilder builder, Car? car) {
-        if (car == null) {
-            builder.AddLabel("No car selected.");
             return;
-        }
 
-        _CarInspector ??= new CarInspector();
-        var setter = _CarSetter ??= CreatePrivateSetter();
-        setter(_CarInspector, car);
-        _CarInspector.PopulatePanel(builder);
+            void BleedAllCars() {
+                cars.Do(c => {
+                    if (c.SupportsBleed()) {
+                        c.SetBleed();
+                    }
+                });
+            }
+        });
+
+        builder.ButtonStrip(strip => {
+            strip.AddButtonSelectable("Manual", mode == AutoEngineerMode.Off, UpdateMode(AutoEngineerMode.Off));
+            strip.AddButtonSelectable("Road", mode == AutoEngineerMode.Road, UpdateMode(AutoEngineerMode.Road));
+            strip.AddButtonSelectable("Yard", mode == AutoEngineerMode.Yard, UpdateMode(AutoEngineerMode.Yard));
+            strip.AddButtonSelectable("WP", mode == AutoEngineerMode.Waypoint, UpdateMode(AutoEngineerMode.Waypoint));
+        });
+        return;
+
+        Action UpdateMode(AutoEngineerMode newMode) {
+            return () => {
+                helper.SetOrdersValue(newMode);
+                builder.Rebuild();
+            };
+        }
     }
 
-    private static Action<CarInspector, Car>? _CarSetter;
+    private static bool IsAirConnected(List<Car> consist) {
+        return consist.All(car => IsAirConnectedImpl(car, car.EndGearA!, Car.LogicalEnd.A) && IsAirConnectedImpl(car, car.EndGearB!, Car.LogicalEnd.B));
 
-    private static Action<CarInspector, Car> CreatePrivateSetter() {
-        var fieldInfo = typeof(CarInspector).GetField("_car", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (fieldInfo == null) {
-            throw new InvalidOperationException("Field '_car' not found!");
+        bool IsAirConnectedImpl(Car car, Car.EndGear endGear, Car.LogicalEnd end) {
+            return car.CoupledTo(end)
+                ? car.AirConnectedTo(end) != null && !(endGear.AnglecockSetting < 0.999f)
+                : !(endGear.AnglecockSetting > 0.001f);
+        }
+    }
+
+    private static void ConnectAir(List<Car> consist) {
+        foreach (var car in consist) {
+            ConnectAirImpl(car, Car.LogicalEnd.A);
+            ConnectAirImpl(car, Car.LogicalEnd.B);
         }
 
-        var instanceParam    = Expression.Parameter(typeof(CarInspector), "instance");
-        var valueParam       = Expression.Parameter(typeof(Car), "value");
-        var fieldAccess      = Expression.Field(instanceParam, fieldInfo);
-        var assignExpression = Expression.Assign(fieldAccess, valueParam);
-        var setterLambda     = Expression.Lambda<Action<CarInspector, Car>>(assignExpression, instanceParam, valueParam);
-        return setterLambda.Compile();
-    }
-}
+        return;
 
-[HarmonyPatchCategory("ConsistWindow")]
-public static class CarInspectorPatches
-{
-    [HarmonyReversePatch]
-    [HarmonyPatch(typeof(CarInspector), "PopulatePanel")]
-    public static void PopulatePanel(this CarInspector carInspector, UIPanelBuilder builder) => throw new NotImplementedException("It's a stub: CarInspector.PopulatePanel");
+        static void ConnectAirImpl(Car car, Car.LogicalEnd end) {
+            StateManager.ApplyLocal(new PropertyChange(car.id!, CarPatches.KeyValueKeyFor(Car.EndGearStateKey.Anglecock, car.LogicalToEnd(end)), new FloatPropertyValue(car[end]!.IsCoupled ? 1f : 0f)));
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(CarInspector), "Show")]
-    public static bool Show(Car car) {
-        if (car == TrainController.Shared.SelectedLocomotive) {
-            ConsistWindow.Shared.ShowWindow();
-            return false;
+            if (car.TryGetAdjacentCar(end, out var car2)) {
+                StateManager.ApplyLocal(new SetGladhandsConnected(car.id!, car2!.id!, true));
+            }
         }
-
-        return true;
     }
+
+    private static void ReleaseAllHandbrakes(List<Car> consist) {
+        consist.Do(c => c.SetHandbrake(false));
+    }
+
 }
 
 

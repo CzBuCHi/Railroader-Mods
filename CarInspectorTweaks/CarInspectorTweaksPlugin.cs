@@ -100,10 +100,8 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
         builder.AddField("Copy crew", builder.AddToggle(() => Settings.CopyCrew, o => Settings.CopyCrew = o)!)!
                .Tooltip("Copy crew", "Copy car's crew to the other cars in consist.");
-
-        builder.AddField("Consist window", builder.AddToggle(() => Settings.ConsistWindow, o => Settings.ConsistWindow = o)!)!
-               .Tooltip("Consist window", "Custom window with consist-related functions.");
-
+        
+        builder.AddButton("Open Consist Window", ConsistWindow.Shared.ShowWindow);
         builder.AddButton("Save", ModTabDidClose);
     }
 
@@ -114,12 +112,12 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
     }
 
     private void UnpatchAll() {
-        var harmony = new Harmony(ModIdentifier);
+        var harmony = new HarmonyLib.Harmony(ModIdentifier);
         harmony.UnpatchAll(ModIdentifier);
     }
 
     private void ApplyPatches() {
-        var harmony = new Harmony(ModIdentifier);
+        var harmony = new HarmonyLib.Harmony(ModIdentifier);
 
         if (Settings.WhistleButtons) {
             harmony.PatchCategory("WhistleButtons");
@@ -161,8 +159,6 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
             harmony.PatchCategory("CopyCrew");
         }
 
-        if (Settings.ConsistWindow) {
-            harmony.PatchCategory("ConsistWindow");
-        }
+        harmony.PatchCategory("ConsistWindow");
     }
 }

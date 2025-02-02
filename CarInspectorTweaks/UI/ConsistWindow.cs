@@ -8,6 +8,7 @@ using Game.Events;
 using Game.Messages;
 using Game.State;
 using HarmonyLib;
+using Helpers;
 using KeyValue.Runtime;
 using Model;
 using Model.AI;
@@ -29,6 +30,14 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
     public override void Awake() {
         base.Awake();
         Window.Title = "Consist Window";
+    }
+
+    protected override void WindowOnOnShownDidChange(bool isShown) {
+        base.WindowOnOnShownDidChange(isShown);
+        if (isShown) {
+            var rectTransform = Window.GetComponent<RectTransform>()!;
+            rectTransform.position = new Vector2(315, 0).Round();
+        }
     }
 
     protected override void Build(UIPanelBuilder builder) {

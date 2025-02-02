@@ -7,6 +7,7 @@ using Teleporter.Extensions;
 using Teleporter.Harmony;
 using UI.Builder;
 using UI.Common;
+using UnityEngine;
 
 namespace Teleporter.UI;
 
@@ -18,6 +19,14 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
     private string _NewLocationName = "";
 
     private static TeleporterWindow Shared => WindowManager.Shared!.GetWindow<TeleporterWindow>()!;
+
+    protected override void WindowOnOnShownDidChange(bool isShown) {
+        base.WindowOnOnShownDidChange(isShown);
+        if (isShown) {
+            var rectTransform = Window.GetComponent<RectTransform>()!;
+            rectTransform.position = new Vector2(Screen.width, 0).Round();
+        }
+    }
 
     public static void Toggle() {
         if (Shared.Window.IsShown) {

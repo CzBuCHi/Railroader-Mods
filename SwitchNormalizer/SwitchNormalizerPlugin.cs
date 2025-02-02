@@ -5,6 +5,7 @@ using Game.Events;
 using HarmonyLib;
 using JetBrains.Annotations;
 using MapEditor.Utility;
+using Model.Ops.Timetable;
 using Railloader;
 using Track;
 using UnityEngine;
@@ -43,7 +44,12 @@ public sealed class SwitchNormalizerPlugin(IModdingContext context, IUIHelper ui
         if (InputHelper.GetShift()) {
             _Settings.ThrownSwitches = _Switches.Where(o => o.isThrown).Select(o => o.id).ToArray();
         } else {
-            _Switches.Do(node => node.isThrown = _Settings.ThrownSwitches.Contains(node.id));
+            _Switches.Do(node => {
+                var isThrown = _Settings.ThrownSwitches.Contains(node.id);
+                if (TrainController.Shared!.CanSetSwitch(node, isThrown, out _)) {
+                    node.isThrown = isThrown;
+                }
+            });
         }
     }
 }

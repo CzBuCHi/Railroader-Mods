@@ -1,8 +1,9 @@
+using System;
 using CarInspectorTweaks.UI;
 using CzBuCHi.Shared.Harmony;
-using HarmonyLib;
+using GalaSoft.MvvmLight.Messaging;
+using Game.Events;
 using JetBrains.Annotations;
-using KeyValue.Runtime;
 using Railloader;
 using Serilog;
 using UI.Builder;
@@ -18,7 +19,8 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
     public static IUIHelper       UiHelper { get; private set; } = null!;
     public static Settings        Settings { get; private set; } = null!;
 
-    private readonly ILogger _Logger = Log.ForContext<CarInspectorTweaksPlugin>()!;
+    private readonly ILogger   _Logger    = Log.ForContext<CarInspectorTweaksPlugin>()!;
+    private          Messenger _Messenger = null!;
 
     public CarInspectorTweaksPlugin(IModdingContext context, IUIHelper uiHelper) {
         Context = context;
@@ -31,11 +33,20 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
     public override void OnEnable() {
         _Logger.Information("OnEnable");
         ApplyPatches();
+
+        _Messenger = Messenger.Default!;
+        _Messenger.Register(this, new Action<MapDidLoadEvent>(OnMapDidLoad));
+    }
+
+    private void OnMapDidLoad(MapDidLoadEvent obj) {
+        CzBuCHi.Shared.UI.TopRightArea.AddButton("CarInspectorTweaks.icon.png", "Consist Window", 9, ConsistWindow.Shared.ShowWindow);
     }
 
     public override void OnDisable() {
         _Logger.Information("OnDisable");
         UnpatchAll();
+
+        _Messenger.Unregister(this);
     }
 
     public static void SaveSettings() {

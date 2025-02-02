@@ -49,15 +49,11 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
         builder.ButtonStrip(strip => {
             var cars = locomotive.EnumerateCoupled()!.ToList();
 
-            var hasCylinderPressure = false;
             var lowOilCar           = cars[0]!;
             cars.Do(car => {
                 strip.AddObserver(car.KeyValueObject!.Observe(PropertyChange.KeyForControl(PropertyChange.Control.Handbrake)!, _ => strip.Rebuild(), false)!);
                 strip.AddObserver(car.KeyValueObject.Observe(PropertyChange.KeyForControl(PropertyChange.Control.CylinderCock)!, _ => strip.Rebuild(), false)!);
                 strip.AddObserver(car.KeyValueObject.Observe("oiled", _ => strip.Rebuild(), false)!);
-
-                hasCylinderPressure = car.Archetype is not (CarArchetype.LocomotiveDiesel or CarArchetype.LocomotiveSteam or CarArchetype.Tender) &&
-                                      car.air.BrakeCylinder.Pressure > 0;
 
                 if (lowOilCar.Oiled > car.Oiled) {
                     lowOilCar = car;
@@ -73,11 +69,6 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
                          strip.Rebuild();
                      })
                      .Tooltip("Release handbrakes", $"Iterates over cars in this consist and releases {TextSprites.HandbrakeWheel}.");
-            }
-
-            if (hasCylinderPressure) {
-                strip.AddButton("Bleed All", BleedAllCars)!
-                     .Tooltip("Bleed All Valves", "Bleed the brakes to release pressure from the train's brake system.");
             }
 
             if (!IsAirConnected(cars)) {

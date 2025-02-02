@@ -12,6 +12,12 @@
     <Content Include="*.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="icon.png" />
+  </ItemGroup>
+  <ItemGroup>
   <Reference Include="System.Core" />
     <GameAssembly Include="Assembly-CSharp" />
     <GameAssembly Include="0Harmony" />

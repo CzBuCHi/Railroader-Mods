@@ -20,6 +20,11 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
 
     private static TeleporterWindow Shared => WindowManager.Shared!.GetWindow<TeleporterWindow>()!;
 
+    public override void Awake() {
+        base.Awake();
+        Window.Title = "Teleporter";
+    }
+
     protected override void WindowOnOnShownDidChange(bool isShown) {
         base.WindowOnOnShownDidChange(isShown);
         if (isShown) {

@@ -30,6 +30,11 @@ public sealed class EditorWindow : ProgrammaticWindowBase
         }
     }
 
+    public override void Awake() {
+        base.Awake();
+        Window.Title = "Map Editor";
+    }
+
     public static void Toggle() {
         if (Shared.Window.IsShown) {
             Shared.Window.CloseWindow();

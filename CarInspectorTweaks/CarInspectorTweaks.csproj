@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- Optionally, set a few things to your liking -->
     <MajorVersion>3</MajorVersion>
-    <MinorVersion>7</MinorVersion>
+    <MinorVersion>8</MinorVersion>
     <IsMod>true</IsMod>
     <PackageMod>enable</PackageMod>
     <Nullable>enable</Nullable>

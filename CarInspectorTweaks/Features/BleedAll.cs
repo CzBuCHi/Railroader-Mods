@@ -33,14 +33,14 @@ public static class BleedAll
     }
 
     public static MethodBase TargetMethod() {
-        var type = typeof(CarInspector).Assembly.GetType("UI.CarInspector.CarInspector+<>c__DisplayClass23_0");
+        var type = typeof(CarInspector).Assembly.GetType("UI.CarInspector.CarInspector+<>c__DisplayClass21_0");
         if (type == null) {
-            throw new Exception("Type UI.CarInspector.CarInspector+<>c__DisplayClass23_0 not found.");
+            throw new Exception("Type UI.CarInspector.CarInspector+<>c__DisplayClass21_0 not found.");
         }
 
         var targetMethod = AccessTools.Method(type, "<PopulateCarPanel>b__4");
         if (targetMethod == null) {
-            throw new Exception("Method UI.CarInspector.CarInspector+<>c__DisplayClass23_0::b__4 not found.");
+            throw new Exception("Method UI.CarInspector.CarInspector+<>c__DisplayClass21_0::b__4 not found.");
         }
 
         return targetMethod;

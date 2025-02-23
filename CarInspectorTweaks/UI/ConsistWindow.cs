@@ -92,16 +92,6 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
                 strip.AddButton($"Low oil: {lowOilCar.Oiled:0%})", () => CameraSelector.shared!.FollowCar(lowOilCar))!
                      .Tooltip("Jump to low oil car", "Jump the overhead camera to car with lowest oil in bearing.");
             }
-
-            return;
-
-            void BleedAllCars() {
-                cars.Do(c => {
-                    if (c.SupportsBleed()) {
-                        c.SetBleed();
-                    }
-                });
-            }
         });
 
         builder.ButtonStrip(strip => {

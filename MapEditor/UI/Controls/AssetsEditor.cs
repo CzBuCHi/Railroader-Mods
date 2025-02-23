@@ -55,6 +55,9 @@ internal sealed class ArrayMoveHandler(IMoveableObjectHandler[] handlers) : IMov
 
     public MoveableObjectMode Mode => handlers[0].Mode;
 
+    public Vector3    StartPosition => handlers[0].StartPosition;
+    public Quaternion StartRotation => handlers[0].StartRotation;
+
     public void OnStart() {
         handlers.Do(o => o.OnStart());
     }

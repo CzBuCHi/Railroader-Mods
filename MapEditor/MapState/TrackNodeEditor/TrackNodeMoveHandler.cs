@@ -23,21 +23,21 @@ public sealed class TrackNodeMoveHandler : IMoveableObjectHandler
     public MoveableObjectMode Mode { get; }
 
     private readonly TrackSegmentVisualizer[] _Segments;
-    private          Vector3                  _StartPosition;
-    private          Quaternion               _StartRotation;
+    public           Vector3                  StartPosition { get; private set; }
+    public           Quaternion               StartRotation { get; private set; }
 
     public void OnStart() {
-        _StartPosition = _TrackNode.transform.localPosition;
-        _StartRotation = _TrackNode.transform.localRotation;
+        StartPosition = _TrackNode.transform.localPosition;
+        StartRotation = _TrackNode.transform.localRotation;
     }
 
     public void OnUpdate(Vector3? translation, Quaternion? rotation) {
         if (translation.HasValue) {
-            _TrackNode.transform.localPosition = _StartPosition + translation.Value;
+            _TrackNode.transform.localPosition = StartPosition + translation.Value;
         }
 
         if (rotation.HasValue) {
-            _TrackNode.transform.localRotation = _StartRotation * rotation.Value;
+            _TrackNode.transform.localRotation = StartRotation * rotation.Value;
         }
 
         _Segments.Do(o => o.PendingRebuild = true);
@@ -45,10 +45,10 @@ public sealed class TrackNodeMoveHandler : IMoveableObjectHandler
 
     public IStateStep OnComplete(Vector3? translation, Quaternion? rotation) {
         return new TrackNodeUpdate(_TrackNode.id) {
-            OriginalPosition = translation != null ? _StartPosition : null,
-            OriginalRotation = rotation != null ? _StartRotation : null,
-            Position = translation != null ? _StartPosition + translation.Value : null,
-            Rotation = rotation != null ? _StartRotation * rotation.Value : null
+            OriginalPosition = translation != null ? StartPosition : null,
+            OriginalRotation = rotation != null ? StartRotation : null,
+            Position = translation != null ? StartPosition + translation.Value : null,
+            Rotation = rotation != null ? StartRotation * rotation.Value : null
         };
     }
 }

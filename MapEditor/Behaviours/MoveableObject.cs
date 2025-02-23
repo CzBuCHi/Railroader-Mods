@@ -1,8 +1,11 @@
 using Helpers;
 using JetBrains.Annotations;
+using MapEditor.Extensions;
 using MapEditor.Harmony;
 using MapEditor.MapState;
 using MapEditor.Utility;
+using Newtonsoft.Json;
+using Serilog;
 using UI;
 using UnityEngine;
 
@@ -12,6 +15,9 @@ internal interface IMoveableObjectHandler
 {
     GameObject         GameObject { get; }
     MoveableObjectMode Mode       { get; }
+
+    Vector3    StartPosition { get; }
+    Quaternion StartRotation { get; }
 
     void OnStart();
     void OnUpdate(Vector3? translation, Quaternion? rotation);
@@ -78,9 +84,15 @@ internal sealed class MoveableObject : MonoBehaviour
             return;
         }
 
-        var isMouseOverUi   = GameInput.IsMouseOverUI(out _, out _);
-        var mouseButtonDown = !isMouseOverUi && Input.GetMouseButtonDown(0);
-        var mouseButtonHeld = !isMouseOverUi && Input.GetMouseButton(0);
+        var isMouseOverUi = GameInput.IsMouseOverUI(out _, out _);
+        var mouseButtonDown = Input.GetMouseButtonDown(0);
+
+        if (isMouseOverUi && mouseButtonDown) {
+            Destroy();
+            return;
+        }
+
+        var mouseButtonHeld = Input.GetMouseButton(0);
         var mouseButtonUp   = Input.GetMouseButtonUp(0);
 
         if (mouseButtonDown && UnityHelpers.RayPointFromMouse(_MainCamera, out var startPoint)) {
@@ -142,17 +154,31 @@ internal sealed class MoveableObject : MonoBehaviour
         return offset;
     }
 
-    private Quaternion? HandleRotation() {
+    private Quaternion? HandleRotation()
+    {
         var dragOffset = UnityHelpers.GetMouseDragOffset(_DragPlane, _MainCamera, _DragStartPosition!.Value);
-        if (!dragOffset.HasValue) {
+        if (!dragOffset.HasValue)
+        {
             return null;
         }
 
-        var currentMousePosition = _DragStartPosition.Value + dragOffset.Value;
-        var startToDrag          = Vector3.ProjectOnPlane(_DragStartPosition.Value - transform.position, _DragPlane.normal);
-        var currentToDrag        = Vector3.ProjectOnPlane(currentMousePosition - transform.position, _DragPlane.normal);
-        var angle                = Vector3.SignedAngle(startToDrag, currentToDrag, _DragPlane.normal);
-        return Quaternion.AngleAxis(angle, _DragPlane.normal);
+        Vector3 axis;
+        if (InputHelper.GetControl()) {
+            // X-axis (pitch)
+            axis = Vector3.right;
+        } else if (InputHelper.GetAlt()) {
+            // Z-axis (roll)
+            axis = Vector3.forward;
+        } else {
+            // Y-axis (yaw)
+            axis = Vector3.up;
+        }
+
+        var startToDrag   = Vector3.ProjectOnPlane(_DragStartPosition.Value - transform.position, axis);
+        var currentToDrag = Vector3.ProjectOnPlane(_DragStartPosition.Value + dragOffset.Value - transform.position, axis);
+        var angle         = Vector3.SignedAngle(startToDrag, currentToDrag, axis);
+
+        return Quaternion.AngleAxis(angle, axis);
     }
 }
 

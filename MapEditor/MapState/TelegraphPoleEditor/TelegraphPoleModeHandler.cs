@@ -11,25 +11,25 @@ public sealed class TelegraphPoleModeHandler(int telegraphPoleId, MoveableObject
     public GameObject         GameObject => TelegraphPoleUtility.GetTelegraphPole(telegraphPoleId).gameObject;
     public MoveableObjectMode Mode       { get; } = mode;
 
-    private Vector3    _StartPosition;
-    private Quaternion _StartRotation;
+    public  Vector3    StartPosition { get; private set; }
+    public  Quaternion StartRotation { get; private set; }
 
     public void OnStart() {
         
         var telegraphPole = TelegraphPoleUtility.GetTelegraphPole(telegraphPoleId);
-        _StartPosition = telegraphPole.transform.localPosition;
-        _StartRotation = telegraphPole.transform.localRotation;
+        StartPosition = telegraphPole.transform.localPosition;
+        StartRotation = telegraphPole.transform.localRotation;
     }
 
     public void OnUpdate(Vector3? translation, Quaternion? rotation) {
         var telegraphPole = TelegraphPoleUtility.GetTelegraphPole(telegraphPoleId);
 
         if (translation.HasValue) {
-            telegraphPole.transform.localPosition = _StartPosition + translation.Value;
+            telegraphPole.transform.localPosition = StartPosition + translation.Value;
         }
 
         if (rotation.HasValue) {
-            telegraphPole.transform.localRotation = _StartRotation * rotation.Value;
+            telegraphPole.transform.localRotation = StartRotation * rotation.Value;
         }
     }
 

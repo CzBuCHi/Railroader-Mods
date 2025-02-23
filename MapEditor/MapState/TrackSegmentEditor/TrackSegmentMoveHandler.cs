@@ -18,6 +18,9 @@ public sealed class TrackSegmentMoveHandler(TrackSegment trackSegment, MoveableO
     private          Vector3                  _StartPositionB;
     private          Quaternion               _StartRotationB;
 
+    public Vector3    StartPosition => _StartPositionA;
+    public Quaternion StartRotation => _StartRotationA;
+
     public GameObject         GameObject => trackSegment.gameObject;
     public MoveableObjectMode Mode       { get; } = mode;
 

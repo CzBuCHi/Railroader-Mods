@@ -7,13 +7,19 @@ using UnityEngine;
 
 namespace MapEditor.MapState.AutoTrestleEditor.StrangeCustoms;
 
-// copy of StrangeCustoms.AutoTrestleData
+// copy of StrangeCustoms.AutoTrestleBuilder.AutoTrestleData
 [JsonConverter(typeof(AutoTrestleDataJsonConverter))]
 public class AutoTrestleData
 {
     public SerializedSplinePoint[]          Points    { get; set; } = null!;
     public AutoTrestle.AutoTrestle.EndStyle HeadStyle { get; set; }
     public AutoTrestle.AutoTrestle.EndStyle TailStyle { get; set; }
+}
+
+// copy of StrangeCustoms.AutoTrestleBuilder.SerializedSplinePoint
+public class SerializedSplinePoint {
+    public Vector3 Position { get; set; }
+    public Vector3 Rotation { get; set; }
 }
 
 // workaround: JObject tries to serialize more than just x,y,z from Vector3 class -> reference loop exception

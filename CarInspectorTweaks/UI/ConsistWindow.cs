@@ -54,6 +54,15 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
         var mode        = helper.Mode;
 
         builder.ButtonStrip(strip => {
+            strip.AddButtonSelectable("Manual", mode == AutoEngineerMode.Off, UpdateMode(AutoEngineerMode.Off));
+            strip.AddButtonSelectable("Road", mode == AutoEngineerMode.Road, UpdateMode(AutoEngineerMode.Road));
+            strip.AddButtonSelectable("Yard", mode == AutoEngineerMode.Yard, UpdateMode(AutoEngineerMode.Yard));
+            strip.AddButtonSelectable("WP", mode == AutoEngineerMode.Waypoint, UpdateMode(AutoEngineerMode.Waypoint));
+        });
+
+        builder.Spacer(20);
+
+        builder.ButtonStrip(strip => {
             var cars = locomotive.EnumerateCoupled()!.ToList();
 
             var lowOilCar           = cars[0]!;
@@ -91,14 +100,7 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
                      .Tooltip("Jump to low oil car", "Jump the overhead camera to car with lowest oil in bearing.");
             }
         });
-
-        builder.ButtonStrip(strip => {
-            strip.AddButtonSelectable("Manual", mode == AutoEngineerMode.Off, UpdateMode(AutoEngineerMode.Off));
-            strip.AddButtonSelectable("Road", mode == AutoEngineerMode.Road, UpdateMode(AutoEngineerMode.Road));
-            strip.AddButtonSelectable("Yard", mode == AutoEngineerMode.Yard, UpdateMode(AutoEngineerMode.Yard));
-            strip.AddButtonSelectable("WP", mode == AutoEngineerMode.Waypoint, UpdateMode(AutoEngineerMode.Waypoint));
-        });
-
+        
         builder.AddExpandingVerticalSpacer();
         return;
 

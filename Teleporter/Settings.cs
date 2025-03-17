@@ -4,8 +4,9 @@ namespace Teleporter;
 
 public class Settings
 {
-    public Dictionary<string, TeleportLocation> Locations  { get; } = new();
-    public bool                                 CloseAfter { get; set; }
+    public Dictionary<string, TeleportLocation> Locations             { get; } = new();
+    public bool                                 CloseAfter            { get; set; }
+    public bool                                 AutoOpenTeleporterWindow { get; set; }
 }
 
 public record Vector(float X, float Y, float Z);

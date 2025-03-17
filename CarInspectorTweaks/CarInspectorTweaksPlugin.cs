@@ -40,6 +40,9 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
     private void OnMapDidLoad(MapDidLoadEvent obj) {
         CzBuCHi.Shared.UI.TopRightArea.AddButton("CarInspectorTweaks.icon.png", "Consist Window", 9, ConsistWindow.Shared.ShowWindow);
+        if (Settings.AutoOpenConsistWindow) {
+            ConsistWindow.Shared.ShowWindow();
+        }
     }
 
     public override void OnDisable() {
@@ -111,6 +114,9 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
         builder.AddField("Copy crew", builder.AddToggle(() => Settings.CopyCrew, o => Settings.CopyCrew = o)!)!
                .Tooltip("Copy crew", "Copy car's crew to the other cars in consist.");
+
+        builder.AddField("Auto Open Consist Window", builder.AddToggle(() => Settings.AutoOpenConsistWindow, o => Settings.AutoOpenConsistWindow = o)!)!
+               .Tooltip("Auto Open Consist Window", "Automatically open consist window on map load.");
         
         builder.AddButton("Open Consist Window", ConsistWindow.Shared.ShowWindow);
         builder.AddButton("Save", ModTabDidClose);

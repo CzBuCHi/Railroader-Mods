@@ -6,11 +6,12 @@ using JetBrains.Annotations;
 using Railloader;
 using Teleporter.TopRightArea;
 using Teleporter.UI;
+using UI.Builder;
 
 namespace Teleporter;
 
 [PublicAPI]
-public sealed class TeleporterPlugin : SingletonPluginBase<TeleporterPlugin>
+public sealed class TeleporterPlugin : SingletonPluginBase<TeleporterPlugin>, IModTabHandler
 {
     private const string PluginIdentifier = "CzBuCHi.Teleporter";
 
@@ -51,9 +52,24 @@ public sealed class TeleporterPlugin : SingletonPluginBase<TeleporterPlugin>
 
     private void OnMapDidLoad(MapDidLoadEvent @event) {
         TopRightAreaExtension.AddButton("icon.png", "Teleporter", 9, TeleporterWindow.Toggle);
+
+        if (Settings.AutoOpenTeleporterWindow) {
+            TeleporterWindow.Toggle();
+        }
     }
 
     private void OnMapDidUnload(MapDidUnloadEvent @event) {
+        SaveSettings();
+    }
+
+    public void ModTabDidOpen(UIPanelBuilder builder) {
+        builder.AddField("Auto Open Teleporter Window", builder.AddToggle(() => Settings.AutoOpenTeleporterWindow, o => Settings.AutoOpenTeleporterWindow = o)!)!
+               .Tooltip("Auto Open Teleporter Window", "Automatically open teleporter window on map load.");
+        
+        builder.AddButton("Save", ModTabDidClose);
+    }
+
+    public void ModTabDidClose() {
         SaveSettings();
     }
 }

@@ -23,7 +23,7 @@ namespace CarInspectorTweaks.UI;
 
 public sealed class ConsistWindow : ProgrammaticWindowBase
 {
-    public override Window.Sizing Sizing => Window.Sizing.Fixed(new Vector2Int(300, 150));
+    public override Window.Sizing Sizing => Window.Sizing.Fixed(new Vector2Int(300, 120));
 
     public static ConsistWindow Shared => WindowManager.Shared!.GetWindow<ConsistWindow>()!;
 
@@ -48,8 +48,6 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
             builder.AddLabel("No locomotive selected.");
             return;
         }
-
-        builder.AddTitle(CarInspectorPatches.TitleForCar(locomotive), CarInspectorPatches.SubtitleForCar(locomotive));
 
         var persistence = new AutoEngineerPersistence(locomotive.KeyValueObject!);
         var helper      = new AutoEngineerOrdersHelper(locomotive, persistence);
@@ -100,6 +98,8 @@ public sealed class ConsistWindow : ProgrammaticWindowBase
             strip.AddButtonSelectable("Yard", mode == AutoEngineerMode.Yard, UpdateMode(AutoEngineerMode.Yard));
             strip.AddButtonSelectable("WP", mode == AutoEngineerMode.Waypoint, UpdateMode(AutoEngineerMode.Waypoint));
         });
+
+        builder.AddExpandingVerticalSpacer();
         return;
 
         Action UpdateMode(AutoEngineerMode newMode) {

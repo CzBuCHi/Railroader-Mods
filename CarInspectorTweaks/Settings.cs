@@ -18,4 +18,5 @@ public class Settings
     public bool  SetCarInspectorHeight    { get; set; }
     public int   CarInspectorHeight       { get; set; } = 500;
     public bool  CopyCrew                 { get; set; }
+    public bool  AutoOpenConsistWindow    { get; set; }
 }

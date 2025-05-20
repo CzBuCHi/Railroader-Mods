@@ -5,7 +5,7 @@ Alpha version of Editor
 
 ![MapEditor](Docs/MapEditor.webp)
 
-![Guide from CrankyAnt](Docs/CzBuCHi MapEditor Guide.pdf)
+[Guide made by CrankyAnt](Docs/CzBuCHi%20MapEditor%20Guide.pdf)
 
 ## SwitchNormalizer
 A straightforward mod that adds button to normalize all switches on entire map.

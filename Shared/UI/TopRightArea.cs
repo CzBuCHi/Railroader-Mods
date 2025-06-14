@@ -44,7 +44,14 @@ public static class TopRightArea
 
     private static Texture2D LoadTexture2D(string iconName, int width, int height) {
         try {
+
+            Log.Information("ICON: " + iconName);
+
             var bytes   = GetBytes(iconName);
+
+            Log.Information("BYTES: " + bytes.Length);
+
+
             var texture = new Texture2D(width, height, TextureFormat.DXT5, false);
             texture.LoadImage(bytes);
             return texture;

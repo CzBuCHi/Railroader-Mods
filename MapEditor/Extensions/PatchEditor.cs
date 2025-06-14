@@ -1,8 +1,8 @@
 using System.Reflection;
 using MapEditor.Harmony;
+using MapMod.TelegraphPoles;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Serilog;
 using StrangeCustoms.Tracks;
 using Track;
 using Vector3 = UnityEngine.Vector3;
@@ -23,35 +23,18 @@ public static class PatchEditorExtensions
         patchEditor.AddOrUpdateSpliney("TelegraphPoles", AddOrUpdate);
         return;
 
-        JObject AddOrUpdate(JObject? o) {
-            o ??= new() {
-                { "handler", "MapMod.TelegraphPoleTransform" },
-                { "nodes", new JObject() }
-            };
-
-            var nodes = (JObject)o["nodes"]!;
-            nodes[$"{nodeId}"] = new JObject {
-                { "position", new JArray { position.x, position.y, position.z } },
-                { "rotation", new JArray { rotation.x, rotation.y, rotation.z } },
-                { "tag", tag }
-            };
-            return o;
-        }
-    }
-
-    public static void RemoveTelegraphPole(this PatchEditor patchEditor, int nodeId) {
-        var splineys = patchEditor.GetSplineys();
-        if (!splineys.TryGetValue("TelegraphPoles", out _)) {
-            return;
-        }
-
-        patchEditor.AddOrUpdateSpliney("TelegraphPoles", AddOrUpdate);
-        return;
-
         JObject AddOrUpdate(JObject? data) {
-            var nodes = (JObject)data!["nodes"]!;
-            nodes.Remove($"{nodeId}");
-            return data;
+            var poles = data != null
+                ? MapMod.Utility.Deserialize<MapMod.TelegraphPoles.TelegraphPoles>(data)
+                : new MapMod.TelegraphPoles.TelegraphPoles();
+
+            poles.Nodes[nodeId] = new TelegraphPoleData {
+                Position = position,
+                Rotation = rotation,
+                Tag = tag
+            };
+
+            return MapMod.Utility.Serialize(poles);
         }
     }
 
@@ -64,6 +47,4 @@ public static class PatchEditorExtensions
 
         patchEditor.ChangeThing("scenery", id, jObject, true);
     }
-
-
 }

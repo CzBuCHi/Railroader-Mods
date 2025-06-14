@@ -39,7 +39,7 @@ public static class EmptyEditor
                 SceneWindow.SelectTemplate(template => {
                     template.SetActive(false);
 
-                    var go = Object.Instantiate(template);
+                    var go = Object.Instantiate(template)!;
                     template.SetActive(true);
 
                     go.transform.SetParent(template.transform.parent, true);
@@ -49,7 +49,7 @@ public static class EmptyEditor
 
                     var sceneryAssetInstance = go.GetComponent<SceneryAssetInstance>()!;
                     EditorState.ReplaceSelection(sceneryAssetInstance);
-                    MapEditorPlugin.PatchEditor.AddOrUpdateScenery(sceneryAssetInstance.name, new SerializedScenery(sceneryAssetInstance));
+                    MapEditorPlugin.PatchEditor!.AddOrUpdateScenery(sceneryAssetInstance.name!, new SerializedScenery(sceneryAssetInstance));
                 });
             });
         }

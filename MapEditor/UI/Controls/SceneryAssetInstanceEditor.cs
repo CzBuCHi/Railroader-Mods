@@ -21,7 +21,7 @@ public static class SceneryAssetInstanceEditor
         _Identifiers ??= Object.FindObjectsByType<SceneryAssetInstance>(FindObjectsInactive.Include, FindObjectsSortMode.None)!
                                .Select(o => o.identifier).Distinct().OrderBy(o => o).ToList();
 
-        builder.AddField("Id", builder.AddInputField(sceneryAssetInstance.name, _ => { })).Disable(true);
+        builder.AddField("Id", builder.AddInputField(sceneryAssetInstance.name!, _ => { })).Disable(true);
         builder.AddField("Position", builder.AddInputField(sceneryAssetInstance.transform.localPosition.ToString(), _ => { })).Disable(true);
         builder.AddField("Rotation", builder.AddInputField(sceneryAssetInstance.transform.localEulerAngles.ToString(), _ => { })).Disable(true);
         //builder.AddField("Operation", builder.ButtonStrip(strip => {
@@ -35,7 +35,7 @@ public static class SceneryAssetInstanceEditor
             sceneryAssetInstance.gameObject.SetActive(false);
             sceneryAssetInstance.identifier = _Identifiers[o]!;
             sceneryAssetInstance.gameObject.SetActive(true);
-            MapEditorPlugin.PatchEditor.AddOrUpdateScenery(sceneryAssetInstance.name, new SerializedScenery(sceneryAssetInstance));
+            MapEditorPlugin.PatchEditor!.AddOrUpdateScenery(sceneryAssetInstance.name!, new SerializedScenery(sceneryAssetInstance));
         }));
 
         return;

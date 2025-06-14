@@ -40,5 +40,8 @@
     <GameAssembly Include="StrangeCustoms" />
     <GameAssembly Include="SimpleGraph.Runtime" />
     
+  </ItemGroup>  
+  <ItemGroup>
+    <Folder Include="TelegraphPoles\" />
   </ItemGroup>
 </Project>

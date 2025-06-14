@@ -13,7 +13,9 @@ using UnityEngine;
 namespace SwitchNormalizer;
 
 [PublicAPI]
+#pragma warning disable CS9113 // Parameter is unread.
 public sealed class SwitchNormalizerPlugin(IModdingContext context, IUIHelper uiHelper) : SingletonPluginBase<SwitchNormalizerPlugin>
+#pragma warning restore CS9113 // Parameter is unread.
 {
     private const string ModIdentifier = "CzBuCHi.SwitchNormalizer";
 

@@ -1,14 +1,16 @@
-﻿using UI;
+﻿using JetBrains.Annotations;
+using UI;
 using UI.Builder;
 using UI.Common;
 using UnityEngine;
 
 namespace CzBuCHi.Shared.UI;
 
+[PublicAPI]
 public abstract class ProgrammaticWindowBase : MonoBehaviour, IProgrammaticWindow
 {
     public          UIBuilderAssets BuilderAssets    { get; set; } = null!;
-    public          string          WindowIdentifier => GetType().FullName;
+    public          string          WindowIdentifier => GetType().FullName!;
     public          Vector2Int      DefaultSize      => Sizing.MinSize;
     public virtual  Window.Position DefaultPosition  => Window.Position.Center;
     public abstract Window.Sizing   Sizing           { get; }

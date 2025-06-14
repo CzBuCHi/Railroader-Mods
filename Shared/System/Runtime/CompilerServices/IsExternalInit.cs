@@ -1,6 +1,7 @@
-﻿using JetBrains.Annotations;
+﻿// ReSharper disable All
 
-// ReSharper disable once CheckNamespace
+using JetBrains.Annotations;
+
 namespace System.Runtime.CompilerServices;
 
 [PublicAPI]

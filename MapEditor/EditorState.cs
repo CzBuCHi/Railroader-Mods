@@ -6,8 +6,9 @@ using System.Text;
 using GalaSoft.MvvmLight.Messaging;
 using MapEditor.Behaviours;
 using MapEditor.Events;
+using MapEditor.Features.TrackNodes;
+using MapEditor.Features.TrackSegments;
 using MapEditor.Utility;
-using MapEditor.Visualizers;
 using Serilog;
 using StrangeCustoms.Tracks;
 using Track;
@@ -150,14 +151,12 @@ public static class EditorState
     private static void OnEditorEnabled() {
         MapEditorPlugin.PatchEditor = new PatchEditor(SelectedPatch!);
         TrackNodeVisualizer.CreateVisualizers();
-        TrackMarkerVisualizer.CreateVisualizers();
         TrackSegmentVisualizer.CreateVisualizers();
     }
 
     private static void OnEditorDisabled() {
         MapEditorPlugin.PatchEditor = null;
         TrackNodeVisualizer.DestroyVisualizers();
-        TrackMarkerVisualizer.DestroyVisualizers();
         TrackSegmentVisualizer.DestroyVisualizers();
     }
 }

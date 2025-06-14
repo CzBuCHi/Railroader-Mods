@@ -9,8 +9,7 @@ using UnityEngine;
 namespace MapEditor.Utility;
 
 [UsedImplicitly]
-public sealed class UnityHelpers : MonoBehaviour
-{
+public sealed class UnityHelpers : MonoBehaviour {
     private static UnityHelpers? _Instance;
 
     public static void Initialize() {
@@ -79,7 +78,7 @@ public sealed class UnityHelpers : MonoBehaviour
                 action();
             }
         }
-        
+
     }
 
     // Calls action once when user press mouse button

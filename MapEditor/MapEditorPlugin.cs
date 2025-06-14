@@ -3,13 +3,13 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using CzBuCHi.Shared.Harmony;
+using CzBuCHi.Shared.UI;
 using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
 using Helpers;
 using JetBrains.Annotations;
 using KeyValue.Runtime;
 using MapEditor.Behaviours;
-using MapEditor.TopRightArea;
 using MapEditor.UI;
 using MapEditor.Utility;
 using Newtonsoft.Json;
@@ -53,7 +53,7 @@ public sealed class MapEditorPlugin(IModdingContext context, IUIHelper uiHelper)
     }
 
     private void OnMapDidLoad(MapDidLoadEvent @event) {
-        TopRightAreaExtension.AddButton("icon.png", "Map Editor", 9, EditorWindow.Toggle);
+        TopRightArea.AddButton("MapEditor.icon.png", "Map Editor", 9, EditorWindow.Toggle);
 
         UnityHelpers.Initialize();
     }

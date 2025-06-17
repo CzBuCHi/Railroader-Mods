@@ -1,41 +1,51 @@
 using AlinasMapMod;
+using Serilog;
+using Track;
 using UnityEngine;
 
 namespace MapMod.Loaders;
 
 public sealed class LoaderData
 {
-    public Vector3 Position { get; set; }
-    public Vector3 Rotation { get; set; }
-    public string  Prefab   { get; set; } = "empty://";
-    public string  Industry { get; set; } = "";
+    public string           Segment         { get; set; }
+    public float            Distance        { get; set; }
+    public TrackSegment.End End             { get; set; }
+    public bool             FlipOrientation { get; set; }
+    public string           Prefab          { get; set; } = "empty://";
+    public string           Industry        { get; set; } = "";
 
-    public LoaderInstance Create(string id) {
+    public Loader Create(string id) {
         var go = new GameObject(id);
         go.transform.parent = Utility.GetParent("Loaders").transform;
-        var comp = go.AddComponent<LoaderInstance>();
+        var comp = go.AddComponent<Loader>();
         comp.name = id;
         comp.Identifier = id;
         Write(comp);
         return comp;
     }
 
-    public void Destroy(LoaderInstance comp) {
+    public void Destroy(Loader comp) {
         Object.Destroy(comp.gameObject);
     }
 
-    public void Read(LoaderInstance comp) {
-        Position = comp.transform.localPosition;
-        Rotation = comp.transform.localEulerAngles;
+    public void Read(Loader comp) {
+        Segment = comp.Location.segment.id;
+        Distance = comp.Location.distance;
+        End = comp.Location.end;
         Prefab = comp.Prefab;
         Industry = comp.Industry;
     }
 
-    public void Write(LoaderInstance comp) {
-        comp.transform.localPosition = Position;
-        comp.transform.localEulerAngles = Rotation;
+    public void Write(Loader comp) {
+        comp.Location = new Location(Graph.Shared.GetSegment(Segment), Distance, End);
+        comp.transform.localPosition = comp.Location.GetPosition();
+        comp.transform.localRotation = comp.Location.GetRotation() * Quaternion.Euler(0, 90, 0);
+
+        Log.Information("WATER: " +  comp.transform.localEulerAngles);
+
         comp.Prefab = Prefab;
         comp.Industry = Industry;
+        comp.FlipOrientation = FlipOrientation;
     }
 
     public void Validate() {

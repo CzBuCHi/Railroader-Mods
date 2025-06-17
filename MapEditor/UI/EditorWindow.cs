@@ -4,10 +4,12 @@ using CzBuCHi.Shared.UI;
 using Helpers;
 using JetBrains.Annotations;
 using MapEditor.Events;
+using MapEditor.Features.Loaders;
 using MapEditor.Features.TelegraphPoles;
 using MapEditor.Features.TrackNodes;
 using MapEditor.Features.TrackSegments;
 using MapEditor.UI.Controls;
+using MapMod.Loaders;
 using Track;
 using UI.Builder;
 using UI.Common;
@@ -92,6 +94,9 @@ public sealed class EditorWindow : ProgrammaticWindowBase
             case SceneryAssetInstance sceneryAssetInstance:
                 SceneryAssetInstanceEditor.Build(builder, sceneryAssetInstance);
                 break;
+            case Loader loader:
+                LoaderEditor.Build(builder, loader);
+                break;
         }
     }
 
@@ -101,6 +106,7 @@ public sealed class EditorWindow : ProgrammaticWindowBase
             TrackSegment trackSegment                 => "TrackSegment " + trackSegment.id,
             TelegraphPoleId telegraphPoleId           => "TelegraphPole " + telegraphPoleId.Id,
             SceneryAssetInstance sceneryAssetInstance => "SceneryAsset " + sceneryAssetInstance.name,
+            Loader loader                             => "Loader " + loader.Identifier,
             _                                         => throw new NotSupportedException()
         };
     }

@@ -28,7 +28,8 @@
     <GameAssembly Include="Serilog" />   
     <GameAssembly Include="Newtonsoft.Json" />   
     <GameAssembly Include="StrangeCustoms" />
-    <GameAssembly Include="SimpleGraph.Runtime" />    
+    <GameAssembly Include="SimpleGraph.Runtime" />  
+    <GameAssembly Include="RuntimeLevelDesign.Runtime" />
   </ItemGroup>  
   <ItemGroup>
     <EmbeddedResource Include="icon.png" />

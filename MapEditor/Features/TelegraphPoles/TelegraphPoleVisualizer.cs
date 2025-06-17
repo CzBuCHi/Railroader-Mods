@@ -2,13 +2,12 @@ using System.Linq;
 using Helpers;
 using JetBrains.Annotations;
 using MapEditor.Utility;
-using MapEditor.Visualizers;
 using UnityEngine;
 
 namespace MapEditor.Features.TelegraphPoles;
 
 [PublicAPI]
-internal sealed class TelegraphPoleVisualizer : ArrowVisualizer, IPickable
+internal sealed class TelegraphPoleVisualizer : MonoBehaviour, IPickable
 {
     #region IPickable
 
@@ -30,9 +29,29 @@ internal sealed class TelegraphPoleVisualizer : ArrowVisualizer, IPickable
 
     #endregion
 
-    public override void Awake() {
-        base.Awake();
-        VerticalOffset = 10f;
+    private static readonly Material _LineMaterial = new(Shader.Find("Universal Render Pipeline/Lit")!);
+
+    private LineRenderer _LineRenderer   = null!;
+    private float        _VerticalOffset = 10f;
+
+    private LineRenderer CreateLineRenderer() {
+        var lineRenderer = gameObject.AddComponent<LineRenderer>();
+        lineRenderer.material = _LineMaterial;
+        lineRenderer.material.color = Color.yellow;
+        lineRenderer.startWidth = 0.05f;
+        lineRenderer.positionCount = 5;
+        lineRenderer.useWorldSpace = false;
+        lineRenderer.SetPosition(0, new Vector3(-0.2f, _VerticalOffset + 0.5f, 0));
+        lineRenderer.SetPosition(1, new Vector3(0, _VerticalOffset, 0));
+        lineRenderer.SetPosition(2, new Vector3(0, _VerticalOffset + 5f, 0));
+        lineRenderer.SetPosition(3, new Vector3(0, _VerticalOffset, 0));
+        lineRenderer.SetPosition(4, new Vector3(0.2f, _VerticalOffset + 0.5f, 0));
+        lineRenderer.enabled = true;
+        return lineRenderer;
+    }
+
+    public void Awake() {
+        _LineRenderer = CreateLineRenderer();
 
         gameObject.layer = Layers.Clickable;
 
@@ -48,6 +67,6 @@ internal sealed class TelegraphPoleVisualizer : ArrowVisualizer, IPickable
             return;
         }
 
-        LineRenderer.enabled = EditorState.SelectedAssets.OfType<TelegraphPoleId>().Select(o => o.Id).Contains(NodeId);
+        _LineRenderer.enabled = EditorState.SelectedAssets.OfType<TelegraphPoleId>().Select(o => o.Id).Contains(NodeId);
     }
 }

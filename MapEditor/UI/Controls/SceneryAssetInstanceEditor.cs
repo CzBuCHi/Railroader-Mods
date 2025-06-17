@@ -38,11 +38,11 @@ public static class SceneryAssetInstanceEditor
             MapEditorPlugin.PatchEditor!.AddOrUpdateScenery(sceneryAssetInstance.name!, new SerializedScenery(sceneryAssetInstance));
         }));
 
-        return;
+        //return;
 
-        Action SetOperation(UIPanelBuilder strip, MoveableObjectMode mode) => () => {
-            //MapEditorPlugin.PatchEditor.AddOrUpdateScenery(sceneryAssetInstance.name, new SerializedScenery(sceneryAssetInstance));
-            strip.Rebuild();
-        };
+        //Action SetOperation(UIPanelBuilder strip, MoveableObjectMode mode) => () => {
+        //    //MapEditorPlugin.PatchEditor.AddOrUpdateScenery(sceneryAssetInstance.name, new SerializedScenery(sceneryAssetInstance));
+        //    strip.Rebuild();
+        //};
     }
 }

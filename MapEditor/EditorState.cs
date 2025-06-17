@@ -6,9 +6,11 @@ using System.Text;
 using GalaSoft.MvvmLight.Messaging;
 using MapEditor.Behaviours;
 using MapEditor.Events;
+using MapEditor.Features.Loaders;
 using MapEditor.Features.TrackNodes;
 using MapEditor.Features.TrackSegments;
 using MapEditor.Utility;
+using MapMod.Loaders;
 using Serilog;
 using StrangeCustoms.Tracks;
 using Track;
@@ -30,6 +32,8 @@ public static class EditorState
     private static bool IsEntity(object entity) => SelectedAssets?.Contains(entity) == true;
 
     public static TrackNode? TrackNode => SelectedAssets is { Length: 1 } && SelectedAssets[0] is TrackNode trackNode ? trackNode : null;
+
+    public static Loader? Loader => SelectedAssets is { Length: 1 } && SelectedAssets[0] is Loader loader ? loader : null;
 
     public static void AddToSelection(object entity) {
         Log.Information("AddToSelection: " + entity);
@@ -152,12 +156,14 @@ public static class EditorState
         MapEditorPlugin.PatchEditor = new PatchEditor(SelectedPatch!);
         TrackNodeVisualizer.CreateVisualizers();
         TrackSegmentVisualizer.CreateVisualizers();
+        LoaderVisualizer.CreateVisualizers();
     }
 
     private static void OnEditorDisabled() {
         MapEditorPlugin.PatchEditor = null;
         TrackNodeVisualizer.DestroyVisualizers();
         TrackSegmentVisualizer.DestroyVisualizers();
+        LoaderVisualizer.DestroyVisualizers();
     }
 }
 

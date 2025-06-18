@@ -13,11 +13,6 @@ public sealed class TelegraphPoleBuilder : ISplineyBuilder
 {
     public GameObject BuildSpliney(string id, Transform parentTransform, JObject data) {
         var poles = Utility.Deserialize<TelegraphPoles>(data);
-        if (poles.Handler != typeof(TelegraphPoleBuilder).FullName) {
-            Log.Warning("Invalid telegraph pole handler.");
-            return new GameObject();
-        }
-
         var manager = Object.FindObjectOfType<TelegraphPoleManager>();
         var graph   = Traverse.Create(manager!).Property<SimpleGraph.Runtime.SimpleGraph>("Graph")!.Value;
 

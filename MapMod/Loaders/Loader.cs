@@ -126,26 +126,29 @@ public sealed class Loader : MonoBehaviour
 
     private void OnFlipOrientationChanged() {
         UpdateTransform();
-        UpdatePrefabTransform();
     }
 
-    private void UpdateTransform() {
+    public void UpdateTransform() {
         var positionRotation = Graph.Shared.GetPositionRotation(Location);
         transform.position = WorldTransformer.GameToWorld(positionRotation.Position);
         transform.rotation = positionRotation.Rotation * Quaternion.Euler(0, 90, 0);
+        UpdatePrefabTransform();
     }
 
     private void UpdatePrefabTransform() {
-        var prefab = transform.Find("prefab")!;
+        var prefab = transform.Find("prefab");
+        if (prefab == null) {
+            return;
+        }
 
         if (FlipOrientation) {
             switch (_Prefab) {
                 case "vanilla://dieselFuelingStand":
-                    prefab.transform.localPosition = new Vector3(0, 0, -4.25f);
+                    prefab.transform.localPosition = new Vector3(0, 0, 4.25f);
                     prefab.transform.localRotation = Quaternion.Euler(0, 270, 0);
                     break;
                 case "vanilla://coalConveyor":
-                    prefab.transform.localPosition = new Vector3(0, 0, -15);
+                    prefab.transform.localPosition = new Vector3(0, 0, 15);
                     prefab.transform.localRotation = Quaternion.identity;
                     break;
                 default:
@@ -153,7 +156,6 @@ public sealed class Loader : MonoBehaviour
                     prefab.transform.localRotation = Quaternion.Euler(0, 180, 0);;
                     break;
             }
-
         } else {
             switch (_Prefab) {
                 case "vanilla://dieselFuelingStand":

@@ -9,23 +9,21 @@ namespace MapEditor.Features.Loaders;
 
 public static class LoaderUtility
 {
-    public static readonly List<string> Prefabs = new List<string>
-    {
+    public static readonly List<string> Prefabs = [
         "Coal Conveyor",
         "Coal lTower",
         "Diesel Fueling Stand",
         "Water Tower",
         "Water Column"
-    };
+    ];
 
-    private static readonly List<string> _Prefabs = new List<string>
-    {
+    private static readonly List<string> _Prefabs = [
         "coalConveyor",
         "coalTower",
         "dieselFuelingStand",
         "waterTower",
         "waterColumn"
-    };
+    ];
 
     public static int GetPrefabIndex(Loader loader) {
         return _Prefabs.IndexOf(loader.Prefab.Replace("vanilla://", ""));
@@ -56,5 +54,30 @@ public static class LoaderUtility
         }
 
         MapStateEditor.NextStep(new LoaderUpdate(loader.Identifier) { Industry = value });
+    }
+
+    public static void Show(Loader loader) => CameraSelector.shared.ZoomToPoint(loader.transform.localPosition);
+
+    public static void Remove(Loader loader) {
+        MapStateEditor.NextStep(new LoaderDestroy(loader.Identifier));
+    }
+
+    public static LoaderData Destroy(Loader trackNode) {
+
+        var loaderData = new LoaderData();
+        loaderData.Read(trackNode);
+        loaderData.Destroy(trackNode);
+        MapEditorPlugin.PatchEditor!.RemoveNode(trackNode.Identifier);
+        return loaderData;
+    }
+
+    public static Loader Create(string id, LoaderData loaderData) {
+        return loaderData.Create(id);
+    }
+
+    public static void Move(Loader loader) {
+        var go = new GameObject();
+        var picker = go.AddComponent<LoaderPositionPicker>();
+        picker.StartPickingLocation(loader);
     }
 }

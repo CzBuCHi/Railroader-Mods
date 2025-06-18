@@ -1,5 +1,7 @@
-﻿using MapEditor.MapState;
+﻿using MapEditor.Features.TrackNodes;
+using MapEditor.MapState;
 using MapMod.Loaders;
+using Track;
 using UI.Builder;
 using UnityEngine;
 
@@ -7,9 +9,6 @@ namespace MapEditor.Features.Loaders;
 
 public static class LoaderEditor
 {
-    private static int  _Delta = 100;
-    private static bool _Loader;
-
     public static void Build(UIPanelBuilder builder, Loader loader) {
         builder.AddField("Identifier", builder.AddInputField(loader.Identifier, _ => { }));
         builder.AddField("Position", builder.AddInputField(loader.transform.localPosition.ToString(), _ => { }));
@@ -34,5 +33,14 @@ public static class LoaderEditor
                 builder.AddDropdown(LoaderUtility.Industries, LoaderUtility.GetIndustryIndex(loader), index => LoaderUtility.UpdateIndustry(loader, index))
             );
         }
+
+        
+        builder.AddSection("Operations", section => {
+            section.ButtonStrip(strip => {
+                strip.AddButton("Show", () => LoaderUtility.Show(loader));
+                strip.AddButton("Remove", () => LoaderUtility.Remove(loader));
+                strip.AddButton("Move", () => LoaderUtility.Move(loader));
+            });
+        });
     }
 }

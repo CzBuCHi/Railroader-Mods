@@ -7,7 +7,8 @@ namespace MapMod.Loaders;
 
 public sealed class LoaderData
 {
-    public string           Segment         { get; set; }
+    public string           Handler         { get; }      = typeof(LoaderBuilder).FullName!;
+    public string           Segment         { get; set; } = null!;
     public float            Distance        { get; set; }
     public TrackSegment.End End             { get; set; }
     public bool             FlipOrientation { get; set; }
@@ -38,11 +39,6 @@ public sealed class LoaderData
 
     public void Write(Loader comp) {
         comp.Location = new Location(Graph.Shared.GetSegment(Segment), Distance, End);
-        comp.transform.localPosition = comp.Location.GetPosition();
-        comp.transform.localRotation = comp.Location.GetRotation() * Quaternion.Euler(0, 90, 0);
-
-        Log.Information("WATER: " +  comp.transform.localEulerAngles);
-
         comp.Prefab = Prefab;
         comp.Industry = Industry;
         comp.FlipOrientation = FlipOrientation;

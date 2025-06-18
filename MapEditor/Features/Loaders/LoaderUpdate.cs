@@ -34,7 +34,6 @@ public class LoaderUpdate(string identifier) : IStateStep
             loader.Location = Location.Value;
         }
 
-
         if (FlipOrientation != null) {
             loader.FlipOrientation = FlipOrientation.Value;
         }

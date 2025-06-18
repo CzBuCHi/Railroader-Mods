@@ -27,6 +27,9 @@ A straightforward mod that allows player to rotate turntable by clicking on trac
 
 ![TurntableControl](Docs/TurntableControl.webp)
 
+## CarInspectorTweaks
+Various tweaks to car inspector window, all toggleable in settings
+
 ## Project Setup
 
 In order to get going with this, follow the following steps:

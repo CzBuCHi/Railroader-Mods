@@ -44,8 +44,7 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
     protected override void Build(UIPanelBuilder builder) {
         builder.ButtonStrip(strip => {
             strip.AddButton("Save current", Add())!
-                 .Tooltip("Save current position", "Save current location under new name");
-            strip.AddFieldToggle("Close after", () => TeleporterPlugin.Settings.CloseAfter, UpdateSettings);
+                 .Tooltip("Save current position", "Save current location under new name");            
         });
         builder.AddField("New location name", builder.AddInputField(_NewLocationName, UpdateNewLocationName, "Unique name for new location")!);
         builder.VScrollView(scroll => {
@@ -62,11 +61,6 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
         });
 
         return;
-
-        void UpdateSettings(bool value) {
-            TeleporterPlugin.Settings.CloseAfter = value;
-            TeleporterPlugin.SaveSettings();
-        }
 
         Action Add() => () => {
             if (TeleporterPlugin.Settings.Locations.ContainsKey(_NewLocationName)) {
@@ -106,10 +100,6 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
                 camera.SetAngleX(rotation.eulerAngles.x);
                 camera.SetDistance(location.Distance);
                 camera.JumpTo(point, rotation);
-
-                if (TeleporterPlugin.Settings.CloseAfter) {
-                    CloseWindow();
-                }
             };
         }
 

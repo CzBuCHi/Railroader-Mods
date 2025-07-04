@@ -26,9 +26,9 @@ public static class WhistleButtons
         var currentIndex = whistles.FindIndex(id => settings.WhistleIdentifier == id.Identifier);
         builder.AddField("",
             builder.ButtonStrip(strip => {
-                strip.AddButton("Previous", () => UpdateWhistle(--currentIndex)).Disable(currentIndex == 0);
+                strip.AddButton("Prev", () => UpdateWhistle(--currentIndex)).Disable(currentIndex == 0);
                 strip.AddButton("Next", () => UpdateWhistle(++currentIndex)).Disable(currentIndex == whistles.Count - 1);
-                strip.AddButton("Random", () => UpdateWhistle(Random.Range(0, whistles.Count)));
+                strip.AddButton("Rand", () => UpdateWhistle(Random.Range(0, whistles.Count)));
             })
         );
 

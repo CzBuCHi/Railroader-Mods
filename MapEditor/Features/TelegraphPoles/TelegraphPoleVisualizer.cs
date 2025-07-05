@@ -63,10 +63,11 @@ internal sealed class TelegraphPoleVisualizer : MonoBehaviour, IPickable
     public int NodeId;
 
     public void Update() {
-        if (EditorState.SelectedAssets == null) {
-            return;
-        }
-
-        _LineRenderer.enabled = EditorState.SelectedAssets.OfType<TelegraphPoleId>().Select(o => o.Id).Contains(NodeId);
+        _LineRenderer.enabled =
+            EditorState.SelectedAssets != null &&
+            EditorState.SelectedAssets
+                       .OfType<TelegraphPoleId>()
+                       .Select(o => o.Id)
+                       .Contains(NodeId);
     }
 }

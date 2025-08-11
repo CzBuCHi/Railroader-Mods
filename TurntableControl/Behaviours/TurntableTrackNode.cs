@@ -1,4 +1,5 @@
-﻿using Helpers;
+﻿using System.Linq;
+using Helpers;
 using JetBrains.Annotations;
 using Track;
 using UnityEngine;
@@ -31,8 +32,7 @@ public class TurntableTrackNode : MonoBehaviour, IPickable
         gameObject!.layer = Layers.Clickable;
 
         var trackNodeName = GetComponent<TrackNode>()!.name!;
-        var index         = trackNodeName.LastIndexOf(' ');
-        _TrackNodeIndex = int.Parse(trackNodeName.Substring(index + 1));
+        _TrackNodeIndex = int.Parse(new string(trackNodeName.Reverse().TakeWhile(char.IsDigit).Reverse().ToArray()));
 
         var boxCollider = gameObject.AddComponent<BoxCollider>()!;
         boxCollider.center = Vector3.zero;

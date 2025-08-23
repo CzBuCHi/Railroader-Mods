@@ -117,6 +117,9 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
         builder.AddField("Auto Open Consist Window", builder.AddToggle(() => Settings.AutoOpenConsistWindow, o => Settings.AutoOpenConsistWindow = o)!)!
                .Tooltip("Auto Open Consist Window", "Automatically open consist window on map load.");
+
+        builder.AddField("Auto select on follow", builder.AddToggle(() => Settings.FollowAndSelect, o => Settings.FollowAndSelect = o)!)!
+               .Tooltip("Auto select on follow", "Shift+Click on 'Eye' icon in Engine roster will also select given locomotive.");
         
         builder.AddButton("Open Consist Window", ConsistWindow.Shared.ShowWindow);
         builder.AddButton("Save", ModTabDidClose);
@@ -174,6 +177,10 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
         if (Settings.CopyCrew) {
             harmony.PatchCategory("CopyCrew");
+        }
+
+        if (Settings.FollowAndSelect) {
+            harmony.PatchCategory("FollowAndSelect");
         }
 
         harmony.PatchCategory("ConsistWindow");

@@ -2,11 +2,13 @@
 
 namespace Teleporter;
 
-public class Settings
+public sealed class Settings
 {
-    public Dictionary<string, TeleportLocation> Locations                { get; } = new();    
-    public bool                                 AutoOpenTeleporterWindow { get; set; }
+    public List<LocationGroup> Groups                   { get; } = new();
+    public bool                AutoOpenTeleporterWindow { get; set; }
 }
+
+public sealed record LocationGroup(string Name, Dictionary<string, TeleportLocation> Locations);
 
 public record Vector(float X, float Y, float Z);
 

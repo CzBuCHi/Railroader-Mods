@@ -4,6 +4,8 @@ using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
 using JetBrains.Annotations;
 using Railloader;
+using Serilog;
+using Teleporter.Events;
 using Teleporter.TopRightArea;
 using Teleporter.UI;
 using UI.Builder;
@@ -16,20 +18,20 @@ public sealed class TeleporterPlugin : SingletonPluginBase<TeleporterPlugin>, IM
     private const string PluginIdentifier = "CzBuCHi.Teleporter";
 
     private readonly IModdingContext _Context;
-    private readonly Settings        _Settings;
+    private readonly Settings       _Settings;
 
     public TeleporterPlugin(IModdingContext context, IUIHelper uiHelper) {
         _Context = context;
-
         _Settings = _Context.LoadSettingsData<Settings>(PluginIdentifier) ?? new Settings();
     }
-
+    
     private Messenger _Messenger = null!;
 
     public static Settings Settings => Shared!._Settings;
 
     public static void SaveSettings() {
         Shared!._Context.SaveSettingsData(PluginIdentifier, Shared._Settings);
+        Shared._Messenger.Send(new SettingsChangedEvent());
     }
 
     public override void OnEnable() {

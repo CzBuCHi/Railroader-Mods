@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using CzBuCHi.Shared.UI;
 using Helpers;
 using JetBrains.Annotations;
+using Teleporter.Events;
 using Teleporter.Extensions;
 using Teleporter.Harmony;
 using UI.Builder;
@@ -16,13 +18,20 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
 {
     public override Window.Sizing Sizing => Window.Sizing.Resizable(new(400, 250));
 
-    private string _NewLocationName = "";
+    private string          _NewLocationGroup = "Unnamed";
+    private string          _NewLocationName  = "";
+    private UIState<string> _SelectedGroup    = new("");
+
+    private HashSet<string> _Groups;
 
     private static TeleporterWindow Shared => WindowManager.Shared!.GetWindow<TeleporterWindow>()!;
 
     public override void Awake() {
         base.Awake();
         Window.Title = "Teleporter";
+
+        _Groups = new HashSet<string>(TeleporterPlugin.Settings.Groups.Select(o => o.Name));
+        _SelectedGroup.Value = _Groups.FirstOrDefault() ?? "";
     }
 
     protected override void WindowOnOnShownDidChange(bool isShown) {
@@ -42,13 +51,53 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
     }
 
     protected override void Build(UIPanelBuilder builder) {
+        builder.RebuildOnEvent<SettingsChangedEvent>();
+
         builder.ButtonStrip(strip => {
-            strip.AddButton("Save current", Add())!
+            strip.AddButton("Save current", Add)
                  .Tooltip("Save current position", "Save current location under new name");            
         });
-        builder.AddField("New location name", builder.AddInputField(_NewLocationName, UpdateNewLocationName, "Unique name for new location")!);
+        builder.AddField("New location group", builder.AddInputField(_NewLocationGroup, UpdateNewLocationGroup, "Group name for new location"));
+        builder.AddField("New location name", builder.AddInputField(_NewLocationName, UpdateNewLocationName, "Unique name for new location"));
+
+        var groups = _Groups
+                     .Select(o => new UIPanelBuilder.ListItem<string>(o, o, "", o))
+                     .ToList();
+     
+        builder.AddListDetail(groups, _SelectedGroup, BuildGroup);
+
+        return;
+       
+        void UpdateNewLocationGroup(string value) {
+            _NewLocationGroup = value;
+            builder.Rebuild();
+        }
+
+        void UpdateNewLocationName(string value) {
+            _NewLocationName = value;
+            builder.Rebuild();
+        }
+    }
+
+    private void BuildGroup(UIPanelBuilder builder, string groupName) {
+        builder.RebuildOnEvent<SettingsChangedEvent>();
+
+        if (string.IsNullOrEmpty(groupName)) {
+            var message = TeleporterPlugin.Settings.Groups.Count > 0
+                ? "Select group to view locations ..."
+                : "Saved locations will be shown here ...";
+            builder.AddLabel(message);
+            return;
+        }
+
+        var group = TeleporterPlugin.Settings.Groups.FirstOrDefault(o => o.Name == groupName);
+        if (group == null) {
+            builder.AddLabel("Something went wrong ... (cannot find group named '" + groupName + "'");
+            return;
+        }
+
         builder.VScrollView(scroll => {
-            foreach (var pair in TeleporterPlugin.Settings.Locations.OrderBy(o => o.Key)) {
+            foreach (var pair in group.Locations.OrderBy(o => o.Key)) {
                 scroll.AddField(pair.Key!,
                     scroll.ButtonStrip(strip => {
                         strip.AddButton(TextSprites.Destination, TeleportTo(pair.Value!))!.Tooltip("Teleport", "Switch to strategy camera at given location");
@@ -61,34 +110,6 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
         });
 
         return;
-
-        Action Add() => () => {
-            if (TeleporterPlugin.Settings.Locations.ContainsKey(_NewLocationName)) {
-                Toast.Present("Location with name " + _NewLocationName + " already exists.");
-                return;
-            }
-
-            Save(_NewLocationName);
-        };
-
-        Action Replace(string key) => () => Save(key);
-
-        void UpdateNewLocationName(string value) {
-            _NewLocationName = value;
-            builder.Rebuild();
-        }
-
-        void Save(string key) {
-            var camera = CameraSelector.shared!.strategyCamera!;
-            TeleporterPlugin.Settings.Locations[key] = new TeleportLocation(
-                WorldTransformer.WorldToGame(camera.GroundPosition).ToVector(),
-                camera.transform!.rotation.ToVector(),
-                camera.GetDistance()
-            );
-
-            TeleporterPlugin.SaveSettings();
-            builder.Rebuild();
-        }
 
         Action TeleportTo(TeleportLocation location) {
             return () => {
@@ -103,12 +124,54 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
             };
         }
 
+        Action Replace(string key) => () => Save(group, key);
+
         Action Remove(string key) {
             return () => {
-                TeleporterPlugin.Settings.Locations.Remove(key);
+                group.Locations.Remove(key);
+                if (group.Locations.Count == 0) {
+                    TeleporterPlugin.Settings.Groups.Remove(group);
+                }
+
                 TeleporterPlugin.SaveSettings();
-                builder.Rebuild();
             };
         }
+    }
+    
+    private void Add() {
+        var group = TeleporterPlugin.Settings.Groups.FirstOrDefault(o => o.Name == _NewLocationGroup);
+        if (group == null) {
+            group = new LocationGroup(_NewLocationGroup, new Dictionary<string, TeleportLocation>());
+            TeleporterPlugin.Settings.Groups.Add(group);
+        } else {
+            if (group.Locations.ContainsKey(_NewLocationName)) {
+                Toast.Present("Location with name " + _NewLocationName + " already exists in group + " + _NewLocationGroup + ".");
+                return;
+            }
+        }
+
+        Save(group, _NewLocationName);
+    }
+
+    private void Save(string groupName, string locationName) {
+        var group = TeleporterPlugin.Settings.Groups.FirstOrDefault(o => o.Name == _NewLocationGroup);
+        if (group == null) {
+            group = new LocationGroup(_NewLocationGroup, new Dictionary<string, TeleportLocation>());
+            TeleporterPlugin.Settings.Groups.Add(group);
+        } 
+
+        Save(group, locationName);
+    }
+
+    private void Save(LocationGroup group, string locationName) {
+        var camera = CameraSelector.shared.strategyCamera;
+
+        group.Locations[locationName] = new TeleportLocation(
+            WorldTransformer.WorldToGame(camera.GroundPosition).ToVector(),
+            camera.transform.rotation.ToVector(),
+            camera.GetDistance()
+        );
+
+        TeleporterPlugin.SaveSettings();
     }
 }

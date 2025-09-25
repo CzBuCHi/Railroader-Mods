@@ -90,6 +90,11 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
             return;
         }
 
+        if (_NewLocationGroup != groupName) {
+            TeleporterPlugin.SendSettingsChangedEvent();
+            _NewLocationGroup = groupName;
+        }
+
         var index = Groups.FindIndex(o => o.Name == groupName);
         if (index == -1) {
             builder.AddLabel($"Something went wrong ... (cannot find group named '{groupName}'");

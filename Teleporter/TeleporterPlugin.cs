@@ -31,7 +31,11 @@ public sealed class TeleporterPlugin : SingletonPluginBase<TeleporterPlugin>, IM
 
     public static void SaveSettings() {
         Shared!._Context.SaveSettingsData(PluginIdentifier, Shared._Settings);
-        Shared._Messenger.Send(new SettingsChangedEvent());
+        SendSettingsChangedEvent();
+    }
+
+    public static void SendSettingsChangedEvent() {
+        Shared!._Messenger.Send(new SettingsChangedEvent());
     }
 
     public override void OnEnable() {

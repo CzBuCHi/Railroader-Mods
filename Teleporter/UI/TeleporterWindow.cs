@@ -91,8 +91,9 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
         }
 
         if (_NewLocationGroup != groupName) {
-            TeleporterPlugin.SendSettingsChangedEvent();
             _NewLocationGroup = groupName;
+            TeleporterPlugin.SendSettingsChangedEvent();
+            return;
         }
 
         var index = Groups.FindIndex(o => o.Name == groupName);

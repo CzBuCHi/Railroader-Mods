@@ -4,5 +4,5 @@ namespace CzBuCHi.Shared.Harmony;
 
 using HarmonyLib;
 
-[HarmonyPatchCategory("ConsistWindow")]
+[HarmonyPatchCategory("ProgrammaticWindowCreatorPatches")]
 public static partial class ProgrammaticWindowCreatorPatches;

@@ -13,9 +13,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="icon.png" />
+    <None Remove="time.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="icon.png" />
+    <EmbeddedResource Include="time.png" />
   </ItemGroup>
   <ItemGroup>
   <Reference Include="System.Core" />
@@ -32,6 +34,7 @@
     <GameAssembly Include="Unity.TextMeshPro" />
     <GameAssembly Include="Railloader.Interchange" />
     <GameAssembly Include="Serilog" />    
+    <GameAssembly Include="Newtonsoft.Json" />    
   </ItemGroup>
   <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 </Project>

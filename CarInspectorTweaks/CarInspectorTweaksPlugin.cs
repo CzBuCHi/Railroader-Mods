@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using CarInspectorTweaks.Data;
+using CarInspectorTweaks.Features;
 using CarInspectorTweaks.UI;
 using CzBuCHi.Shared.Harmony;
 using GalaSoft.MvvmLight.Messaging;
@@ -19,15 +22,21 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
     public static IUIHelper       UiHelper { get; private set; } = null!;
     public static Settings        Settings { get; private set; } = null!;
 
-    private readonly ILogger   _Logger    = Log.ForContext<CarInspectorTweaksPlugin>()!;
-    private          Messenger _Messenger = null!;
+    private static readonly ILogger   _Logger    = Log.ForContext<CarInspectorTweaksPlugin>()!;
+    private                 Messenger _Messenger = null!;
 
     public CarInspectorTweaksPlugin(IModdingContext context, IUIHelper uiHelper) {
         Context = context;
         UiHelper = uiHelper;
         Settings = Context.LoadSettingsData<Settings>(ModIdentifier) ?? new Settings();
+        SortTimeNotifications();
 
         ProgrammaticWindowCreatorPatches.RegisterWindow<ConsistWindow>();
+        ProgrammaticWindowCreatorPatches.RegisterWindow<TimeNotificationWindow>();
+    }
+
+    public static void SendEvent<T>(T @event) {
+        Shared!._Messenger.Send(@event);
     }
 
     public override void OnEnable() {
@@ -40,10 +49,19 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
     private void OnMapDidLoad(MapDidLoadEvent obj) {
         CzBuCHi.Shared.UI.TopRightArea.AddButton("CarInspectorTweaks.icon.png", "Consist Window", 9, ConsistWindow.Shared.ShowWindow);
+
+        if (Settings.TimeNotificationsEnabled) {
+            CzBuCHi.Shared.UI.TopRightArea.AddButton("CarInspectorTweaks.time.png", "Time Notification Window", 10, TimeNotificationWindow.Shared.ShowWindow);
+
+            _Messenger.Register(this, new Action<TimeMinuteDidChange>(OnTimeMinuteDidChange));
+        }
+
         if (Settings.AutoOpenConsistWindow) {
             ConsistWindow.Shared.ShowWindow();
         }
     }
+
+    private void OnTimeMinuteDidChange(TimeMinuteDidChange _) => TimeNotificationsManager.CheckTime();
 
     public override void OnDisable() {
         _Logger.Information("OnDisable");
@@ -52,7 +70,19 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
         _Messenger.Unregister(this);
     }
 
+    private static void SortTimeNotifications() {
+        if (Settings.TimeNotifications.Length > 0) {
+            Settings.TimeNotifications =
+                Settings.TimeNotifications
+                        .Where(t => t.Hours is >= 0f and < 24f)
+                        .OrderBy(t => t.Hours)
+                        .ToArray();
+        }
+    }
+
     public static void SaveSettings() {
+        _Logger.Information("SaveSettings");
+        SortTimeNotifications();
         Context.SaveSettingsData(ModIdentifier, Settings);
     }
 
@@ -120,6 +150,9 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
 
         builder.AddField("Auto select on follow", builder.AddToggle(() => Settings.FollowAndSelect, o => Settings.FollowAndSelect = o)!)!
                .Tooltip("Auto select on follow", "Shift+Click on 'Eye' icon in Engine roster will also select given locomotive.");
+
+        builder.AddField("Time notifications", builder.AddToggle(() => Settings.TimeNotificationsEnabled, o => Settings.TimeNotificationsEnabled = o)!)!
+               .Tooltip("Time notifications", "Allows player to configure notification at specific time of day.");
         
         builder.AddButton("Open Consist Window", ConsistWindow.Shared.ShowWindow);
         builder.AddButton("Save", ModTabDidClose);
@@ -183,6 +216,13 @@ public sealed class CarInspectorTweaksPlugin : SingletonPluginBase<CarInspectorT
             harmony.PatchCategory("FollowAndSelect");
         }
 
+        if (Settings.TimeNotificationsEnabled) {
+            harmony.PatchCategory("TimeNotifications");
+        }
+
+        harmony.PatchCategory("ProgrammaticWindowCreatorPatches");
         harmony.PatchCategory("ConsistWindow");
     }
+
+
 }

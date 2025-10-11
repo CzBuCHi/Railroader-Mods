@@ -36,6 +36,8 @@ public sealed class TimeNotificationWindow : ProgrammaticWindowBase
     }
 
     private void GetLocomotives () {
+        _Logger.Information("Resolving locomotives ...");
+
         _Locomotives = TrainController.Shared!.Cars!.OfType<BaseLocomotive>().ToList();
         _LocomotiveNames = _Locomotives.Select(o => o.DisplayName).ToList();
     }
@@ -49,7 +51,7 @@ public sealed class TimeNotificationWindow : ProgrammaticWindowBase
         string id;
         do {
             id = Guid.NewGuid().ToString("N").Substring(0, 8);
-        } while (!_Notifications.ContainsKey(id));
+        } while (_Notifications.ContainsKey(id));
         return id;
     }
 

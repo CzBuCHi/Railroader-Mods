@@ -70,6 +70,7 @@ public sealed class TeleporterWindow : ProgrammaticWindowBase
        
         void UpdateNewLocationGroup(string value) {
             _NewLocationGroup = value;
+            _SelectedGroup.Value = "";
             builder.Rebuild();
         }
 

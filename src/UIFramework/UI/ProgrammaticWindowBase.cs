@@ -1,0 +1,56 @@
+﻿using JetBrains.Annotations;
+using UI;
+using UI.Builder;
+using UI.Common;
+using UnityEngine;
+
+namespace UIFramework.UI
+{
+    [PublicAPI]
+    public abstract class ProgrammaticWindowBase : MonoBehaviour, IProgrammaticWindow
+    {
+        private         UIPanel?        _Panel;
+        protected       Window          Window           { get; private set; } = null!;
+        public          UIBuilderAssets BuilderAssets    { get; set; }         = null!;
+        public          string          WindowIdentifier => GetType().FullName!;
+        public          Vector2Int      DefaultSize      => Sizing.MinSize;
+        public virtual  Window.Position DefaultPosition  => Window.Position.Center;
+        public abstract Window.Sizing   Sizing           { get; }
+
+        public virtual void Awake() {
+            Window                  =  GetComponent<Window>()!;
+            Window.OnShownDidChange += WindowOnOnShownDidChange;
+        }
+
+        public virtual void OnDestroy() {
+            Window.OnShownDidChange -= WindowOnOnShownDidChange;
+        }
+
+        protected virtual void WindowOnOnShownDidChange(bool isShown) {
+        }
+
+        public virtual void OnDisable() {
+            _Panel?.Dispose();
+            _Panel = null;
+        }
+
+        public void ShowWindow() {
+            Populate();
+            Window.ShowWindow();
+        }
+
+        public void CloseWindow() {
+            if (Window.IsShown) {
+                Window.CloseWindow();
+            }
+        }
+
+        private void Populate() {
+            _Panel?.Dispose();
+            _Panel = UIPanel.Create(Window.contentRectTransform!, BuilderAssets, Build);
+        }
+
+        // todo: if metadata build used this can be implemented here ...
+        protected abstract void Build(UIPanelBuilder builder);
+    }
+}

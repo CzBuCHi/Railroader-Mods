@@ -27,4 +27,5 @@
       <GameAssembly Include="Newtonsoft.Json" />
       <GameAssembly Include="UnityModManager" />
   </ItemGroup>
+  <Import Project="..\Shared\Shared.projitems" Label="Shared" />
 </Project>

@@ -17,15 +17,21 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarInspectorTweaks", "CarIn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MapMod", "MapMod\MapMod.csproj", "{3041DF0C-7607-4DF1-BDE2-3C9FF61139CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIFramework", "UIFramework\UIFramework.csproj", "{1A77A589-242F-5857-480B-7E9D9C5E064A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UIFramework", "src\UIFramework\UIFramework.csproj", "{1A77A589-242F-5857-480B-7E9D9C5E064A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeWindowTweaks", "TimeWindowTweaks\TimeWindowTweaks.csproj", "{7AF79CA8-B2DF-7FD0-A1D9-727847B84D09}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeWindowTweaks", "src\TimeWindowTweaks\TimeWindowTweaks.csproj", "{7AF79CA8-B2DF-7FD0-A1D9-727847B84D09}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3640AFE6-B4BF-40BC-B9A4-2F333A727D95}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "old", "old", "{E2C0513A-EC4B-4746-9DDF-EAE07E74D054}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SwitchNormalizer", "src\SwitchNormalizer\SwitchNormalizer.csproj", "{25223A43-C5BA-49B6-8963-C454D93B0AB1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Teleporter", "src\Teleporter\Teleporter.csproj", "{F9696E47-6A51-B80E-104A-ED3F2E699799}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Shared", "src\Shared\Shared.shproj", "{584BD3DC-6D8E-418A-895C-87A26396E0AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TurntableControl", "src\TurntableControl\TurntableControl.csproj", "{0FA74377-0EC6-59BE-E902-DA83D11879A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +75,14 @@ Global
 		{25223A43-C5BA-49B6-8963-C454D93B0AB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25223A43-C5BA-49B6-8963-C454D93B0AB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{25223A43-C5BA-49B6-8963-C454D93B0AB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9696E47-6A51-B80E-104A-ED3F2E699799}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9696E47-6A51-B80E-104A-ED3F2E699799}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9696E47-6A51-B80E-104A-ED3F2E699799}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9696E47-6A51-B80E-104A-ED3F2E699799}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FA74377-0EC6-59BE-E902-DA83D11879A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FA74377-0EC6-59BE-E902-DA83D11879A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FA74377-0EC6-59BE-E902-DA83D11879A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FA74377-0EC6-59BE-E902-DA83D11879A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,16 +98,23 @@ Global
 		{1A77A589-242F-5857-480B-7E9D9C5E064A} = {3640AFE6-B4BF-40BC-B9A4-2F333A727D95}
 		{7AF79CA8-B2DF-7FD0-A1D9-727847B84D09} = {3640AFE6-B4BF-40BC-B9A4-2F333A727D95}
 		{25223A43-C5BA-49B6-8963-C454D93B0AB1} = {3640AFE6-B4BF-40BC-B9A4-2F333A727D95}
+		{F9696E47-6A51-B80E-104A-ED3F2E699799} = {3640AFE6-B4BF-40BC-B9A4-2F333A727D95}
+		{584BD3DC-6D8E-418A-895C-87A26396E0AD} = {3640AFE6-B4BF-40BC-B9A4-2F333A727D95}
+		{0FA74377-0EC6-59BE-E902-DA83D11879A0} = {3640AFE6-B4BF-40BC-B9A4-2F333A727D95}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F364731-F9C0-4C42-AEFD-54A52CF756A3}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Shared\Shared.projitems*{0803dab3-fd47-4b42-955e-6534da428245}*SharedItemsImports = 13
+		src\Shared\Shared.projitems*{0fa74377-0ec6-59be-e902-da83d11879a0}*SharedItemsImports = 5
+		src\Shared\Shared.projitems*{1a77a589-242f-5857-480b-7e9d9c5e064a}*SharedItemsImports = 5
 		Shared\Shared.projitems*{357f5828-0cee-44a5-942d-7ea28a15c3a1}*SharedItemsImports = 5
+		src\Shared\Shared.projitems*{584bd3dc-6d8e-418a-895c-87a26396e0ad}*SharedItemsImports = 13
 		Shared\Shared.projitems*{5f5d5580-72dc-4fea-bc6a-9da237a912fc}*SharedItemsImports = 5
 		Shared\Shared.projitems*{7ef42e27-a88d-43af-a017-ecad79e6da66}*SharedItemsImports = 5
 		Shared\Shared.projitems*{c925027f-443d-469b-b660-0690910f1438}*SharedItemsImports = 5
 		Shared\Shared.projitems*{f69f66bc-ee81-4261-b090-b5f7e3fb4c6d}*SharedItemsImports = 5
+		src\Shared\Shared.projitems*{f9696e47-6a51-b80e-104a-ed3f2e699799}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

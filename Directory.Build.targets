@@ -46,7 +46,7 @@
   <!-- Copy the mod to the game directory -->
   <Target Name="CopyToGameModDir" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Debug' And '$(IsMod)' == 'true'">
     <ItemGroup>
-      <OutputFiles Include="$(OutputPath)/**/*" />
+      <OutputFiles Include="$(OutputPath)/**/*" Exclude="*cache*" />
     </ItemGroup>
 
     <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" />

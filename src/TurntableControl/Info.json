@@ -1,0 +1,10 @@
+{
+  "Id": "CzBuCHi.TurntableControl",
+  "DisplayName": "TurntableControl",
+  "Author": "CzBuCHi",
+  "Version": "0.0.1",
+  "ManagerVersion": "0.32.4.0",
+  "GameVersion": "2022.3.62f2",
+  "AssemblyName": "CzBuCHi.TurntableControl.dll",
+  "EntryMethod": "TurntableControl.Main.Load"
+}

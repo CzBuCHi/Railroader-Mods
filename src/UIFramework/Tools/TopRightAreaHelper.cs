@@ -18,7 +18,7 @@ namespace UIFramework.Tools
     public static class TopRightAreaHelper
     {
         public static void AddButton(Assembly assembly, string iconName, string tooltip, int index, UnityAction onClick) {
-            var topRightArea = Object.FindObjectOfType<UI.TopRightArea>();
+            var topRightArea = Object.FindObjectOfType<global::UI.TopRightArea>();
             if (topRightArea == null) {
                 return;
             }

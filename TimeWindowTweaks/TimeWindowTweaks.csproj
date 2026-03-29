@@ -12,6 +12,9 @@
     <Content Include="*.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
   <ItemGroup>
+    <Content Remove="Info.json" />
+  </ItemGroup>
+  <ItemGroup>
       <GameAssembly Include="Assembly-CSharp" />
       <GameAssembly Include="0Harmony" />
       <GameAssembly Include="KeyValue.Runtime" />
@@ -27,5 +30,15 @@
       <GameAssembly Include="Newtonsoft.Json" />
       <GameAssembly Include="UnityModManager" />
       <GameAssembly Include="CzBuCHi.UIFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="TimeWindowTweaksPlugin.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Info.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

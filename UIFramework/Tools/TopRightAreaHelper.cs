@@ -1,0 +1,62 @@
+﻿using System;
+using System.IO;
+using System.Reflection;
+using JetBrains.Annotations;
+using Serilog;
+using UI.Tooltips;
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
+using Object = UnityEngine.Object;
+
+namespace UIFramework.Tools
+{
+    /// <summary>
+    /// Adds button to top right area of the UI.
+    /// </summary>
+    [PublicAPI]
+    public static class TopRightAreaHelper
+    {
+        public static void AddButton(Assembly assembly, string iconName, string tooltip, int index, UnityAction onClick) {
+            var topRightArea = Object.FindObjectOfType<UI.TopRightArea>();
+            if (topRightArea == null) {
+                return;
+            }
+
+            var componentInChildren = topRightArea.transform.Find("Strip")!.gameObject.GetComponentInChildren<Button>()!;
+            var gameObject          = Object.Instantiate(componentInChildren.gameObject, componentInChildren.transform.parent)!;
+            gameObject.transform.SetSiblingIndex(index);
+
+            gameObject.GetComponent<UITooltipProvider>()!.TooltipInfo = new TooltipInfo(tooltip, string.Empty);
+
+            var button = gameObject.GetComponent<Button>()!;
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(onClick);
+
+            var image = gameObject.GetComponent<Image>()!;
+
+            var icon = LoadTexture2D(assembly, iconName, 128, 128);
+            image.sprite = Sprite.Create(icon, new Rect(0.0f, 0.0f, 128, 128), new Vector2(0.5f, 0.5f))!;
+        }
+
+        private static byte[] GetBytes(Assembly assembly, string iconName) {
+            using var stream = assembly.GetManifestResourceStream(iconName)!;
+            using var ms     = new MemoryStream();
+            stream.CopyTo(ms);
+            return ms.ToArray();
+        }
+
+        private static Texture2D LoadTexture2D(Assembly assembly, string iconName, int width, int height) {
+            try {
+                var bytes   = GetBytes(assembly, iconName);
+                var texture = new Texture2D(width, height, TextureFormat.DXT5, false);
+                texture.LoadImage(bytes);
+                return texture;
+            } catch (Exception e) {
+                Log.Error(e, "Failed to load texture {0}", iconName);
+            }
+
+            return null!;
+        }
+    }
+}

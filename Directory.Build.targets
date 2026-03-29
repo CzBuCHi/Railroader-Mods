@@ -27,6 +27,7 @@
     <!-- Reference the .dll/.exes specified with GameAssembly elements-->
     <Reference Include="@(GameAssembly)">
       <HintPath Condition="Exists('$(GameManagedDir)\%(Identity).dll')">$(GameManagedDir)\%(Identity).dll</HintPath>
+	  <HintPath Condition="Exists('$(GameManagedDir)\UnityModManager\%(Identity).dll')">$(GameManagedDir)\UnityModManager\%(Identity).dll</HintPath>
       <HintPath Condition="Exists('$(GameManagedDir)\%(Identity).exe')">$(GameManagedDir)\%(Identity).exe</HintPath>
       <HintPath Condition="Exists('$(GameDir)/Mods/%(Identity)/%(Identity).dll')">$(GameDir)/Mods/%(Identity)/%(Identity).dll</HintPath>
       <Private>false</Private>

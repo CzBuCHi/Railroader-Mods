@@ -1,0 +1,11 @@
+{
+  "Id": "CzBuCHi.TimeWindowTweaks",
+  "DisplayName": "TimeWindowTweaks",
+  "Author": "CzBuCHi",
+  "Version": "0.0.1",
+  "ManagerVersion": "0.32.4.0",
+  "GameVersion": "2022.3.62f2",
+  "Requirements": [ "CzBuCHi.UIFramework-0.0.1" ],
+  "AssemblyName": "CzBuCHi.TimeWindowTweaks.dll",
+  "EntryMethod": "TimeWindowTweaks.Main.Load"
+}

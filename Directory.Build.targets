@@ -80,7 +80,7 @@
                     Condition="Exists('$(MSBuildProjectDirectory)/PrankTexts.txt')" />
     </ItemGroup>
     <Copy SourceFiles="@(_PackageFile)" DestinationFolder="$(_PackageModDir)" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)docs/$(MSBuildProjectName).md"
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)Docs/$(MSBuildProjectName).md"
           DestinationFolder="$(_PackageModDir)/docs" />
     <ZipDirectory SourceDirectory="$(_PackageStage)" DestinationFile="$(ZipName)" Overwrite="true" />
     <Message Text="Package: $(ZipName)" Importance="high" />

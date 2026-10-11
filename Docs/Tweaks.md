@@ -1,6 +1,6 @@
 ﻿# Tweaks
 
-Mod ID: CzBuCHi.Tweaks. Current version: 2.0.22.
+Mod ID: CzBuCHi.Tweaks. Current version: 2.0.23.
 
 Selected features from CarInspectorTweaks, plus consist controls and repair-shop customization. Each feature has its own RailForge settings toggle. Defaults are enabled unless noted below.
 
@@ -22,11 +22,13 @@ Actions use the game's methods, state messages, and permission checks.
 
 ## Locomotive HUD
 
+![Tweaks locomotive HUD showing consist length in meters, fix-air, release-handbrakes, and oil/hotbox warning icons.](MainPanel.png)
+
 Four icon buttons replace the visible Control Mode dropdown: Manual, AE Road, AE Yard, and AE Waypoint. The original dropdown remains hidden as the backend, and the buttons call its native change handler.
 
 Shift+G works from every mode: it selects AE Waypoint and opens the native waypoint picker.
 
-Consist length is shown in whole meters by converting the native feet display. For example, 1931 ft becomes 589 m.
+Consist length is shown in whole meters by converting the native feet display. For example, 1931 ft becomes 589 m. Show train length in meters is enabled by default in settings; disable it to restore the native feet display in the HUD and tooltip.
 
 Conditional action icons appear higher in the header, beside the speed display:
 

@@ -82,6 +82,8 @@
     <Copy SourceFiles="@(_PackageFile)" DestinationFolder="$(_PackageModDir)" />
     <Copy SourceFiles="$(MSBuildThisFileDirectory)Docs/$(MSBuildProjectName).md"
           DestinationFolder="$(_PackageModDir)/docs" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)Docs/MainPanel.png"
+          DestinationFolder="$(_PackageModDir)/docs" Condition="'$(MSBuildProjectName)' == 'Tweaks'" />
     <ZipDirectory SourceDirectory="$(_PackageStage)" DestinationFile="$(ZipName)" Overwrite="true" />
     <Message Text="Package: $(ZipName)" Importance="high" />
   </Target>

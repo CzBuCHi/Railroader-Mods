@@ -1,10 +1,10 @@
-﻿# Tweaks 2.0.22
+﻿# Tweaks 2.0.23
 
 Requires RTM.RailForge. Mod ID: CzBuCHi.Tweaks.
 
 Selected CarInspectorTweaks features: sleep until the next interchange, whole-MPH car speed, oil level, Shift-follow-and-select, 6-MPH manual pushing, copy repair destination, copy crew, and bleed all.
 
-The locomotive HUD adds control-mode icons, Shift+G waypoint selection from any mode, consist length in meters, and conditional fix-air, release-handbrakes, and oil/hotbox warning icons.
+The locomotive HUD adds control-mode icons, Shift+G waypoint selection from any mode, optional consist length in meters (Show train length in meters in settings), and conditional fix-air, release-handbrakes, and oil/hotbox warning icons.
 
 Choose / test whistles opens a single-choice checkbox list with one-second previews. OK confirms; Cancel discards the choice. Manual whistle and bell changes require customization permission and a repair track. The optional five-game-minute installation uses a temporary waybill; disabling its settings toggle makes manual changes immediate.
 

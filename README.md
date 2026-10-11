@@ -7,7 +7,7 @@ RailForge ports of SwitchNormalizer, TurntableControl, Teleporter, and selected 
 | [SwitchNormalizer](Docs/SwitchNormalizer.md) | 2.0.4 | Save and restore switch positions from the toolbar. |
 | [TurntableControl](Docs/TurntableControl.md) | 2.0.4 | Rotate a turntable toward a selected track using its normal motor. |
 | [Teleporter](Docs/Teleporter.md) | 2.0.5 | Save grouped first-person and tracking-camera locations. |
-| [Tweaks](Docs/Tweaks.md) | 2.0.22 | Car inspection, consist actions, control modes, and repair-shop sound customization. |
+| [Tweaks](Docs/Tweaks.md) | 2.0.23 | Car inspection, consist actions, control modes, and repair-shop sound customization. |
 
 See the [documentation index](Docs/README.md) and [build guide](Docs/Build.md).
 

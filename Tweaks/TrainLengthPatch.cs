@@ -12,6 +12,7 @@ internal static class TrainLengthPatch
     [HarmonyPostfix]
     private static void Postfix(ref string __result)
     {
+        if (!TweaksPlugin.Settings.ShowTrainLengthInMeters) return;
         var separator = __result.LastIndexOf(", ", StringComparison.Ordinal);
         if (separator < 0 || !__result.EndsWith(" ft", StringComparison.Ordinal)) return;
         var nativeLength = __result.Substring(separator + 2, __result.Length - separator - 5);

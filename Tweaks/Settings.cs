@@ -4,6 +4,7 @@ public sealed class Settings
 {
     public bool SleepUntilNextInterchange { get; set; } = true;
     public bool ShowCarSpeed { get; set; } = true;
+    public bool ShowTrainLengthInMeters { get; set; } = true;
     public bool ShowCarOil { get; set; } = true;
     public bool FollowAndSelect { get; set; } = true;
     public bool FastStrongMan { get; set; } = true;

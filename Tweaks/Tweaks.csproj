@@ -3,7 +3,7 @@
     <IsMod>true</IsMod>
     <AssemblyName>CzBuCHi.Tweaks</AssemblyName>
     <RootNamespace>Tweaks</RootNamespace>
-    <Version>2.0.22</Version>
+    <Version>2.0.23</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="RailForge">

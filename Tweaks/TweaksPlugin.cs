@@ -67,6 +67,7 @@ public sealed class TweaksPlugin : PluginBase, IModTabHandler
     {
         builder.AddFieldToggle("Sleep until next interchange", () => Settings.SleepUntilNextInterchange, value => { Settings.SleepUntilNextInterchange = value; Save(); });
         builder.AddFieldToggle("Show car speed", () => Settings.ShowCarSpeed, value => { Settings.ShowCarSpeed = value; Save(); });
+        builder.AddFieldToggle("Show train length in meters", () => Settings.ShowTrainLengthInMeters, value => { Settings.ShowTrainLengthInMeters = value; Save(); });
         builder.AddFieldToggle("Show car oil", () => Settings.ShowCarOil, value => { Settings.ShowCarOil = value; Save(); });
         builder.AddFieldToggle("Follow and select (Shift + eye)", () => Settings.FollowAndSelect, value => { Settings.FollowAndSelect = value; Save(); });
         builder.AddFieldToggle("Fast strong man (6 mph)", () => Settings.FastStrongMan, value => { Settings.FastStrongMan = value; Save(); });

@@ -29,7 +29,7 @@ Railroader-Mods.slnx contains the four mod projects. Directory.Build.targets run
 - CzBuCHi.SwitchNormalizer_2.0.4.zip
 - CzBuCHi.TurntableControl_2.0.4.zip
 - CzBuCHi.Teleporter_2.0.5.zip
-- CzBuCHi.Tweaks_2.0.22.zip
+- CzBuCHi.Tweaks_2.0.23.zip
 
 Plain dotnet publish also works, using the SDK's default configuration. Use -c Release for distribution. Publishing the same mod version replaces its ZIP; ZIPs for other versions are retained.
 

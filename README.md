@@ -1,52 +1,32 @@
-# Collection of all my mods for game Railroader
+﻿# Railroader mods for RailForge
 
-## MapEditor
-Alpha version of Editor
+RailForge ports of SwitchNormalizer, TurntableControl, Teleporter, and selected CarInspectorTweaks features. The experimental code in the old repository's src folder is not used.
 
-![MapEditor](Docs/MapEditor.webp)
+| Mod | Version | Purpose |
+| --- | --- | --- |
+| [SwitchNormalizer](docs/SwitchNormalizer.md) | 2.0.4 | Save and restore switch positions from the toolbar. |
+| [TurntableControl](docs/TurntableControl.md) | 2.0.4 | Rotate a turntable toward a selected track using its normal motor. |
+| [Teleporter](docs/Teleporter.md) | 2.0.5 | Save grouped first-person and tracking-camera locations. |
+| [Tweaks](docs/Tweaks.md) | 2.0.22 | Car inspection, consist actions, control modes, and repair-shop sound customization. |
 
-[Guide made by CrankyAnt](Docs/CzBuCHi%20MapEditor%20Guide.pdf)
+See the [documentation index](docs/README.md) and [build guide](docs/Build.md).
 
-## SwitchNormalizer
-A straightforward mod that adds button to normalize all switches on entire map.
+## Installation
 
-Alt mode: when button clicked with SHIFT key it will save current switch state so you can have some switches thrown by default.
+Install RTM.RailForge first. Close Railroader, then extract the package's Mods directory into the game directory. Keep only one copy of each mod and remove its old Railloader version from Mods.
 
-![SwitchNormalizer](Docs/SwitchNormalizer.webp)
+When updating Tweaks, preserve your customized PrankTexts.txt.
 
-## Teleporter 
+## Build
 
-A straightforward mod that introduces a window for saving teleport locations on the map, enabling quick and convenient navigation across the map.
+Requires the .NET SDK, the installed game assemblies, and RailForge. The test projects use .NET 10.
 
-![Teleporter](Docs/Teleporter.gif)
+Copy Paths.user.sample to Paths.user and set GameDir. Paths.user is local configuration and is ignored by Git. Command-line -GameDir overrides it.
 
-## TurntableControl
+    dotnet publish -c Release
+    dotnet publish Tweaks/Tweaks.csproj -c Release
+    dotnet publish -c Release -p:GameDir="D:\SteamLibrary\steamapps\common\Railroader"
 
-A straightforward mod that allows player to rotate turntable by clicking on track node.
-(Known issue: rotation is instant and do not check fouling track)
+Run from the repository root. Railroader-Mods.slnx selects all four mods. Publishing runs the applicable checks and creates installable ZIPs in bin. It does not install mods or publish GitHub releases. Plain dotnet publish also works; Release is recommended for distribution.
 
-![TurntableControl](Docs/TurntableControl.webp)
-
-## CarInspectorTweaks
-Various tweaks to car inspector window, all toggleable in settings
-
-## Project Setup
-
-In order to get going with this, follow the following steps:
-
-1. Clone the repo
-2. Copy the `Paths.user.example` to `Paths.user`, open the new `Paths.user` and set the `<GameDir>` to your game's directory.
-3. Open the Solution
-4. You're ready!
-
-### During Development
-
-Make sure you're using the _Debug_ configuration. Every time you build your project, the files will be copied to your Mods folder and you can immediately start the game to test it.
-
-### Publishing
-
-Make sure you're using the _Release_ configuration. The build pipeline will then automatically do a few things:
-
-1. Makes sure it's a proper release build without debug symbols
-1. Replaces `$(AssemblyVersion)` in the `Definition.json` with the actual assembly version.
-1. Copies all build outputs into a zip file inside `bin` with a ready-to-extract structure inside, named like the project they belonged to and the version of it.
+Source text files use UTF-8 with BOM and CRLF line endings.

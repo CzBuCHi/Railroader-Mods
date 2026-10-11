@@ -1,23 +1,15 @@
 ﻿<Project>
-  <Import Project="Paths.user" Condition="Exists('Paths.user')" />
+  <Import Project="$(MSBuildThisFileDirectory)Paths.user" Condition="Exists('$(MSBuildThisFileDirectory)Paths.user')" />
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Steam\steamapps\common\Railroader</GameDir>
+    <GameManagedDir Condition="'$(GameManagedDir)' == ''">$(GameDir)\Railroader_Data\Managed</GameManagedDir>
+    <RailForgeDir Condition="'$(RailForgeDir)' == ''">$(GameDir)\Mods\RTM.RailForge</RailForgeDir>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <LangVersion>latest</LangVersion>
-    <ImplicitUsings>false</ImplicitUsings>
-    <Nullable>disable</Nullable>
+    <Deterministic>true</Deterministic>
+    <Version>2.0.4</Version>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <DebugType>none</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="BUTR.Harmony.Analyzer" Version="1.0.1.50">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 </Project>

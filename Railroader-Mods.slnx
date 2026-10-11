@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="SwitchNormalizer/SwitchNormalizer.csproj" />
+  <Project Path="TurntableControl/TurntableControl.csproj" />
+  <Project Path="Teleporter/Teleporter.csproj" />
+  <Project Path="Tweaks/Tweaks.csproj" />
+</Solution>

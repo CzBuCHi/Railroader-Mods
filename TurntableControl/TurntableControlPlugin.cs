@@ -1,23 +1,38 @@
-﻿using JetBrains.Annotations;
-using Railloader;
+﻿using HarmonyLib;
+using RailForge;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace TurntableControl;
 
-[PublicAPI]
-public sealed class TurntableControlPlugin : SingletonPluginBase<TurntableControlPlugin>
+public sealed class TurntableControlPlugin : PluginBase
 {
-    private const string PluginIdentifier = "CzBuCHi.TurntableControl";
+    private Harmony? harmony;
+    private TurntableManager? manager;
 
-    public TurntableControlPlugin(IModdingContext context, IUIHelper uiHelper) {
+    public override void OnEnable()
+    {
+        if (manager != null)
+            return;
+
+        NativeAccess.Validate();
+        harmony = new Harmony("CzBuCHi.TurntableControl");
+        harmony.PatchAll(typeof(TurntableControlPlugin).Assembly);
+        var host = new GameObject("CzBuCHi.TurntableControl.Manager");
+        Object.DontDestroyOnLoad(host);
+        manager = host.AddComponent<TurntableManager>();
+        manager.Initialize();
     }
 
-    public override void OnEnable() {
-        var harmony = new HarmonyLib.Harmony(PluginIdentifier);
-        harmony.PatchAll();
-    }
-
-    public override void OnDisable() {
-        var harmony = new HarmonyLib.Harmony(PluginIdentifier);
-        harmony.UnpatchAll();
+    public override void OnDisable()
+    {
+        if (manager != null)
+        {
+            manager.Shutdown();
+            Object.Destroy(manager.gameObject);
+            manager = null;
+        }
+        harmony?.UnpatchAll("CzBuCHi.TurntableControl");
+        harmony = null;
     }
 }

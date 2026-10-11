@@ -1,15 +1,12 @@
-{
-    "manifestVersion": 1,
-    "id": "CzBuCHi.SwitchNormalizer",
-    "name": "Switch Normalizer",
-    "version": "$(AssemblyVersion)",
-    "requires": [
-        {
-            "id": "railloader",
-            "notBefore": "1.9.6.14"
-        }
-    ],
-    "assemblies": [
-        "CzBuCHi.SwitchNormalizer"
-    ]
+﻿{
+  "manifestVersion": 1,
+  "id": "CzBuCHi.SwitchNormalizer",
+  "name": "Switch Normalizer",
+  "version": "2.0.4",
+  "requires": [
+    { "id": "RTM.RailForge" }
+  ],
+  "assemblies": [
+    "CzBuCHi.SwitchNormalizer"
+  ]
 }

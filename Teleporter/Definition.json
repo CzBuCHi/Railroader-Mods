@@ -1,15 +1,8 @@
-{
-    "manifestVersion": 1,
-    "id": "CzBuCHi.Teleporter",
-    "name": "Teleporter",
-    "version": "1.0",
-    "requires": [
-        {
-            "id": "railloader",
-            "notBefore": "1.9.6.14"
-        }
-    ],
-    "assemblies": [
-        "CzBuCHi.Teleporter"
-    ]
+﻿{
+  "manifestVersion": 1,
+  "id": "CzBuCHi.Teleporter",
+  "name": "Teleporter",
+  "version": "2.0.5",
+  "requires": [ { "id": "RTM.RailForge" } ],
+  "assemblies": [ "CzBuCHi.Teleporter" ]
 }

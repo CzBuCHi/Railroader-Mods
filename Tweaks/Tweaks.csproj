@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsMod>true</IsMod>
+    <AssemblyName>CzBuCHi.Tweaks</AssemblyName>
+    <RootNamespace>Tweaks</RootNamespace>
+    <Version>2.0.22</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="RailForge">
+      <HintPath>$(RailForgeDir)\RailForge.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(GameManagedDir)\UnityModManager\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <GameReference Include="Assembly-CSharp;Core;Definition;KeyValue.Runtime;SimpleGraph.Runtime;UnityEngine.CoreModule;UnityEngine.AudioModule;UnityEngine.InputLegacyModule;UnityEngine.TextRenderingModule;UnityEngine.TextCoreFontEngineModule;UnityEngine.UI;Unity.TextMeshPro" />
+    <Reference Include="@(GameReference)">
+      <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <None Update="PrankTexts.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Definition.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CheckGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(RailForgeDir)\RailForge.dll')" Text="RailForge.dll was not found. Set GameDir to your Railroader installation." />
+    <Error Condition="!Exists('$(GameManagedDir)\Assembly-CSharp.dll')" Text="Railroader game assemblies were not found. Set GameDir to your Railroader installation." />
+  </Target>
+</Project>

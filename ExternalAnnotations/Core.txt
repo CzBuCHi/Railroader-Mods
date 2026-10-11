@@ -1,2 +1,0 @@
-M:Core.BezierCurve.Approximate(System.Single,System.Single,System.Int32,System.Single)
-M:Core.IdGenerator.Next

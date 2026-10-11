@@ -1,41 +1,22 @@
 ﻿<Project>
   <PropertyGroup>
-    <!-- Try to find the directory on our own -->
-    <GameManagedDir Condition="'$(GameManagedDir)' == ''">$([System.IO.Directory]::GetDirectories(`$(GameDir)`, `*_Data`)[0])\Managed</GameManagedDir>
-    
-    <!-- Copy the mod to the game directory -->
-    <GameModDir Condition="'$(GameModDir)' == ''">$(GameDir)/Mods/$(AssemblyName)</GameModDir>
-    <!-- <OutDir Condition="'$(Configuration)' == 'Debug' And '$(IsMod)' == 'true'">$(GameModDir)/</OutDir> -->
-  </PropertyGroup>
-
-  <PropertyGroup>
     <IsMod Condition="'$(IsMod)' == ''">false</IsMod>
-    <PackageMod Condition="'$(PackageMod)' == '' Or '$(IsMod)' == 'false'">disable</PackageMod>
-    <PublishMod Condition="'$(PublishMod)' == '' Or '$(PackageMod)' == 'false'">disable</PublishMod>
+    <PackageMod Condition="'$(PackageMod)' == ''">enable</PackageMod>
+    <GameModDir Condition="'$(GameModDir)' == ''">$(GameDir)/Mods/$(AssemblyName)</GameModDir>
   </PropertyGroup>
 
-  <!-- Replace the default version if something was set for it -->
-  <PropertyGroup Condition="'$(AssemblyVersion)' == '' OR '$(MajorVersion)' != '' OR '$(MinorVersion)' != ''">
-    <MajorVersion Condition="'$(MajorVersion)' == ''">1</MajorVersion>
-    <MinorVersion Condition="'$(MinorVersion)' == ''">0</MinorVersion>
-    <AssemblyVersion>$(MajorVersion).$(MinorVersion).$([System.DateTime]::UtcNow.ToString(yy))$([System.DateTime]::UtcNow.DayOfYear.ToString("000")).$([System.DateTime]::UtcNow.ToString("Hmm").TrimStart('0'))</AssemblyVersion>
-    <FileVersion>$(AssemblyVersion)</FileVersion>
-    <ProductVersion>$(AssemblyVersion)</ProductVersion>
-  </PropertyGroup>
-
+  <!-- Keep the original reference declarations available for other projects. -->
   <ItemGroup>
-    <!-- Reference the .dll/.exes specified with GameAssembly elements-->
     <Reference Include="@(GameAssembly)">
-      <HintPath Condition="Exists('$(GameManagedDir)\%(Identity).dll')">$(GameManagedDir)\%(Identity).dll</HintPath>
-	  <HintPath Condition="Exists('$(GameManagedDir)\UnityModManager\%(Identity).dll')">$(GameManagedDir)\UnityModManager\%(Identity).dll</HintPath>
-      <HintPath Condition="Exists('$(GameManagedDir)\%(Identity).exe')">$(GameManagedDir)\%(Identity).exe</HintPath>
+      <HintPath Condition="Exists('$(GameManagedDir)/%(Identity).dll')">$(GameManagedDir)/%(Identity).dll</HintPath>
+      <HintPath Condition="Exists('$(GameManagedDir)/UnityModManager/%(Identity).dll')">$(GameManagedDir)/UnityModManager/%(Identity).dll</HintPath>
+      <HintPath Condition="Exists('$(GameManagedDir)/%(Identity).exe')">$(GameManagedDir)/%(Identity).exe</HintPath>
       <HintPath Condition="Exists('$(GameDir)/Mods/%(Identity)/%(Identity).dll')">$(GameDir)/Mods/%(Identity)/%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- Allow referencing things like OtherMod/Mod.dll -->
     <ModReference Include="@(ModAssembly)">
-      <AssemblyName>$([System.IO.Path]::GetFileNameWithoutExtension("%(Identity)"))</AssemblyName>
-      <FullModPath>$(GameDir)\Mods\%(Identity)</FullModPath>
+      <AssemblyName>$([System.IO.Path]::GetFileNameWithoutExtension('%(Identity)'))</AssemblyName>
+      <FullModPath>$(GameDir)/Mods/%(Identity)</FullModPath>
     </ModReference>
     <Reference Include="@(ModReference->'%(AssemblyName)')">
       <HintPath Condition="Exists('%(FullModPath)')">%(FullModPath)</HintPath>
@@ -43,64 +24,65 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Copy the mod to the game directory -->
-  <Target Name="CopyToGameModDir" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Debug' And '$(IsMod)' == 'true'">
-    <ItemGroup>
-      <OutputFiles Include="$(OutputPath)/**/*" Exclude="*cache*" />
-    </ItemGroup>
+  <UsingTask TaskName="ValidateRailForgePackage" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <AssemblyPath ParameterType="System.String" Required="true" />
+      <ManifestPath ParameterType="System.String" Required="true" />
+      <ExpectedVersion ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Reflection" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var actual = AssemblyName.GetAssemblyName(AssemblyPath).Version.ToString(3);
+        var match = Regex.Match(File.ReadAllText(ManifestPath), @"""version""\s*:\s*""([^""]+)""");
+        if (!match.Success || match.Groups[1].Value != ExpectedVersion || actual != ExpectedVersion)
+        {
+            Log.LogError("Assembly, manifest, and project versions must match: " + AssemblyPath);
+            return false;
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
 
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" />
-
+  <Target Name="ValidateModPublish" BeforeTargets="PackageMod"
+          Condition="'$(IsMod)' == 'true' And '$(PackageMod)' == 'enable'">
+    <ValidateRailForgePackage AssemblyPath="$(TargetPath)"
+                             ManifestPath="$(MSBuildProjectDirectory)/Definition.json"
+                             ExpectedVersion="$(Version)" />
+    <Exec Condition="'$(MSBuildProjectName)' == 'TurntableControl'"
+          Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)tests/TurntableControl.Tests/TurntableControl.Tests.csproj&quot; -c &quot;$(Configuration)&quot;" />
+    <Exec Condition="'$(MSBuildProjectName)' == 'Tweaks'"
+          Command="dotnet run --project &quot;$(MSBuildThisFileDirectory)tests/Tweaks.Tests/Tweaks.Tests.csproj&quot; -c &quot;$(Configuration)&quot; -p:GameDir=&quot;$(GameDir)&quot; -- &quot;$(GameManagedDir)/Assembly-CSharp.dll&quot;" />
   </Target>
-  
-  <!-- Publish the mod as a neat zip file -->
-  <Target Name="PackageMod" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release' And '$(PackageMod)' == 'enable'">
-    <Message Text="Packaging $(AssemblyName) v$(AssemblyVersion)" Importance="high" />
-    <!-- Replace $(AssemblyVersion) with the actual version -->
-    <Exec Command="powershell -Command &quot;(Get-Content '$(OutputPath)Definition.json') -replace '\$\(AssemblyVersion\)', '$(AssemblyVersion)' | Set-Content '$(OutputPath)Definition.json'&quot;" />
 
+  <!-- Publish creates a local installable archive; it does not deploy or create a GitHub release. -->
+  <Target Name="PackageMod" AfterTargets="Publish"
+          Condition="'$(IsMod)' == 'true' And '$(PackageMod)' == 'enable'">
     <PropertyGroup>
-      <ModsDirectory>$(OutputPath)/Mods</ModsDirectory>
-      <ModDirectory>$(ModsDirectory)/$(AssemblyName)</ModDirectory>
-
-      <!-- Folder we'll put the published zips into -->
-      <PublishPath>../bin</PublishPath>
-      <ZipName>$(PublishPath)/$(AssemblyName)_$(AssemblyVersion).zip</ZipName>
+      <_PackageStage>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/obj/$(Configuration)/RailForgePackage'))</_PackageStage>
+      <_PackageModDir>$(_PackageStage)/Mods/$(AssemblyName)</_PackageModDir>
+      <_PackageBin>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)bin'))</_PackageBin>
+      <ZipName>$(_PackageBin)/$(AssemblyName)_$(Version).zip</ZipName>
     </PropertyGroup>
-
-    <!-- Assure the output path exists -->
-    <MakeDir Directories="$(PublishPath)" />
-    
-    <!-- Remove the old Mods directory, and Zips file if any is lying around -->
+    <Error Condition="!$(_PackageStage.StartsWith('$(MSBuildProjectDirectory)'))"
+           Text="Package staging must stay inside the project directory." />
+    <RemoveDir Directories="$(_PackageStage)" />
+    <MakeDir Directories="$(_PackageModDir)/docs;$(_PackageBin)" />
     <ItemGroup>
-      <OldZips Include="$(PublishPath)/$(AssemblyName)_*.zip" />
+      <_PackageFile Include="$(TargetPath)" />
+      <_PackageFile Include="$(MSBuildProjectDirectory)/Definition.json" />
+      <_PackageFile Include="$(MSBuildThisFileDirectory)LICENSE" />
+      <_PackageFile Include="$(MSBuildProjectDirectory)/README.md" />
+      <_PackageFile Include="$(MSBuildProjectDirectory)/PrankTexts.txt"
+                    Condition="Exists('$(MSBuildProjectDirectory)/PrankTexts.txt')" />
     </ItemGroup>
-    
-    <RemoveDir Directories="$(ModsDirectory)"  ContinueOnError="true" />
-    <Delete Files="@(OldZips)" />
-    
-    <!-- Create the Mods directory again -->
-    <MakeDir Directories="$(ModDirectory)" />
-
-    <!-- Move all files to the right folder -->
-    <ItemGroup>
-      <OutputFiles Include="$(OutputPath)/**/*" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(ModDirectory)" />
-
-    <!-- Zip it up -->
-    <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(ModDirectory)' -Destination '$(ZipName)'&quot;" />
-    
-    <!-- Move them to the game directory -->
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="$(GameModDir)" />
-    
+    <Copy SourceFiles="@(_PackageFile)" DestinationFolder="$(_PackageModDir)" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)docs/$(MSBuildProjectName).md"
+          DestinationFolder="$(_PackageModDir)/docs" />
+    <ZipDirectory SourceDirectory="$(_PackageStage)" DestinationFile="$(ZipName)" Overwrite="true" />
+    <Message Text="Package: $(ZipName)" Importance="high" />
   </Target>
-  <Target Name="PublishMod" AfterTargets="PackageMod" Condition="'$(Configuration)' == 'Release' AND '$(PublishMod)' == 'enable'">
-    <Message Text="Publishing $(AssemblyName) v$(AssemblyVersion)" Importance="high" />
-    <!-- Publish to GitHub -->
-    <Exec Command="gh release create v$(AssemblyVersion) --generate-notes $(ZipName) @(ExtraZips, ' ')" />
-    
-  </Target>
-
 </Project>

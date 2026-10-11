@@ -1,6 +1,8 @@
-﻿namespace SwitchNormalizer;
+﻿using System;
 
-public record Settings
+namespace SwitchNormalizer;
+
+public sealed class Settings
 {
-    public string[] ThrownSwitches { get; set; } = [];
+    public string[] ThrownSwitches { get; set; } = Array.Empty<string>();
 }

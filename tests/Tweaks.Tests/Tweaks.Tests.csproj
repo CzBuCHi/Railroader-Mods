@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Tweaks\NextServiceSelection.cs" Link="NextServiceSelection.cs" />
+    <Compile Include="..\..\Tweaks\FastStrongManPatch.cs" Link="FastStrongManPatch.cs" />
+    <Compile Include="..\..\Tweaks\PrankTextList.cs" Link="PrankTextList.cs" />
+    <Compile Include="..\..\Tweaks\RepairStopState.cs" Link="RepairStopState.cs" />
+    <Compile Include="..\..\Tweaks\ShopWorkTiming.cs" Link="ShopWorkTiming.cs" />
+    <Compile Include="..\..\Tweaks\Settings.cs" Link="Settings.cs" />
+    <Reference Include="0Harmony">
+      <HintPath>$(GameManagedDir)\UnityModManager\0Harmony.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

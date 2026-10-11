@@ -1,81 +1,61 @@
 ﻿using System;
-using CzBuCHi.Shared.Harmony;
 using GalaSoft.MvvmLight.Messaging;
 using Game.Events;
-using JetBrains.Annotations;
-using Railloader;
-using Serilog;
-using Teleporter.Events;
-using Teleporter.TopRightArea;
-using Teleporter.UI;
+using RailForge;
 using UI.Builder;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Teleporter;
 
-[PublicAPI]
-public sealed class TeleporterPlugin : SingletonPluginBase<TeleporterPlugin>, IModTabHandler
+public sealed class TeleporterPlugin : PluginBase, IModTabHandler
 {
-    private const string PluginIdentifier = "CzBuCHi.Teleporter";
+    internal const string Identifier = "CzBuCHi.Teleporter";
+    private readonly IModdingContext context;
+    private TeleporterRuntime? runtime;
+    internal Settings Settings { get; private set; } = new Settings();
 
-    private readonly IModdingContext _Context;
-    private readonly Settings       _Settings;
+    public TeleporterPlugin(IModdingContext context) { this.context = context; }
 
-    public TeleporterPlugin(IModdingContext context, IUIHelper uiHelper) {
-        _Context = context;
-        _Settings = _Context.LoadSettingsData<Settings>(PluginIdentifier) ?? new Settings();
-    }
-    
-    private Messenger _Messenger = null!;
-
-    public static Settings Settings => Shared!._Settings;
-
-    public static void SaveSettings() {
-        Shared!._Context.SaveSettingsData(PluginIdentifier, Shared._Settings);
-        SendSettingsChangedEvent();
-    }
-
-    public static void SendSettingsChangedEvent() {
-        Shared!._Messenger.Send(new SettingsChangedEvent());
-    }
-
-    public override void OnEnable() {
-        _Messenger = Messenger.Default!;
-        _Messenger.Register(this, new Action<MapDidLoadEvent>(OnMapDidLoad));
-        _Messenger.Register(this, new Action<MapDidUnloadEvent>(OnMapDidUnload));
-
-        var harmony = new HarmonyLib.Harmony(PluginIdentifier);
-        harmony.PatchAll();
-
-        ProgrammaticWindowCreatorPatches.RegisterWindow<TeleporterWindow>();
+    public override void OnEnable()
+    {
+        if (runtime != null)
+            return;
+        Settings = context.LoadSettingsData<Settings>(Identifier) ?? new Settings();
+        Settings.Groups = Settings.Groups ?? new System.Collections.Generic.List<LocationGroup>();
+        Settings.Groups.RemoveAll(group => group == null);
+        foreach (var group in Settings.Groups)
+            group.Locations = group.Locations ?? new System.Collections.Generic.Dictionary<string, TeleportLocation>();
+        var host = new GameObject(Identifier + ".Runtime");
+        Object.DontDestroyOnLoad(host);
+        runtime = host.AddComponent<TeleporterRuntime>();
+        runtime.Initialize(this);
+        Messenger.Default.Register<MapDidLoadEvent>(this, OnMapLoaded);
+        Messenger.Default.Register<MapWillUnloadEvent>(this, OnMapWillUnload);
+        Messenger.Default.Register<MapDidUnloadEvent>(this, OnMapUnloaded);
     }
 
-    public override void OnDisable() {
-        _Messenger.Unregister(this);
-
-        var harmony = new HarmonyLib.Harmony(PluginIdentifier);
-        harmony.UnpatchAll();
-    }
-
-    private void OnMapDidLoad(MapDidLoadEvent @event) {
-        TopRightAreaExtension.AddButton("icon.png", "Teleporter", 9, TeleporterWindow.Toggle);
-
-        if (Settings.AutoOpenTeleporterWindow) {
-            TeleporterWindow.Toggle();
+    public override void OnDisable()
+    {
+        Messenger.Default.Unregister(this);
+        if (runtime != null)
+        {
+            runtime.SetMapLoaded(false);
+            Object.Destroy(runtime.gameObject);
+            runtime = null;
         }
     }
 
-    private void OnMapDidUnload(MapDidUnloadEvent @event) {
-        SaveSettings();
-    }
+    private void OnMapLoaded(MapDidLoadEvent message) => runtime?.SetMapLoaded(true);
+    private void OnMapWillUnload(MapWillUnloadEvent message) => runtime?.SetMapLoaded(false);
+    private void OnMapUnloaded(MapDidUnloadEvent message) => runtime?.SetMapLoaded(false);
 
-    public void ModTabDidOpen(UIPanelBuilder builder) {
-        builder.AddField("Auto Open Teleporter Window", builder.AddToggle(() => Settings.AutoOpenTeleporterWindow, o => Settings.AutoOpenTeleporterWindow = o)!)!
-               .Tooltip("Auto Open Teleporter Window", "Automatically open teleporter window on map load.");
-        
-        builder.AddButton("Save", ModTabDidClose);
-    }
+    internal void Save() => context.SaveSettingsData(Identifier, Settings);
 
-    public void ModTabDidClose() {
-        SaveSettings();
+    public void ModTabDidOpen(UIPanelBuilder builder)
+    {
+        builder.AddFieldToggle("Open Teleporter on map load", () => Settings.AutoOpenTeleporterWindow,
+            value => { Settings.AutoOpenTeleporterWindow = value; Save(); });
     }
+    public void ModTabDidClose() => Save();
 }

@@ -1,36 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Optionally, set a few things to your liking -->
-    <MajorVersion>1</MajorVersion>
-    <MinorVersion>0</MinorVersion>
     <IsMod>true</IsMod>
-    <PackageMod>enable</PackageMod>
-    <Nullable>enable</Nullable>
-    <AssemblyName>CzBuCHi.$(MSBuildProjectName)</AssemblyName>
+    <AssemblyName>CzBuCHi.SwitchNormalizer</AssemblyName>
+    <RootNamespace>SwitchNormalizer</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="*.json" CopyToOutputDirectory="Always" />
-  </ItemGroup>  
-  <ItemGroup>
-    <Reference Include="System.Core" />
-    <GameAssembly Include="Assembly-CSharp" />
-    <GameAssembly Include="0Harmony" />
-    <GameAssembly Include="KeyValue.Runtime" />
-    <GameAssembly Include="Core" />
-    <GameAssembly Include="Definition" />
-    <GameAssembly Include="UnityEngine.CoreModule" />
-    <GameAssembly Include="UnityEngine.PhysicsModule" />
-    <GameAssembly Include="UnityEngine.ImageConversionModule" />
-    <GameAssembly Include="UnityEngine.InputLegacyModule" />
-    <GameAssembly Include="UnityEngine.UI" />
-    <GameAssembly Include="Unity.TextMeshPro" />
-    <GameAssembly Include="Railloader.Interchange" />
-    <GameAssembly Include="Serilog" />   
-    <GameAssembly Include="Newtonsoft.Json" />   
-    <GameAssembly Include="SimpleGraph.Runtime" />    
-  </ItemGroup>  
-  <ItemGroup>
-    <EmbeddedResource Include="icon.png" />
-  </ItemGroup>  
-  <Import Project="..\Shared\Shared.projitems" Label="Shared" />  
+    <Reference Include="RailForge">
+      <HintPath>$(RailForgeDir)\RailForge.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <GameReference Include="Assembly-CSharp;Core;Definition;KeyValue.Runtime;SimpleGraph.Runtime;UnityEngine.CoreModule;UnityEngine.InputLegacyModule;UnityEngine.ImageConversionModule;UnityEngine.UI" />
+    <Reference Include="@(GameReference)">
+      <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <EmbeddedResource Include="icon.png" LogicalName="SwitchNormalizer.icon.png" />
+    <None Update="Definition.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CheckGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(RailForgeDir)\RailForge.dll')" Text="RailForge.dll was not found. Set GameDir to your Railroader installation." />
+    <Error Condition="!Exists('$(GameManagedDir)\Assembly-CSharp.dll')" Text="Railroader game assemblies were not found. Set GameDir to your Railroader installation." />
+  </Target>
 </Project>

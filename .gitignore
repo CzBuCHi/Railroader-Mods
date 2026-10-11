@@ -1,5 +1,6 @@
-**/bin
-**/obj
-.vs
-_ReSharper.Caches
+﻿**/bin/
+**/obj/
+artifacts/
+.vs/
 *.user
+bin/

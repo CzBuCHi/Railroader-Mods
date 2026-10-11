@@ -1,0 +1,8 @@
+﻿{
+  "manifestVersion": 1,
+  "id": "CzBuCHi.Tweaks",
+  "name": "Tweaks",
+  "version": "2.0.22",
+  "requires": [ { "id": "RTM.RailForge" } ],
+  "assemblies": [ "CzBuCHi.Tweaks" ]
+}

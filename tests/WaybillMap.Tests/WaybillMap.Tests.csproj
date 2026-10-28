@@ -4,10 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\WaybillMap\MarkerGeometry.cs" Link="MarkerGeometry.cs" />
+    <Compile Include="..\..\WaybillMap\MapEnhancerStyle.cs" Link="MapEnhancerStyle.cs" />
     <Compile Include="..\..\WaybillMap\MarkerStyle.cs" Link="MarkerStyle.cs" />
     <Compile Include="..\..\WaybillMap\MapVisibility.cs" Link="MapVisibility.cs" />
-    <Compile Include="..\..\WaybillMap\MarkerLayout.cs" Link="MarkerLayout.cs" />
     <Compile Include="..\..\WaybillMap\TenderPairing.cs" Link="TenderPairing.cs" />
     <Compile Include="..\..\WaybillMap\SwitchSettings.cs" Link="SwitchSettings.cs" />
     <Compile Include="..\..\WaybillMap\SwitchProfileStore.cs" Link="SwitchProfileStore.cs" />

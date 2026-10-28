@@ -1,11 +1,15 @@
 ﻿using System.Collections.Generic;
 using Helpers;
+using HarmonyLib;
+using TMPro;
 using Track;
 using UI.Builder;
 using UI.Map;
+using UI.Tooltips;
 using UI.Windows;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using Object = UnityEngine.Object;
 
 namespace WaybillMap
@@ -25,7 +29,7 @@ namespace WaybillMap
             root = new GameObject("CzBuCHi.WaybillMap.Controls", typeof(RectTransform), typeof(Image));
             var rect = root.GetComponent<RectTransform>(); rect.SetParent(window.contentRectTransform, false);
             rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
-            rect.anchoredPosition = new Vector2(-10, -10); rect.sizeDelta = new Vector2(255, 130);
+            rect.anchoredPosition = new Vector2(-10, -10); rect.sizeDelta = new Vector2(300, 84);
             root.GetComponent<Image>().color = new Color(0.1f, 0.095f, 0.08f, 0.95f);
             panel = UIPanel.Create(rect, UIBuilderAssets.Shared, Build);
             root.SetActive(window.IsShown);
@@ -33,24 +37,32 @@ namespace WaybillMap
 
         private void Build(UIPanelBuilder builder)
         {
-            builder.ConfigureLayout(4f, new RectOffset(8, 8, 8, 8), TextAnchor.UpperLeft);
+            builder.ConfigureLayout(4f, new RectOffset(6, 6, 4, 4), TextAnchor.UpperLeft);
             builder.HStack(row =>
             {
-                row.ConfigureLayout(6f);
-                row.AddButtonCompact("Save", () => WaybillMapPlugin.Active!.Switches.Save()).Width(112).Height(24)
+                row.ConfigureLayout(4f);
+                var heading = row.AddLabel("Switch positions", text => text.fontSize = 14).Width(100).Height(22);
+                var tooltip = heading.GetComponent<UITooltipProvider>() ?? heading.gameObject.AddComponent<UITooltipProvider>();
+                tooltip.DynamicTooltipInfo = () => new TooltipInfo("Switch positions", WaybillMapPlugin.Active?.Switches.Status ?? "");
+                row.AddButtonCompact("Save", () => WaybillMapPlugin.Active!.Switches.Save()).Width(84).Height(22)
                     .Tooltip("Save switches", "Save the IDs of reversed switches. Normal positions are implicit.");
-                row.AddButtonCompact("Restore", () => WaybillMapPlugin.Active!.Switches.Restore()).Width(112).Height(24)
+                row.AddButtonCompact("Restore", () => WaybillMapPlugin.Active!.Switches.Restore()).Width(84).Height(22)
                     .Tooltip("Restore switches", "Restore saved positions, respecting blocked switches, CTC locks and permissions.");
-            }).Height(24);
+            }).Height(22);
             builder.HStack(row =>
             {
-                row.ConfigureLayout(5f);
-                row.AddToggle(() => WaybillMapPlugin.FollowOption.IsOn, value => WaybillMapPlugin.FollowOption.IsOn = value).Width(20).Height(20);
-                row.AddLabel("Follow selected car").Height(22);
+                row.ConfigureLayout(4f);
+                row.AddLabel("Render", text => { text.fontSize = 12; text.alignment = TextAlignmentOptions.MidlineRight; text.margin = new Vector4(0, 0, 20, 0); }).Width(100).Height(22);
+                row.AddDropdown(new List<string> { "Locomotives only", "Locomotives + caboose", "All vehicles" },
+                    WaybillMapPlugin.VehicleMode, value => WaybillMapPlugin.VehicleMode = value).Width(172).Height(22);
             }).Height(22);
-            builder.AddDropdown(new List<string> { "Locomotives only", "Locomotives + caboose", "All vehicles" },
-                WaybillMapPlugin.VehicleMode, value => WaybillMapPlugin.VehicleMode = value).Height(26);
-            builder.AddLabel(() => WaybillMapPlugin.Active?.Switches.Status ?? "", UIPanelBuilder.Frequency.Periodic).Height(22);
+            builder.HStack(row =>
+            {
+                row.ConfigureLayout(4f);
+                row.Spacer(100);
+                row.AddToggle(() => WaybillMapPlugin.FollowOption.IsOn, value => WaybillMapPlugin.FollowOption.IsOn = value).Width(16).Height(16);
+                row.AddLabel("Follow selected car", text => text.fontSize = 14).Height(22);
+            }).Height(22);
         }
 
         private void LateUpdate()
@@ -70,5 +82,20 @@ namespace WaybillMap
             if (root != null) { Object.Destroy(root); root = null; }
         }
         private void OnDestroy() => Shutdown();
+    }
+
+    [HarmonyPatch(typeof(MapDrag), nameof(MapDrag.OnDrag))]
+    internal static class StopFollowingOnMapDrag
+    {
+        [HarmonyPrefix]
+        private static void Prefix(MapDrag __instance, PointerEventData data)
+        {
+            // Stop before native OnDragChange applies the pan, so LateUpdate cannot undo it.
+            if (__instance.GetComponentInParent<MapControls>() != null && data.delta.sqrMagnitude > 0 && WaybillMapPlugin.FollowOption.IsOn)
+            {
+                WaybillMapPlugin.FollowOption.IsOn = false;
+                __instance.OnDragStart?.Invoke(); // Rebase after any movement since mouse-down while following.
+            }
+        }
     }
 }

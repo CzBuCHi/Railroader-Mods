@@ -38,7 +38,7 @@ namespace WaybillMap
                 displayRegistration = MapDisplayOptions.Add(CarsOption);
                 harmony = new Harmony(HarmonyId);
                 harmony.PatchAll(typeof(WaybillMapPlugin).Assembly);
-                context.Log.Info("Loaded WaybillMap 1.4.0. Toggle Waybill cars in Map > Display.");
+                context.Log.Info("Loaded WaybillMap 1.5.0. Toggle Waybill cars in Map > Display.");
             }
             catch { OnModUnload(); throw; }
         }

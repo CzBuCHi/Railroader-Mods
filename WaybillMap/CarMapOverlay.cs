@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using Helpers;
 using HarmonyLib;
+using Helpers;
 using Model;
 using Model.Ops;
+using TMPro;
 using Track;
 using UI.Map;
 using UI.Windows;
@@ -14,40 +16,58 @@ using Object = UnityEngine.Object;
 
 namespace WaybillMap
 {
+    // MapEnhancer's native world-space MapIcon pipeline, adapted to 0.6's prefab contract.
     [DefaultExecutionOrder(1100)]
     internal sealed class CarMapOverlay : MonoBehaviour
     {
-        private RawImage? image;
+        private static readonly System.Reflection.FieldInfo Prefabs = AccessTools.Field(typeof(Car), "_setupPrefabs");
+        private static readonly System.Reflection.PropertyInfo IconScale = AccessTools.Property(typeof(MapBuilder), "IconScale");
         private MapBuilder? builder;
         private Window? window;
-        private GameObject? root;
-        private VehicleLayer? wagons, engines;
+        private GameObject? root, construction;
+        private Texture2D? texture;
+        private Sprite? wagonSprite;
+        private float nextRefresh;
+        private bool stopped, warned;
         private readonly NativeMapIcons native = new NativeMapIcons();
         private readonly List<BaseLocomotive> locomotives = new List<BaseLocomotive>();
         private readonly List<Entry> cars = new List<Entry>();
+        private readonly Dictionary<Car, Marker> markers = new Dictionary<Car, Marker>();
         private Dictionary<Car, Car> tenders = new Dictionary<Car, Car>();
-        private bool stopped, warned;
-        private float nextRefresh;
-        private static readonly Color Unassigned = new Color32(MarkerStyle.UnassignedChannel, MarkerStyle.UnassignedChannel, MarkerStyle.UnassignedChannel, 255);
-        private static readonly System.Reflection.FieldInfo TrackWidth = AccessTools.Field(typeof(MapBuilder), "_segmentLineWidth");
+        private readonly HashSet<Car> retained = new HashSet<Car>();
+        private readonly List<Car> removed = new List<Car>();
+        private static readonly Color Unassigned = new Color32(221, 221, 221, 255);
         private sealed class Entry
         {
             internal Car Car = null!;
             internal Color Color;
-            internal string Label = "", Number = "";
+            internal string Label = "";
             internal int Index;
-            internal double AverageLength;
+        }
+        private sealed class Marker
+        {
+            internal MapIcon Icon = null!;
+            internal Image Body = null!;
+            internal TMP_Text Text = null!;
+            internal Canvas Canvas = null!;
+            internal VehicleMapTag Tag = null!;
+            internal float Zoom = float.NaN;
         }
 
-        internal void Initialize(RawImage mapImage, MapBuilder mapBuilder)
+        internal void Initialize(RawImage _, MapBuilder mapBuilder)
         {
-            image = mapImage; builder = mapBuilder; window = GetComponent<Window>(); nextRefresh = 0;
+            builder = mapBuilder; window = GetComponent<Window>(); nextRefresh = 0;
             if (root != null) return;
-            var rect = VehicleLayer.CreateRect("CzBuCHi.WaybillMap.Clip", image.rectTransform);
-            root = rect.gameObject; root.AddComponent<RectMask2D>();
-            wagons = new VehicleLayer(VehicleLayer.CreateRect("Wagons", rect));
-            engines = new VehicleLayer(VehicleLayer.CreateRect("Locomotives", rect)); // Entire locomotive layer is last.
-            root.SetActive(false);
+            root = new GameObject("CzBuCHi.WaybillMap.WorldIcons") { hideFlags = HideFlags.DontSave };
+            root.transform.SetParent(builder.transform, false); root.SetActive(false);
+            construction = new GameObject("Creating icons") { hideFlags = HideFlags.DontSave };
+            construction.transform.SetParent(root.transform, false); construction.SetActive(false);
+            using var stream = typeof(CarMapOverlay).Assembly.GetManifestResourceStream("WaybillMap.traincar.png")
+                ?? throw new InvalidDataException("Embedded MapEnhancer wagon sprite is missing.");
+            using var bytes = new MemoryStream(); stream.CopyTo(bytes);
+            texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            if (!texture.LoadImage(bytes.ToArray())) throw new InvalidDataException("Cannot decode wagon sprite.");
+            wagonSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         }
 
         private void Refresh(TrainController controller)
@@ -56,90 +76,127 @@ namespace WaybillMap
             var registered = controller.Cars.Where(c => c != null).OrderBy(c => c.id, StringComparer.Ordinal).ToArray();
             tenders = TenderPairing.Find(registered, c => c is SteamLocomotive steam && steam.hasTender,
                 c => c.set == null ? null : c.CoupledTo(c.EndToLogical(Car.End.R)), c => c.CarType.IsTender);
-            var merged = new HashSet<Car>(tenders.Values);
-            var seen = new HashSet<Car>();
+            var merged = new HashSet<Car>(tenders.Values); var seen = new HashSet<Car>();
             foreach (var anchor in registered)
             {
                 if (seen.Contains(anchor)) continue;
                 var group = anchor.set == null ? new[] { anchor } : anchor.EnumerateCoupled().Where(c => c != null).ToArray();
                 if (group.Length == 0) group = new[] { anchor };
-                var average = group.Sum(c => Math.Max(1f, c.carLength)) / Math.Max(1, group.Count(c => !merged.Contains(c)));
                 var index = 0;
-                for (var i = 0; i < group.Length; i++)
+                foreach (var car in group)
                 {
-                    var car = group[i]; if (!seen.Add(car)) continue;
-                    if (merged.Contains(car)) continue;
-                    if (car is BaseLocomotive locomotive) locomotives.Add(locomotive);
-                    try { cars.Add(new Entry { Car = car, Color = ColorFor(car), Index = index++, AverageLength = average,
-                        Number = car.Ident.RoadNumber, Label = MarkerStyle.Label(car.Ident.ReportingMark, car.Ident.RoadNumber, car.CarType.IsTender) }); }
+                    if (!seen.Add(car) || merged.Contains(car) || car.IsInBardo) continue;
+                    if (car is BaseLocomotive engine) locomotives.Add(engine);
+                    try { cars.Add(new Entry { Car = car, Color = ColorFor(car), Index = index++,
+                        Label = MapEnhancerStyle.Label(car.Ident.ReportingMark, car.Ident.RoadNumber, car is BaseLocomotive || car.CarType.IsTender) }); }
                     catch (Exception error) { Report(error); }
                 }
             }
+            retained.Clear(); foreach (var entry in cars) retained.Add(entry.Car);
+            removed.Clear(); foreach (var pair in markers) if (pair.Key == null || !retained.Contains(pair.Key)) removed.Add(pair.Key!);
+            foreach (var car in removed) { DestroyMarker(markers[car]); markers.Remove(car); }
         }
 
         private static Color ColorFor(Car car)
         {
             var ops = OpsController.Shared;
-            if (ops == null || !ops.TryGetDestinationInfo(car, out _, out var spotted, out _, out var destination))
-                return Unassigned;
-            // Destination info includes repair/depot overrides, including locomotives without a freight waybill.
+            if (ops == null || !ops.TryGetDestinationInfo(car, out _, out var spotted, out _, out var destination)) return Unassigned;
             var tint = ops.AreaForCarPosition(destination)?.tagColor ?? Unassigned;
-            return new Color(MarkerStyle.DestinationChannel(tint.r, spotted), MarkerStyle.DestinationChannel(tint.g, spotted), MarkerStyle.DestinationChannel(tint.b, spotted), 1f);
+            return new Color(MarkerStyle.DestinationChannel(tint.r, spotted), MarkerStyle.DestinationChannel(tint.g, spotted), MarkerStyle.DestinationChannel(tint.b, spotted), 1);
+        }
+
+        private Marker Create(Car car)
+        {
+            var prefab = ((Car.SetupPrefabs)Prefabs.GetValue(car)).LocomotiveMapIcon;
+            if (prefab == null) throw new InvalidOperationException("Native locomotive map prefab is not ready.");
+            var icon = Object.Instantiate(prefab, construction!.transform, false);
+            icon.name = "WaybillMap Vehicle";
+            var body = icon.GetComponentInChildren<Image>(true);
+            var text = icon.GetComponentInChildren<TMP_Text>(true);
+            if (body == null || text == null) { Object.Destroy(icon.gameObject); throw new InvalidOperationException("Native map icon layout changed."); }
+            var tag = icon.gameObject.AddComponent<VehicleMapTag>(); tag.Text = text;
+            if (!(car is BaseLocomotive)) body.sprite = wagonSprite;
+            body.transform.localScale = Vector3.one * MapEnhancerStyle.ChildScale;
+            text.transform.localScale = Vector3.one * MapEnhancerStyle.ChildScale;
+            if (!(car is BaseLocomotive))
+            {
+                // Copied from MapEnhancer.AddTraincarMarker.
+                text.horizontalAlignment = HorizontalAlignmentOptions.Left;
+                text.enableAutoSizing = false; text.fontSizeMin = MapEnhancerStyle.FontSize; text.fontSize = MapEnhancerStyle.FontSize;
+                text.autoSizeTextContainer = true; text.transform.localPosition = Vector3.zero;
+            }
+            text.richText = true;
+            foreach (var collider in icon.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+            foreach (var graphic in icon.GetComponentsInChildren<Graphic>(true)) graphic.raycastTarget = false;
+            icon.OnClick = null;
+            // Awake/OnEnable now run with the own-marker tag and native Canvas already configured.
+            icon.transform.SetParent(root!.transform, false);
+            return new Marker { Icon = icon, Body = body, Text = text, Canvas = icon.GetComponent<Canvas>(), Tag = tag };
         }
 
         private void LateUpdate()
         {
-            if (stopped || root == null || image == null || builder == null) return;
+            if (stopped || root == null || builder == null) return;
             var camera = builder.mapCamera; var controller = TrainController.Shared;
             if (window == null || !window.IsShown || !WaybillMapPlugin.CarsOption.IsOn || camera == null ||
                 !camera.isActiveAndEnabled || controller == null || Graph.Shared == null)
             { native.Restore(); root.SetActive(false); nextRefresh = 0; return; }
             root.SetActive(true);
             if (Time.unscaledTime >= nextRefresh) { nextRefresh = Time.unscaledTime + 0.5f; Refresh(controller); }
-            wagons!.Markers.Clear(); engines!.Markers.Clear();
-            var rect = image.rectTransform.rect; var uv = image.uvRect; var graph = Graph.Shared.Current;
-            var pixelsPerMeter = rect.height / (2 * camera.orthographicSize);
-            var scale = MarkerLayout.ScaleForTrack((float)TrackWidth.GetValue(builder) * pixelsPerMeter);
+            var graph = Graph.Shared.Current;
+            var zoom = (float)IconScale.GetValue(builder);
             foreach (var entry in cars)
             {
-                var car = entry.Car; if (car == null || !car.LocationF.IsValid || !car.LocationR.IsValid) continue;
-                var engine = car is BaseLocomotive;
-                if (!MapVisibility.Show(WaybillMapPlugin.VehicleMode, engine, car.CarType.IsCaboose, car == controller.SelectedCar,
-                    entry.Index, entry.AverageLength, pixelsPerMeter, scale)) continue;
+                var car = entry.Car;
+                if (car == null) continue;
                 try
                 {
-                    var rear = car.LocationR;
-                    var length = car.carLength;
+                    if (!markers.TryGetValue(car, out var marker)) { marker = Create(car); markers.Add(car, marker); }
+                    var engine = car is BaseLocomotive;
+                    var stride = MapEnhancerStyle.SamplingStride(marker.Body.rectTransform.rect.height, zoom);
+                    if (!car.LocationF.IsValid || !car.LocationR.IsValid || !MapVisibility.Show(WaybillMapPlugin.VehicleMode,
+                        engine, car.CarType.IsCaboose, car == controller.SelectedCar, entry.Index, stride))
+                    { marker.Canvas.enabled = false; continue; }
+                    var rear = car.LocationR; var length = car.carLength;
                     if (tenders.TryGetValue(car, out var tender) && tender != null && tender.set != null && car.set != null &&
                         car.CoupledTo(car.EndToLogical(Car.End.R)) == tender)
                     {
                         rear = tender.CoupledTo(tender.EndToLogical(Car.End.F)) == car ? tender.LocationR : tender.LocationF;
-                        if (!rear.IsValid) continue;
+                        if (!rear.IsValid) { marker.Canvas.enabled = false; continue; }
                         length += tender.carLength;
                     }
-                    var a = camera.WorldToViewportPoint(WorldTransformer.GameToWorld(graph.GetPosition(rear)));
-                    var b = camera.WorldToViewportPoint(WorldTransformer.GameToWorld(graph.GetPosition(car.LocationF)));
-                    if (a.z <= 0 || b.z <= 0) continue;
-                    if (MarkerGeometry.TryCreate(a.x, a.y, b.x, b.y, uv.x, uv.y, uv.width, uv.height,
-                        rect.xMin, rect.yMin, rect.width, rect.height, out var geometry, length,
-                        scale, MarkerLayout.ForConsist(entry.AverageLength, pixelsPerMeter, scale).LengthScale))
-                        (engine ? engines : wagons).Markers.Add(new MapMarker(geometry, entry.Color, entry.Label, entry.Number, engine));
+                    var frontPoint = graph.GetPosition(car.LocationF); var rearPoint = graph.GetPosition(rear);
+                    var center = WorldTransformer.GameToWorld(Vector3.Lerp(frontPoint, rearPoint, 0.5f));
+                    // MapEnhancer uses separate 4000/3000 altitude layers. Anchor those
+                    // layers to the camera so high terrain cannot place an icon above it.
+                    center.y = camera.transform.position.y - (engine ? 1000f : 2000f);
+                    var rotation = car.GetCenterRotation(graph);
+                    marker.Icon.transform.SetPositionAndRotation(center, Quaternion.Euler(-90, rotation.eulerAngles.y, 0));
+                    marker.Body.transform.localScale = new Vector3(MapEnhancerStyle.ChildScale,
+                        engine ? MapEnhancerStyle.EngineScaleY(car.carLength, length) : MapEnhancerStyle.WagonScaleY(length), MapEnhancerStyle.ChildScale);
+                    marker.Body.color = entry.Color;
+                    marker.Text.color = MarkerStyle.UseDarkText(entry.Color.r, entry.Color.g, entry.Color.b, entry.Color.a) ? Color.black : Color.white;
+                    marker.Icon.SetText(entry.Label);
+                    marker.Canvas.enabled = true;
+                    if (marker.Zoom != zoom) { marker.Icon.SetZoom(zoom); marker.Zoom = zoom; }
+                    marker.Tag.FixRotation();
                 }
                 catch (Exception error) { Report(error); }
             }
-            wagons.Render(); engines.Render();
             native.Hide(locomotives);
         }
 
+        private static void DestroyMarker(Marker marker)
+        { if (marker.Icon != null) { marker.Icon.gameObject.SetActive(false); Object.Destroy(marker.Icon.gameObject); } }
         private void Report(Exception error)
-        {
-            if (warned) return; warned = true;
-            Debug.LogWarning("[WaybillMap] Could not read vehicle map data: " + error);
-        }
+        { if (!warned) { warned = true; Debug.LogWarning("[WaybillMap] Could not render vehicle: " + error); } }
         internal void Shutdown()
         {
             stopped = true; enabled = false; native.Restore();
+            foreach (var marker in markers.Values) DestroyMarker(marker); markers.Clear();
             if (root != null) { root.SetActive(false); Object.Destroy(root); root = null; }
+            if (wagonSprite != null) { Object.Destroy(wagonSprite); wagonSprite = null; }
+            if (texture != null) { Object.Destroy(texture); texture = null; }
             cars.Clear(); locomotives.Clear(); tenders.Clear();
         }
         private void OnDestroy() => Shutdown();

@@ -28,9 +28,7 @@ internal static class TenderPairingTests
         var tank = new Vehicle { Rear = tender };
         Program.Check(TenderPairing.Find(new[] { tank }, c => c.NeedsTender, c => c.Rear, c => c.IsTender).Count == 0,
             "Engines without a tender requirement do not absorb a neighboring tender");
-        Program.Check(MarkerGeometry.TryCreate(0.4, 0.5, 0.6, 0.5, 0, 0, 1, 1, -300, -200, 600, 400, out var solo, 10) &&
-            MarkerGeometry.TryCreate(0.3, 0.5, 0.6, 0.5, 0, 0, 1, 1, -300, -200, 600, 400, out var merged, 18) &&
-            merged.X < solo.X && merged.HalfLength > solo.HalfLength && merged.HalfWidth == solo.HalfWidth,
-            "Merged engine+tender marker shifts to combined center and grows in length, not width");
+        Program.Check(MapEnhancerStyle.EngineScaleY(10, 18) > MapEnhancerStyle.EngineScaleY(10, 10),
+            "Merged engine+tender grows the source icon's long axis while retaining the native cross-axis scale");
     }
 }

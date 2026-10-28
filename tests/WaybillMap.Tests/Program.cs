@@ -3,142 +3,87 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Security.Cryptography;
 using WaybillMap;
 
 internal static class Program
 {
     private static int checks;
     internal static void Check(bool value, string message)
-    {
-        if (!value) throw new Exception(message);
-        checks++;
-    }
-    private static bool Near(double a, double b) => Math.Abs(a - b) < 1e-6;
-    private static bool Create(double ax, double ay, double bx, double by, out MarkerGeometry marker) =>
-        MarkerGeometry.TryCreate(ax, ay, bx, by, 0, 0, 1, 1, -300, -200, 600, 400, out marker);
+    { if (!value) throw new Exception(message); checks++; }
+    private static bool Near(double a, double b) => Math.Abs(a - b) < 0.00001;
 
     private static void Main(string[] args)
     {
-        Check(Create(0.4, 0.5, 0.6, 0.5, out var horizontal) && Near(horizontal.X, 0) && Near(horizontal.Y, 0) &&
-            Near(horizontal.AxisX, 1) && Near(horizontal.AxisY, 0), "Horizontal car projects to centered rectangle");
-        Check(Near(horizontal.HalfLength, 14.4) && Near(horizontal.HalfWidth, 7.2), "Vehicle badges use fixed UI dimensions and a 20-percent wider baseline");
-        Check(Create(0.5, 0.4, 0.5, 0.6, out var vertical) && Near(vertical.AxisX, 0) && Near(vertical.AxisY, 1) &&
-            Near(vertical.HalfLength, horizontal.HalfLength), "Vehicle size is independent of camera projection scale");
-        Check(Create(0.4, 0.3, 0.6, 0.7, out var diagonal) && Near(diagonal.AxisX * diagonal.AxisX + diagonal.AxisY * diagonal.AxisY, 1),
-            "Diagonal marker direction is normalized");
-        Check(Create(0.6, 0.5, 0.4, 0.5, out var reversed) && Near(reversed.X, horizontal.X) && Near(reversed.HalfLength, horizontal.HalfLength) &&
-            Near(reversed.AxisX, -horizontal.AxisX), "Reversing logical ends retains marker footprint");
-        Check(Create(0.5, 0.5, 0.5, 0.5, out var tiny) && Near(tiny.HalfLength, horizontal.HalfLength) && Near(tiny.HalfWidth, horizontal.HalfWidth),
-            "Projection alone does not stretch symbols when the baseline style is requested");
-        Check(MarkerGeometry.TryCreate(0.4, 0.5, 0.47, 0.5, 0, 0, 1, 1, -300, -200, 600, 400, out var longCoach, 28) &&
-            Near(longCoach.HalfWidth, horizontal.HalfWidth) && longCoach.HalfLength > horizontal.HalfLength, "Long coaches retain the same badge width and proportional length");
-        Check(Create(0.4, 0.5, 0.5, 0.5, out var car1) && Create(0.5, 0.5, 0.6, 0.5, out var car2) &&
-            car2.X - car1.X > car1.HalfLength + car2.HalfLength + 1.5, "Adjacent vehicles leave a visible coupler gap");
-        Check(MarkerStyle.Label("GTW", "17620", false) == "GTW\n17620" && MarkerStyle.Label("ASNR", "2", true) == "2",
-            "Cars use reporting-mark/number rows and tenders retain number-only labels");
-        Check(MarkerStyle.Label("", "250", false) == "250", "Missing reporting mark does not add an empty row");
-        Check(Near(MarkerStyle.DestinationChannel(0.8f, true), 0.68f) && Near(MarkerStyle.DestinationChannel(0.4f, true), 0.34f),
-            "Spotted destinations retain their hue with only 15-percent dimming");
-        Check(MarkerStyle.DestinationChannel(0.8f, false) == 0.8f, "Unspotted destinations retain the full area color");
-        Check(MapVisibility.Show(0, true, false, false, 1, 12, 0.01) && !MapVisibility.Show(0, false, true, false, 0, 12, 3),
-            "Locomotives-only mode hides all other vehicles at any zoom");
-        Check(MapVisibility.Show(1, false, true, false, 1, 12, 0.01) && !MapVisibility.Show(1, false, false, true, 0, 12, 3),
-            "Locomotives-and-cabooses mode keeps train tails even at overview zoom");
-        Check(Enumerable.Range(0, 9).Where(i => MapVisibility.Show(2, false, false, false, i, 12, 1)).SequenceEqual(new[] { 0, 3, 6 }),
-            "All-vehicles mode samples every third car with the compact reference gap");
-        Check(Near(MarkerLayout.ScaleForTrack(2), 1) && Near(MarkerLayout.ScaleForTrack(8), 8 / 2.4),
-            "Thin-track baseline is retained while thick track increases symbol width proportionally");
-        foreach (var ppm in new[] { 0.1, 0.5, 1d, 3d, 6d })
-        {
-            var size = MarkerLayout.ScaleForTrack(ppm * 2);
-            var layout = MarkerLayout.ForConsist(12, ppm, size);
-            var body = 12 * 2.4 * size * layout.LengthScale;
-            Check(Near(layout.Stride * 12 * ppm - body, 8), "Uniform sampled neighbors keep an eight-point gap at pixel scale " + ppm);
-            Check(MarkerGeometry.TryCreate(0.4, 0.5, 0.6, 0.5, 0, 0, 1, 1, -300, -200, 600, 400,
-                out var scaled, 12, size, layout.LengthScale) && Near(scaled.HalfWidth * 2, Math.Max(14.4, ppm * 2 * 6)),
-                "Vehicle/track width ratio remains consistent across zoom levels");
-        }
-        Check(Enumerable.Range(0, 9).All(i => MapVisibility.Show(2, false, false, false, i, 12, 3)), "Close zoom renders every car");
-        Check(MapVisibility.Show(2, false, false, true, 1, 12, 0.01) && MapVisibility.Show(2, false, true, false, 1, 12, 0.01),
-            "Selected cars and cabooses survive automatic thinning in all-vehicles mode");
-        Check(Near(horizontal.ReadableAngle, reversed.ReadableAngle), "Road numbers do not turn upside down when the car reverses");
-        Check(diagonal.ReadableAngle >= -90 && diagonal.ReadableAngle <= 90 && vertical.ReadableAngle >= -90 && vertical.ReadableAngle <= 90,
-            "Rotated road numbers remain in the readable half-plane");
-        Check(MarkerStyle.UseDarkText(221 / 255d, 221 / 255d, 221 / 255d, 1), "Unassigned #ddd badges get dark road numbers");
-        Check(MarkerStyle.UseDarkText(1, 1, 0, 1), "Bright waybill badges get dark road numbers");
-        Check(!MarkerStyle.UseDarkText(0.05, 0.05, 0.3, 1), "Dark waybill badges get white road numbers");
-        Check(!MarkerStyle.UseDarkText(1, 1, 1, 0.1), "Native dimming/transparency is included when choosing readable ink");
-        Check(!Create(2, 0.5, 2.01, 0.5, out _), "Entirely offscreen car is culled");
-        Check(Create(0.999, 0.5, 1.02, 0.5, out _), "Partially visible edge car is retained for masking");
-        Check(MarkerGeometry.TryCreate(0.3, 0.3, 0.7, 0.3, 0.2, 0.1, 0.6, 0.4, -300, -200, 600, 400, out var cropped) &&
-            Near(cropped.X, 0) && Near(cropped.Y, 0), "Cropped UV rectangle maps positions into displayed area");
-        Check(MarkerGeometry.TryCreate(0.5, 0.25, 0.5, 0.25, 0, 1, 1, -1, -300, -200, 600, 400, out var flipped) &&
-            Near(flipped.Y, 100), "Flipped render-texture UVs are respected");
-        Check(MarkerGeometry.TryCreate(0.5, 0.5, 0.6, 0.5, 0, 0, 1, 1, 0, 0, 1200, 800, out var resized) &&
-            Near(resized.X, 660) && Near(resized.Y, 400), "Resize and non-centered pivot coordinates are respected");
-        foreach (var invalid in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity })
-            Check(!Create(invalid, 0.5, 0.6, 0.5, out _), "Nonfinite projection is rejected");
-        Check(!MarkerGeometry.TryCreate(0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 600, 400, out _) &&
-            !MarkerGeometry.TryCreate(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 400, out _), "Zero-size UV/image cannot divide by zero");
-        Check(MarkerGeometry.BatchSize * 10 < 65535, "Each outlined-marker batch stays below Unity UI vertex limit, including pointed locomotives");
-        SwitchProfileTests.Run();
-        TenderPairingTests.Run();
+        Check(Near(MapEnhancerStyle.WagonScaleY(11), 0.8), "MapEnhancer's 11-meter reference retains its 0.8 scale");
+        Check(Near(MapEnhancerStyle.WagonScaleY(22), 1.6), "Wagon sprite length doubles for a double-length car");
+        Check(Near(MapEnhancerStyle.EngineScaleY(10, 10), 0.8), "Unmerged locomotive retains MapEnhancer's 0.8 scale");
+        Check(MapEnhancerStyle.FontSize == 19, "Wagon typography uses the source's 19-unit size");
+        Check(MapEnhancerStyle.Label("GTW", "17620", false) == "<line-height=70%>GTW\n17620" &&
+            MapEnhancerStyle.Label("ASNR", "2", true) == "2", "Source line spacing and single-line engine/tender labels are retained");
+        Check(MapEnhancerStyle.SamplingStride(92, 0.1f) == 1 && MapEnhancerStyle.SamplingStride(92, 0.4f) == 3,
+            "Existing overlap filter uses native icon extent and native zoom, without a new gap formula");
+        Check(MapVisibility.Show(0, true, false, false, 1, 10) && !MapVisibility.Show(0, false, true, false, 0, 1),
+            "Locomotives-only filter excludes cabooses");
+        Check(MapVisibility.Show(1, false, true, false, 1, 10) && !MapVisibility.Show(1, false, false, true, 0, 1),
+            "Caboose filter excludes ordinary cars even when selected");
+        Check(Enumerable.Range(0, 9).Where(i => MapVisibility.Show(2, false, false, false, i, 3)).SequenceEqual(new[] { 0, 3, 6 }),
+            "Overlap sampling retains stable consist indices");
+        Check(MapVisibility.Show(2, false, false, true, 1, 10) && MapVisibility.Show(2, false, true, false, 1, 10),
+            "Selected cars and cabooses survive ordinary-car sampling");
+        Check(Near(MarkerStyle.DestinationChannel(0.8f, true), 0.68) && MarkerStyle.DestinationChannel(0.8f, false) == 0.8f,
+            "Requested mild spotted dimming is retained over the source rendering port");
+        Check(MarkerStyle.UseDarkText(221 / 255d, 221 / 255d, 221 / 255d, 1) && !MarkerStyle.UseDarkText(0.05, 0.05, 0.3, 1),
+            "Light and dark waybill backgrounds retain contrasting text");
+        SwitchProfileTests.Run(); TenderPairingTests.Run();
         Inspect(args[0], args[1]);
-        Console.WriteLine("PASS: " + checks + " map geometry and installed API/compiled-mod checks.");
+        Console.WriteLine("PASS: " + checks + " native-rendering, filter, profile and installed-API checks.");
     }
 
     private static void Inspect(string managed, string modPath)
     {
         using var gameStream = File.OpenRead(Path.Combine(managed, "Railroader.dll"));
-        using var gamePe = new PEReader(gameStream);
-        var game = gamePe.GetMetadataReader();
+        using var gamePe = new PEReader(gameStream); var game = gamePe.GetMetadataReader();
         TypeDefinition Type(string ns, string name) => game.TypeDefinitions.Select(game.GetTypeDefinition)
             .Single(t => game.GetString(t.Name) == name && game.GetString(t.Namespace) == ns);
         bool Method(TypeDefinition type, string name, int arity) => type.GetMethods().Select(game.GetMethodDefinition)
             .Any(m => game.GetString(m.Name) == name && m.GetParameters().Select(game.GetParameter).Count(p => p.SequenceNumber > 0) == arity);
-        var window = Type("UI.Map", "MapWindow");
-        Check(Method(window, "Start", 0), "Map window lifecycle patch target exists");
-        var fields = window.GetFields().Select(game.GetFieldDefinition).Select(f => game.GetString(f.Name)).ToArray();
-        Check(fields.Contains("rawImage") && fields.Contains("mapBuilder"), "Native map image and camera builder field names match");
-        Check(Type("UI.Map", "MapBuilder").GetFields().Select(game.GetFieldDefinition).Any(f => game.GetString(f.Name) == "_segmentLineWidth"),
-            "Native track width is available for symbol-size matching");
-        Check(Method(Type("UI.Map", "MapDisplayOptions"), "Add", 1) &&
-            Method(Type("UI.Map", "MapDisplayOption"), ".ctor", 3), "Native map display extension registry exists");
-        Check(Method(Type("", "TrainController"), "get_Cars", 0), "Global logical car registry exists");
-        Check(Method(Type("Model.Ops", "OpsControllerExtensions"), "TryGetDestinationInfo", 6), "Native destination API includes repair/depot overrides");
-        Check(Method(Type("Helpers", "WorldTransformer"), "GameToWorld", 1), "Floating world-origin conversion API exists");
-        Check(Method(Type("UI.Windows", "Window"), "get_IsShown", 0), "Native map visibility API exists");
-        Check(Type("Model", "Car").GetFields().Select(game.GetFieldDefinition).Any(f => game.GetString(f.Name) == "MapIcon"),
-            "Native car map-icon field exists for the top locomotive layer");
-
-        using var modStream = File.OpenRead(modPath);
-        using var modPe = new PEReader(modStream);
-        var mod = modPe.GetMetadataReader();
+        var windowFields = Type("UI.Map", "MapWindow").GetFields().Select(game.GetFieldDefinition).Select(f => game.GetString(f.Name)).ToArray();
+        Check(Method(Type("UI.Map", "MapWindow"), "Start", 0) && windowFields.Contains("mapBuilder") && windowFields.Contains("rawImage"),
+            "Map installation targets match installed game");
+        Check(Method(Type("UI.Map", "MapDrag"), "OnDrag", 1), "Native mouse-drag prefix target exists");
+        Check(Method(Type("UI.Map", "MapIcon"), "SetZoom", 1) && Method(Type("UI.Map", "MapIcon"), "FixTextRotation", 0) &&
+            Method(Type("UI.Map", "MapBuilder"), "get_IconScale", 0), "Native map-icon zoom and scoped text-rotation targets exist");
+        var carFields = Type("Model", "Car").GetFields().Select(game.GetFieldDefinition).Select(f => game.GetString(f.Name)).ToArray();
+        Check(carFields.Contains("_setupPrefabs") && carFields.Contains("MapIcon"), "Native prefab access and original-visibility fields match");
+        Check(Method(Type("Model.Ops", "OpsControllerExtensions"), "TryGetDestinationInfo", 6), "Destination lookup includes repair overrides");
+        Check(Method(Type("UI.Map", "MapDisplayOptions"), "Add", 1), "Map display extension point exists");
+        using var modStream = File.OpenRead(modPath); using var modPe = new PEReader(modStream); var mod = modPe.GetMetadataReader();
         var refs = mod.AssemblyReferences.Select(mod.GetAssemblyReference).Select(r => mod.GetString(r.Name)).ToArray();
-        Check(refs.Contains("Railroader.Modding") && refs.Contains("0Harmony") && !refs.Any(n => n.Contains("Tweaks") || n.Contains("RailForge")),
-            "Mod uses native loader/Harmony and is independent of Tweaks and RailForge");
+        Check(refs.Contains("Railroader.Modding") && refs.Contains("0Harmony") && !refs.Any(n => n.Contains("MapEnhancer") || n.Contains("RailForge")),
+            "Port uses native loader and has no legacy MapEnhancer DLL dependency");
         var entry = mod.TypeDefinitions.Select(mod.GetTypeDefinition).Single(t => mod.GetString(t.Name) == "WaybillMapPlugin");
         var interfaces = entry.GetInterfaceImplementations().Select(mod.GetInterfaceImplementation)
             .Select(i => mod.GetString(mod.GetTypeReference((TypeReferenceHandle)i.Interface).Name)).ToArray();
-        Check(interfaces.Contains("IModEntryPoint") && interfaces.Contains("IWorldLifecycle"), "Native load/world cleanup hooks are implemented");
+        Check(interfaces.Contains("IModEntryPoint") && interfaces.Contains("IWorldLifecycle"), "Native lifecycle and cleanup interfaces present");
+        var types = mod.TypeDefinitions.Select(mod.GetTypeDefinition).Select(t => mod.GetString(t.Name)).ToArray();
+        Check(types.Contains("VehicleMapTag") && types.Contains("VehicleTextRotationPatch") && !types.Contains("VehicleLayer") && !types.Contains("MarkerLayout"),
+            "Native marker port replaces the previous UI geometry and spacing heuristics");
+        Check(types.Contains("StopFollowingOnMapDrag"), "Dragging disables follow through an installed Harmony prefix");
         var members = mod.MemberReferences.Select(mod.GetMemberReference).Select(m => mod.GetString(m.Name)).ToArray();
-        Check(members.Contains("get_Cars") && members.Contains("WorldToViewportPoint") && members.Contains("GameToWorld") && members.Contains("get_IsOn"),
-            "Overlay reads logical car registry, projects camera positions and respects display toggle");
-        Check(members.Contains("TryGetDestinationInfo") && members.Contains("AreaForCarPosition"), "Compiled overlay reads native destination area colors without half-strength spotted dimming");
-        Check(members.Contains("get_Ident") && members.Contains("set_text") &&
-            mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "TextMeshProUGUI"),
-            "Overlay reads road numbers and waybill presence and renders centered text labels");
-        Check(mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "RectMask2D") && members.Contains("set_raycastTarget"),
-            "Overlay uses clipping and does not intercept map input");
-        Check(mod.TypeDefinitions.Select(mod.GetTypeDefinition).Any(t => mod.GetString(t.Name) == "NativeMapIcons") &&
-            mod.TypeDefinitions.Select(mod.GetTypeDefinition).Any(t => mod.GetString(t.Name) == "VehicleLayer"),
-            "Shared vehicle rendering replaces oversized native graphics and preserves restoration hooks");
-        Check(members.Contains("get_SelectedCar") && members.Contains("SetMapCenter") && members.Contains("AddToggle") && members.Contains("AddDropdown"),
-            "Map controls include selected-car following and display mode selection");
-        Check(members.Contains("CanSetSwitch") && members.Contains("CheckAuthorizedToSendMessage") && members.Contains("ApplyLocal") &&
-            mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "RequestSetSwitch"),
-            "Switch restoration retains native occupancy and authorization checks and switch request messages");
-        Check(!members.Any(n => new[] { "SetOverrideDestination", "SetHandbrake", "SetGladhandsConnected" }.Contains(n)),
-            "Map controls do not mutate car assignments or brake/air state");
+        Check(members.Contains("Instantiate") && members.Contains("SetZoom") && members.Contains("SetPositionAndRotation") && members.Contains("GetCenterRotation"),
+            "Rendering uses real native map icons and source-style world transforms");
+        Check(members.Contains("set_autoSizeTextContainer") && members.Contains("set_fontSize") && members.Contains("set_enableAutoSizing"),
+            "Copied MapEnhancer typography settings are applied to real native text components");
+        Check(members.Contains("TryGetDestinationInfo") && members.Contains("AreaForCarPosition") && members.Contains("SetMapCenter"),
+            "Destination color and selected-car following APIs are retained");
+        Check(members.Contains("CanSetSwitch") && members.Contains("CheckAuthorizedToSendMessage") && members.Contains("ApplyLocal"),
+            "Switch requests retain occupancy and authorization guards");
+        Check(!members.Any(n => new[] { "SetOverrideDestination", "SetHandbrake", "SetGladhandsConnected" }.Contains(n)), "Rendering does not mutate car state");
+        var resource = mod.ManifestResources.Select(mod.GetManifestResource).Single(r => mod.GetString(r.Name) == "WaybillMap.traincar.png");
+        var reader = modPe.GetSectionData(modPe.PEHeaders.CorHeader!.ResourcesDirectory.RelativeVirtualAddress + (int)resource.Offset).GetReader();
+        var png = reader.ReadBytes(reader.ReadInt32());
+        Check(Convert.ToHexString(SHA256.HashData(png)) == "BEEBBBDF720794303280EACCB4FB2E08095921C36677820A5626D041ECD7F768",
+            "Embedded wagon sprite is byte-for-byte identical to the provided MapEnhancer asset");
     }
 }

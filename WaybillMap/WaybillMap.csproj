@@ -2,17 +2,18 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.WaybillMap</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
   </PropertyGroup>
   <ItemGroup>
-    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Core;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;0Harmony;Newtonsoft.Json;UnityEngine.CoreModule;UnityEngine.TextRenderingModule;UnityEngine.TextCoreFontEngineModule;UnityEngine.UI;UnityEngine.UIModule;Unity.TextMeshPro;UnityEngine.PhysicsModule" />
+    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Core;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;0Harmony;Newtonsoft.Json;UnityEngine.CoreModule;UnityEngine.ImageConversionModule;UnityEngine.TextRenderingModule;UnityEngine.TextCoreFontEngineModule;UnityEngine.UI;UnityEngine.UIModule;Unity.TextMeshPro;UnityEngine.PhysicsModule" />
     <Reference Include="@(GameReference)">
       <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <EmbeddedResource Include="Assets\traincar.png" LogicalName="WaybillMap.traincar.png" />
     <None Update="Info.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="CheckGameReferences" BeforeTargets="ResolveReferences">
@@ -27,7 +28,7 @@
     <Error Condition="!$([System.String]::Copy('$(PackageRoot)').StartsWith('$(MSBuildProjectDirectory)\obj\'))" Text="Package staging must stay inside the project obj directory." />
     <RemoveDir Directories="$(PackageRoot)" />
     <MakeDir Directories="$(PackageDir);$(MSBuildProjectDirectory)\..\bin" />
-    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
+    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\THIRD-PARTY-NOTICES.md;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
     <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageZip)" Overwrite="true" />
     <Message Importance="high" Text="Package: $(PackageZip)" />
   </Target>

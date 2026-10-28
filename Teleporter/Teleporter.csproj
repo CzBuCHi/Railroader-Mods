@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.Teleporter</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
@@ -28,7 +28,7 @@
       <PackageZip>$(MSBuildProjectDirectory)\..\bin\CzBuCHi.Teleporter_$(Version).zip</PackageZip>
     </PropertyGroup>
     <MakeDir Directories="$(PackageDir)\Scripts;$(MSBuildProjectDirectory)\..\bin" />
-    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
+    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\Migrate-RailForgeProfile.ps1;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)\Scripts\Main.rl" DestinationFolder="$(PackageDir)\Scripts" />
     <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageZip)" Overwrite="true" />
     <Message Importance="high" Text="Package: $(PackageZip)" />

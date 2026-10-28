@@ -25,9 +25,7 @@ namespace Teleporter
             try
             {
                 Store = new BookmarkStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "Railroader", "ModSettings", "czbuchi", "teleporter.json"),
-                    Path.Combine(Application.dataPath, "..", "Mods", "RTM.RailForge", "LegacySettings",
-                        "CzBuCHi.Teleporter--CzBuCHi.Teleporter.json"));
+                    "Railroader", "ModSettings", "czbuchi", "teleporter.json"));
                 RelayBridge.Validate();
                 CameraBookmarks.Validate();
                 Active = this;
@@ -37,7 +35,7 @@ namespace Teleporter
                 Object.DontDestroyOnLoad(host);
                 Runtime = host.AddComponent<TeleporterRuntime>();
                 Runtime.Initialize(this);
-                context.Log.Info("Loaded Teleporter 3.0.0 with Relay UI.");
+                context.Log.Info("Loaded Teleporter 3.0.1 with Relay UI.");
             }
             catch
             {

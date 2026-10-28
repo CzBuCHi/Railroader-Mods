@@ -1,4 +1,4 @@
-﻿# Teleporter 3.0.0 - Relay UI + native DLL
+﻿# Teleporter 3.0.1 - Relay UI + native DLL
 
 For Railroader 0.6.x. Identifier: `czbuchi/teleporter`.
 
@@ -39,11 +39,37 @@ Local file, shared between maps:
 
 `Documents\Railroader\ModSettings\czbuchi\teleporter.json`
 
-The `Groups`, `Name`, `Locations`, `Position`, `Rotation`, `Distance`, `FirstPerson`, and `AutoOpenTeleporterWindow` fields remain compatible with the old Teleporter format. When the new file does not exist, the mod imports the old RailForge profile from the game directory:
+The DLL reads only its own profile. It does not scan, import, or depend on RailForge configuration.
 
-`Mods\RTM.RailForge\LegacySettings\CzBuCHi.Teleporter--CzBuCHi.Teleporter.json`
+For a one-time migration, use the standalone `Migrate-RailForgeProfile.ps1` included beside the DLL. Requires **PowerShell 7.3 or later** (`pwsh`). Close Railroader first. Open PowerShell in the extracted mod folder and run:
 
-The old file is never changed. You can also manually copy an old profile to the new location with the game closed. Absolute coordinates depend on the map.
+```powershell
+pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1
+```
+
+Default source: `C:\Steam\steamapps\common\Railroader\Mods\RTM.RailForge\LegacySettings\CzBuCHi.Teleporter--CzBuCHi.Teleporter.json`. Default destination: the local profile path shown above, using your Windows Documents folder.
+
+Preview and validate without writing:
+
+```powershell
+pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1 -WhatIf
+```
+
+If the game is installed elsewhere:
+
+```powershell
+pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Railroader'
+```
+
+For a backed-up RF file or a custom destination:
+
+```powershell
+pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1 -SourcePath 'D:\backup\Teleporter.json' -DestinationPath 'D:\profiles\teleporter.json'
+```
+
+If a new-mod profile already exists, the script stops. Add `-Force` only when you intend to replace it; this creates a uniquely named `teleporter.json.migration-<id>.bak` beside it. The script replaces the profile, rather than merging locations. The RF source is never changed. On success it prints the source, destination, group/location counts, and backup path if applicable.
+
+The converter preserves group order, names (including case-sensitive names), positions, rotations, zoom, camera mode, and the auto-open preference. Missing legacy `FirstPerson` defaults to tracking view; a missing auto-open preference defaults to false. Invalid data is rejected before writing. Restart/load the game after migration. Absolute coordinates still depend on the map.
 
 Edits write immediately using atomic replacement; `.bak` holds the previous file. A failed write does not commit in-memory changes. Invalid profiles stop mod initialization and are not silently replaced with empty data. Native profile files use UTF-8 with BOM and CRLF.
 
@@ -59,7 +85,7 @@ The `textInput(...)` helper in Main.rl is the temporary text-input adapter. It c
 
 ## Validation and remaining in-game checks
 
-The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers adding through both text fields, the main location rows, separate editor actions, two-step replacement/deletion, error handling, refreshes, preferences, and world cleanup. It also tests profile persistence, migration, corruption, backups, failed writes, and the installed game API members used by the bridge.
+The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers adding through both text fields, the main location rows, separate editor actions, two-step replacement/deletion, error handling, refreshes, preferences, and world cleanup. It also tests profile persistence, corruption, backups, failed writes, and the installed game API members used by the bridge. A separate PowerShell test runs the standalone migration script against synthetic profiles, including dry runs, overwrite protection, backups, invalid data, Unicode, and camera fields.
 
 These tests do not run Unity. Check in game:
 

@@ -60,13 +60,9 @@ internal static class Program
             Check(File.Exists(path + ".bak"), "Previous profile backed up");
             Check(File.ReadAllBytes(path).Take(3).SequenceEqual(new byte[] { 239, 187, 191 }), "UTF-8 BOM");
             Check(!File.ReadAllText(path).Replace("\r\n", "").Contains("\n"), "CRLF profile");
-            var legacy = Path.Combine(folder, "legacy.json");
-            File.Copy(path, legacy);
-            var imported = new BookmarkStore(Path.Combine(folder, "imported.json"), legacy);
-            Check(imported.Current.Groups.Count == 2, "Legacy format imported");
-            var legacyText = File.ReadAllText(legacy);
-            imported.Add("New", "New", View());
-            Check(File.ReadAllText(legacy) == legacyText, "Legacy source is untouched");
+            var missing = Path.Combine(folder, "missing.json");
+            Check(new BookmarkStore(missing).Current.Groups.Count == 0 && !File.Exists(missing),
+                "Loading a missing profile does not import or create files");
             foreach (var text in new[] { "{", "{}", "{\"Groups\":null}", "{\"Groups\":[null]}", "{\"Groups\":[{\"Name\":\"X\",\"Locations\":null}]}" })
             {
                 File.WriteAllText(path, text);

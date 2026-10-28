@@ -12,15 +12,10 @@ namespace Teleporter
         private readonly string path;
         internal Settings Current { get; private set; }
 
-        internal BookmarkStore(string path, string? legacyPath = null)
+        internal BookmarkStore(string path)
         {
             this.path = path;
             if (File.Exists(path)) Current = Read(path);
-            else if (legacyPath != null && File.Exists(legacyPath))
-            {
-                Current = Read(legacyPath);
-                Write(Current);
-            }
             else Current = new Settings();
         }
 

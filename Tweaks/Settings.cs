@@ -13,6 +13,7 @@ namespace Tweaks
         public bool ShowCarSpeed { get; set; } = true;
         public bool ShowCarOil { get; set; } = true;
         public bool ShowTrainLengthInMeters { get; set; } = true;
+        public bool ShowDistancesInMeters { get; set; } = true;
         public bool ShowAirButton { get; set; } = true;
         public bool ShowHandbrakeButton { get; set; } = true;
         public bool ShowOilButton { get; set; } = true;

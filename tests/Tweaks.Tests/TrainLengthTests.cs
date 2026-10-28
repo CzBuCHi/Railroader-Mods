@@ -9,6 +9,12 @@ internal static class TrainLengthTests
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+            Program.Check(DistanceDisplay.InMeters(30.48f) == "30 m", "100 feet of distance displays as 30 meters");
+            Program.Check(DistanceDisplay.InMeters(1609.344f) == "1,609 m", "A mile of distance displays in meters");
+            Program.Check(DistanceDisplay.InMeters(0) == "0 m" && DistanceDisplay.InMeters(123.6f) == "124 m",
+                "Distances use whole meters including zero");
+            Program.Check(DistanceDisplay.InMeters(float.NaN) == null && DistanceDisplay.InMeters(float.PositiveInfinity) == null &&
+                DistanceDisplay.InMeters(-1f) == null, "Invalid distances retain native formatter");
             Program.Check(TrainLengthDisplay.InMeters("10 cars, 1,234 tons, 999 ft", 304.6) == "10 cars, 1,234 tons, 305 m",
                 "Metric length preserves car count and tons and uses actual meters");
             Program.Check(TrainLengthDisplay.InMeters("1 car, 50 tons, 1 ft", 0) == "1 car, 50 tons, 0 m",
@@ -16,6 +22,7 @@ internal static class TrainLengthTests
             Program.Check(TrainLengthDisplay.InMeters("10 cars, 500 tons, 4,051 ft", 1234.4).EndsWith("1,234 m"),
                 "Metric length respects current number grouping");
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("cs-CZ");
+            Program.Check(DistanceDisplay.InMeters(1609.344f) == 1609.ToString("N0") + " m", "Distance formatting respects Czech locale");
             Program.Check(TrainLengthDisplay.InMeters("10 cars, 500 tons, 4 051 ft", 1234.4).EndsWith(1234.ToString("N0") + " m"),
                 "Czech grouping is preserved in metric display");
             foreach (var invalid in new[] { double.NaN, double.PositiveInfinity, -1d })

@@ -9,6 +9,7 @@
     <Reference Include="Newtonsoft.Json"><HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath></Reference>
     <Compile Include="..\..\Tweaks\HudRules.cs" Link="HudRules.cs" />
     <Compile Include="..\..\Tweaks\TrainLengthDisplay.cs" Link="TrainLengthDisplay.cs" />
+    <Compile Include="..\..\Tweaks\DistanceDisplay.cs" Link="DistanceDisplay.cs" />
     <Compile Include="..\..\Tweaks\ManualPushSpeed.cs" Link="ManualPushSpeed.cs" />
     <Reference Include="0Harmony"><HintPath>$(GameManagedDir)\0Harmony.dll</HintPath></Reference>
   </ItemGroup>

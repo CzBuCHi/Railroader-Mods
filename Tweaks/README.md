@@ -1,4 +1,4 @@
-﻿# Tweaks 3.0.3 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.4 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
 
@@ -55,6 +55,7 @@ This uses Windows' actual Documents folder, including redirected/OneDrive Docume
   "ShowCarSpeed": true,
   "ShowCarOil": true,
   "ShowTrainLengthInMeters": true,
+  "ShowDistancesInMeters": true,
   "ShowAirButton": true,
   "ShowHandbrakeButton": true,
   "ShowOilButton": true,
@@ -75,6 +76,12 @@ Each boolean enables the named feature independently. `ShowControlModeButtons: f
 Missing keys retain defaults. Invalid JSON, unknown keys, incorrect types, or out-of-range numbers produce a log warning and use the complete default configuration for that run. Existing files are never rewritten, including invalid ones. Delete the file while the game is closed to regenerate defaults next start. Generated files use UTF-8 with BOM and CRLF.
 
 ## Additional features
+
+### Distances in meters
+
+`ShowDistancesInMeters` defaults to `true`. The game's shared distance formatter displays whole meters instead of feet or miles, including long distances. This covers directional objective/location markers, waypoint route distances, fast-forward distance remaining, track-construction progress and work-car distance summaries. Directional markers call this formatter, including those used for tutorial guidance. Rounding and number grouping follow the current locale.
+
+This targets `Model.Units.DistanceText`, not arbitrary UI text matching a number and `ft`. Literal distances embedded in tutorial prose and specialized displays bypassing this formatter are not rewritten. Speed units remain MPH. Set the option to `false` and restart for native distance units; train length is controlled separately below.
 
 ### Train length in meters
 
@@ -122,7 +129,7 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.3.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.4.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
 Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, metric train-length formatting and native length API, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 

@@ -129,6 +129,9 @@ internal static class Program
         Check(method("LocomotiveControlsHoverArea", "SummaryText", 0) && method("ConsistLength", "OfCars", 1),
             "Native train summary and precise metric consist length API exist");
         Check(names.Contains("TrainLengthPatch"), "Requested metric train-length patch is compiled");
+        Check(method("Units", "DistanceText", 1) && method("LocationIndicatorController", "DirectionalText", 2),
+            "Shared distance formatter and directional marker API exist");
+        Check(names.Contains("DistanceTextPatch"), "Metric distance formatter patch is compiled");
         Check(new[] { "FollowAndSelectPatch", "FastStrongManPatch", "CopyCrewPatch", "RepairDestinationPatch" }.All(names.Contains), "All four newly requested additions compiled");
         Check(names.Contains("ControlModeButtons") && names.Contains("ConsistActions") && names.Contains("CarPanelPatch") && names.Contains("SleepUntilInterchangePatch"), "All four requested feature groups compiled");
         var members = modMetadata.MemberReferences.Select(handle => modMetadata.GetString(modMetadata.GetMemberReference(handle).Name)).ToArray();

@@ -1,5 +1,4 @@
 ﻿using System;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,19 +7,30 @@ namespace Tweaks
     // Vector glyphs stay sharp at different UI scales and require no sprite atlas.
     internal sealed class ControlModeIcon : MaskableGraphic
     {
-        private TMP_Text? label;
+        private Button? button;
+        private Color hudColor;
+        private bool selected;
         private int mode;
 
-        internal void Initialize(TMP_Text source, int index)
+        internal void Initialize(Button owner, Color tint, int index)
         {
-            label = source; mode = index; raycastTarget = false;
-            color = source.color; SetVerticesDirty();
+            button = owner; hudColor = tint; mode = index; raycastTarget = false;
+            RefreshColor(); SetVerticesDirty();
         }
+
+        internal void SetSelected(bool value) { selected = value; RefreshColor(); }
 
         private void LateUpdate()
         {
-            // Native button transitions tint the TMP label, including disabled states.
-            if (label != null && color != label.color) color = label.color;
+            RefreshColor();
+        }
+
+        private void RefreshColor()
+        {
+            // Dialog label colors differ from the surrounding locomotive HUD icons.
+            Color tint = selected ? (Color)new Color32(35, 33, 27, 255) : hudColor;
+            if (button != null && !button.interactable) tint.a *= 0.5f;
+            if (color != tint) color = tint;
         }
 
         protected override void OnPopulateMesh(VertexHelper mesh)

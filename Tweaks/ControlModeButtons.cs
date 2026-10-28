@@ -2,6 +2,7 @@
 using TMPro;
 using UI;
 using UI.Builder;
+using UI.Common;
 using UI.EngineControls;
 using UI.Tooltips;
 using UI.Windows;
@@ -19,6 +20,8 @@ namespace Tweaks
         private GameObject? strip;
         private UIBuilderAssets? assets;
         private readonly Button[] buttons = new Button[3];
+        private readonly ControlModeIcon[] icons = new ControlModeIcon[3];
+        private Color hudColor;
         private readonly Graphic[] backgrounds = new Graphic[3];
         private readonly Sprite?[] normalSprites = new Sprite?[3];
         private readonly Color[] normalColors = new Color[3];
@@ -66,10 +69,19 @@ namespace Tweaks
             for (var i = 0; i < buttons.Length; i++)
             {
                 var active = i == highlighted;
-                buttons[i].colors = active ? selected.colors : normalButtonColors[i];
+                var palette = active ? selected.colors : normalButtonColors[i];
+                if (active)
+                {
+                    palette.normalColor = Color.white;
+                    palette.highlightedColor = Color.white;
+                    palette.selectedColor = Color.white;
+                    palette.colorMultiplier = 1f;
+                }
+                buttons[i].colors = palette;
                 if (backgrounds[i] is Image image)
                     image.sprite = active && selectedBackground is Image selectedImage ? selectedImage.sprite : normalSprites[i];
-                backgrounds[i].color = active && selectedBackground != null ? selectedBackground.color : normalColors[i];
+                backgrounds[i].color = active ? hudColor : normalColors[i];
+                icons[i].SetSelected(active);
             }
         }
 
@@ -79,6 +91,14 @@ namespace Tweaks
             if (creator == null || creator.builderAssets == null) return false;
             assets = creator.builderAssets;
             var source = dropdown!.GetComponent<RectTransform>();
+            hudColor = new Color32(217, 198, 166, 255);
+            // Read a neighboring native icon's tint before adding our own buttons.
+            foreach (var native in source.parent.GetComponentsInChildren<RailroaderButton>(true))
+            {
+                if (native.Content == null) continue;
+                hudColor = native.Content.color; hudColor.a = 1f;
+                break;
+            }
             var candidate = new GameObject("CzBuCHi.Tweaks.ControlModes", typeof(RectTransform));
             candidate.SetActive(false);
             try
@@ -128,14 +148,16 @@ namespace Tweaks
                 glyphRect.SetParent(buttonRect, false);
                 glyphRect.anchorMin = Vector2.zero; glyphRect.anchorMax = Vector2.one;
                 glyphRect.offsetMin = new Vector2(3f, 2f); glyphRect.offsetMax = new Vector2(-3f, -2f);
-                glyph.AddComponent<ControlModeIcon>().Initialize(label, i);
+                icons[i] = glyph.AddComponent<ControlModeIcon>();
+                icons[i].Initialize(buttonRect.GetComponent<Button>(), hudColor, i);
                 var tooltip = buttonRect.GetComponent<UITooltipProvider>() ?? buttonRect.gameObject.AddComponent<UITooltipProvider>();
                 tooltip.TooltipInfo = new TooltipInfo(Titles[i], Descriptions[i]);
                 buttons[i] = buttonRect.GetComponent<Button>();
                 backgrounds[i] = buttons[i].targetGraphic ??
                     throw new System.InvalidOperationException("Native compact button has no target graphic.");
                 normalSprites[i] = (backgrounds[i] as Image)?.sprite;
-                normalColors[i] = backgrounds[i].color;
+                normalColors[i] = hudColor;
+                backgrounds[i].color = hudColor;
                 normalButtonColors[i] = buttons[i].colors;
             }
             highlighted = -1;

@@ -63,6 +63,10 @@ internal static class Program
             var missing = Path.Combine(folder, "missing.json");
             Check(new BookmarkStore(missing).Current.Groups.Count == 0 && !File.Exists(missing),
                 "Loading a missing profile does not import or create files");
+            Check(new BookmarkCatalog.Entry("a:b", "c").Id != new BookmarkCatalog.Entry("a", "b:c").Id,
+                "Grouped list identifiers cannot collide on separators");
+            Check(new BookmarkCatalog.Entry("Yard", "View").Id != new BookmarkCatalog.Entry("Yard", "view").Id,
+                "Grouped list identifiers preserve case-sensitive names");
             foreach (var text in new[] { "{", "{}", "{\"Groups\":null}", "{\"Groups\":[null]}", "{\"Groups\":[{\"Name\":\"X\",\"Locations\":null}]}" })
             {
                 File.WriteAllText(path, text);

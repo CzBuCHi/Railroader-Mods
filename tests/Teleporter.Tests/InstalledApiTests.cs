@@ -28,6 +28,12 @@ internal static class InstalledApiTests
             .Any(field => metadata.GetString(field.Name) == "_builder"), "Input adapter backing field exists");
         Program.Check(method("UIPanelBuilder", "AddInputField", 4), "Native text input overload exists");
         Program.Check(method("UIPanelBuilder", "AddLocationFieldFallback", 2), "Wagon-style location row exists");
+        Program.Check(method("UIPanelBuilder", "AddListDetail", 5), "Native purchase-style grouped list exists");
+        foreach (var fieldName in new[] { "listController", "detailRectTransform" })
+            Program.Check(type("ListDetailController").GetFields().Select(handle => metadata.GetFieldDefinition(handle))
+                .Any(field => metadata.GetString(field.Name) == fieldName), "Native list adapter field exists: " + fieldName);
+        Program.Check(type("ListController").GetFields().Select(handle => metadata.GetFieldDefinition(handle))
+            .Any(field => metadata.GetString(field.Name) == "OnSelectItem"), "Native per-click selection callback exists");
         Program.Check(method("StrategyCameraController", "CaptureState", 0) && method("StrategyCameraController", "Restore", 1), "Native camera state methods exist");
         foreach (var fieldName in new[] { "_movementVelocity", "_distanceVelocity", "_angleXVelocity", "_angleYVelocity" })
             Program.Check(type("StrategyCameraController").GetFields().Select(handle => metadata.GetFieldDefinition(handle))

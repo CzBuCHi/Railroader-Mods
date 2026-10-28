@@ -1,4 +1,4 @@
-﻿# Teleporter 3.0.1 - Relay UI + native DLL
+﻿# Teleporter 3.0.2 - Relay UI + native DLL
 
 For Railroader 0.6.x. Identifier: `czbuchi/teleporter`.
 
@@ -14,16 +14,19 @@ Keep the DLL and `Scripts/Main.rl` together. RailForge and UMM are not required.
 
 Open Teleporter using its portal icon in the top-right toolbar, or `/teleporter` in the game console.
 
-Choose a group. Each saved place uses the same native location-field prefab as wagon locations: a destination icon followed by a label. Click the icon to restore the saved view. Adding, replacing, deleting, and reordering are kept out of this window.
+All saved locations appear together in one native list, styled like the wagon purchase list: group headings followed by their locations. No group dropdown or right-hand detail column is present. Click a location row to restore its saved view, including repeated clicks on the same row.
+
+Groups follow the saved group order; locations are sorted by name within each group. Empty groups are omitted from the list. Adding, replacing, deleting, and reordering are kept out of this window.
 
 **Edit locations...** opens a separate editor. Both windows can be moved and resized.
 
 ## Editor
 
-- Enter a group name and location name, then **Add current view**. A new group is created if needed; an existing name is never silently overwritten.
-- Choose a saved group and location to replace its view or delete it. Both actions require a second click to confirm.
-- Move groups up/down using the editor buttons. Locations are sorted by name.
-- Set **Open Teleporter on world load** here.
+- The left side shows the same grouped location list as the main window. Selecting a row opens its editing controls on the right; it does not teleport the camera.
+- Click **New location** to display the add form on the right. Enter group/name, then **Add current view**. A new group is created if needed; an existing name is never silently overwritten.
+- Select a saved location to replace its view or delete it. Both actions require a second click to confirm; selecting another location cancels pending confirmation.
+- Move the selected location's group up/down using the controls on the right.
+- Set **Open Teleporter on world load** in the right-hand panel.
 
 The main window and editor refresh after successful changes. Text fields update their draft values while typing. The editor stores nothing until an action is confirmed.
 
@@ -81,16 +84,16 @@ The DLL patches `ScriptInterpreterFactory.CreatePackScopedBuilder` with a Harmon
 
 The `textInput(...)` helper in Main.rl is the temporary text-input adapter. It calls `tp.inputField(...)`, which unwraps the native panel builder and adds the game's standard text field. Once an official Relay input API is released, update this helper to its documented signature; no future API shape is assumed and no built-in Relay method is overridden.
 
-`tp.locationRow(...)` adds the native wagon-style icon/label row with a bookmark callback. Other bridge functions handle group/name lists, camera capture for add/replace, deletion, group ordering, and the auto-open preference. The DLL uses native strategy camera state capture/restore, validated reflection for camera-mode selection and inertia reset, and no camera update transpilers.
+`tp.locationBrowser(...)` adds the game's native grouped list/detail control, hides its detail column, expands the list to fill the window, and connects row clicks to teleportation. `tp.locationEditor(...)` uses the same control with a 220-pixel list on the left and a Relay callback that builds the editing panel on the right. Selection identifiers encode both group and location names so identical location names in different groups remain distinct. Other bridge functions handle group/name lists, camera capture for add/replace, deletion, group ordering, and the auto-open preference. The DLL uses native strategy camera state capture/restore, validated reflection for camera-mode selection and inertia reset, and no camera update transpilers.
 
 ## Validation and remaining in-game checks
 
-The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers adding through both text fields, the main location rows, separate editor actions, two-step replacement/deletion, error handling, refreshes, preferences, and world cleanup. It also tests profile persistence, corruption, backups, failed writes, and the installed game API members used by the bridge. A separate PowerShell test runs the standalone migration script against synthetic profiles, including dry runs, overwrite protection, backups, invalid data, Unicode, and camera fields.
+The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers all groups in one list, group order, duplicate location names across groups, repeated one-click teleport requests, editor list selection and right-hand forms, two-step replacement/deletion, cancellation on selection change, error handling, refreshes, preferences, and world cleanup. The shared catalog, profile persistence, backups, failed writes, and installed API members used by the bridge are also checked. A separate PowerShell test covers the standalone migration script.
 
 These tests do not run Unity. Check in game:
 
-1. Open the toolbar window; verify icon/label rows look like wagon locations and only the destination icon teleports.
-2. Open the editor, type a group/name, and add a first-person view. Move and rotate, then return and compare heading and pitch.
+1. Open the toolbar window; verify every populated group appears in one purchase-style list, with no right column. Click rows in different groups without using a dropdown, then click the same row again.
+2. Open the editor; verify the same list is on the left and selecting a location displays controls on the right without teleporting. Click New location, type a group/name, and add a first-person view. Move and rotate, then return and compare heading and pitch.
 3. Repeat in tracking view with a different zoom and while following a train. Verify the bookmark stays at the saved absolute location.
 4. Confirm the first replace/delete click changes only the confirmation label; the second performs the edit.
 5. Close/reopen both windows, reload a world, and disable/re-enable the mod. Verify no duplicate toolbar icons or stale windows.

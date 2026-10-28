@@ -10,7 +10,9 @@ using Relay.Native;
 using TMPro;
 using UI.Builder;
 using UI.Builder.Relay;
+using UI;
 using UnityEngine;
+using UnityEngine.UI;
 using Value = Relay.Value;
 
 namespace Teleporter
@@ -20,11 +22,17 @@ namespace Teleporter
     {
         private static readonly FieldInfo BuilderField = typeof(RelayUIPanelBuilder).GetField("_builder",
             BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new NotSupportedException("Relay builder field was changed.");
+        private static readonly FieldInfo ListField = AccessTools.Field(typeof(ListDetailController), "listController")
+            ?? throw new NotSupportedException("Native list controller was changed.");
+        private static readonly FieldInfo DetailField = AccessTools.Field(typeof(ListDetailController), "detailRectTransform")
+            ?? throw new NotSupportedException("Native detail panel was changed.");
 
         internal static void Validate()
         {
             if (BuilderField.FieldType != typeof(UIPanelBuilder))
                 throw new NotSupportedException("Unsupported Relay UI builder.");
+            if (ListField.FieldType != typeof(ListController) || DetailField.FieldType != typeof(RectTransform))
+                throw new NotSupportedException("Unsupported native grouped list.");
         }
 
         [HarmonyPostfix]
@@ -48,6 +56,48 @@ namespace Teleporter
             module.DefineFunction("moveGroup", 2, args => Action(() => Plugin.Store.MoveGroup(args[0].AsString(), args[1].AsInt())));
             module.DefineFunction("autoOpen", 0, _ => Value.Bool(Plugin.Store.Current.AutoOpenTeleporterWindow));
             module.DefineFunction("setAutoOpen", 1, args => Action(() => Plugin.Store.SetAutoOpen(args[0].AsBool())));
+            module.DefineFunction("locationBrowser", 1, args =>
+            {
+                var entries = BookmarkCatalog.Create(Plugin.Store.Current);
+                var view = Builder(args[0]).AddListDetail(Items(entries), new UIState<string>(""), (_, __) => { });
+                var split = view.GetComponent<ListDetailController>();
+                ((RectTransform)DetailField.GetValue(split)).gameObject.SetActive(false);
+                var list = (ListController)ListField.GetValue(split);
+                var layout = list.GetComponent<LayoutElement>();
+                layout.minWidth = 0; layout.preferredWidth = -1; layout.flexibleWidth = 1;
+                var select = list.OnSelectItem;
+                var lookup = entries.ToDictionary(entry => entry.Id);
+                list.OnSelectItem = id =>
+                {
+                    select?.Invoke(id);
+                    if (!lookup.TryGetValue(id, out var entry)) return;
+                    try { Plugin.Runtime.Teleport(Plugin.Store.Get(entry.Group, entry.Name)); }
+                    catch (Exception error) { Report(error); }
+                };
+                return Value.Null();
+            });
+            module.DefineFunction("locationEditor", 5, args =>
+            {
+                var entries = BookmarkCatalog.Create(Plugin.Store.Current);
+                var selected = entries.FirstOrDefault(entry => entry.Group == args[1].AsString() && entry.Name == args[2].AsString())
+                    ?? entries.FirstOrDefault();
+                var state = new UIState<string>(args[4].AsBool() ? "" : selected?.Id ?? "");
+                var context = Interpreter.CurrentCallContext;
+                var closure = args[3].AsClosure();
+                Builder(args[0]).AddListDetail(Items(entries), state, (detail, entry) =>
+                {
+                    try
+                    {
+                        context.CallClosure(closure, new[] {
+                            RelayUIPanelBuilder.Create(detail).Wrap(),
+                            entry == null ? Value.Null() : Value.String(entry.Group),
+                            entry == null ? Value.Null() : Value.String(entry.Name)
+                        });
+                    }
+                    catch (Exception error) { Report(error); }
+                }, listWidth: 220f);
+                return Value.Null();
+            });
             module.DefineFunction("locationRow", 4, args =>
             {
                 var builder = Builder(args[0]);
@@ -78,6 +128,8 @@ namespace Teleporter
         }
 
         private static TeleporterPlugin Plugin => TeleporterPlugin.RequireActive();
+        private static IEnumerable<UIPanelBuilder.ListItem<BookmarkCatalog.Entry>> Items(IEnumerable<BookmarkCatalog.Entry> entries) =>
+            entries.Select(entry => new UIPanelBuilder.ListItem<BookmarkCatalog.Entry>(entry.Id, entry, entry.Group, entry.Name));
         private static Value Strings(IEnumerable<string> items) => Value.Array(items.Select(Value.String).ToList());
         private static UIPanelBuilder Builder(Value value)
         {

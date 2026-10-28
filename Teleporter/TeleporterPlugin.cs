@@ -35,7 +35,7 @@ namespace Teleporter
                 Object.DontDestroyOnLoad(host);
                 Runtime = host.AddComponent<TeleporterRuntime>();
                 Runtime.Initialize(this);
-                context.Log.Info("Loaded Teleporter 3.0.1 with Relay UI.");
+                context.Log.Info("Loaded Teleporter 3.0.2 with Relay UI.");
             }
             catch
             {

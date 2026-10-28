@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="..\..\Teleporter\Settings.cs" Link="Settings.cs" />
     <Compile Include="..\..\Teleporter\BookmarkStore.cs" Link="BookmarkStore.cs" />
+    <Compile Include="..\..\Teleporter\BookmarkCatalog.cs" Link="BookmarkCatalog.cs" />
     <Reference Include="Newtonsoft.Json"><HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath></Reference>
     <Reference Include="Relay"><HintPath>$(GameManagedDir)\Relay.dll</HintPath></Reference>
   </ItemGroup>

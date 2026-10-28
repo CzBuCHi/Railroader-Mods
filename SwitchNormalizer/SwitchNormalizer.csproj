@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>CzBuCHi.SwitchNormalizer</AssemblyName>
+    <Version>3.0.0</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <NoStdLib>true</NoStdLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Core;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;Newtonsoft.Json;UnityEngine.CoreModule;UnityEngine.ImageConversionModule;UnityEngine.UI" />
+    <Reference Include="@(GameReference)">
+      <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <EmbeddedResource Include="icon.png" LogicalName="SwitchNormalizer.icon.png" />
+    <None Update="Info.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CheckGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameManagedDir)\Railroader.Modding.dll')" Text="Railroader 0.6 assemblies not found. Set GameDir in Paths.user or pass -p:GameDir=..." />
+  </Target>
+  <Target Name="PackageMod" AfterTargets="Publish">
+    <PropertyGroup>
+      <PackageRoot>$(MSBuildProjectDirectory)\obj\$(Configuration)\NativePackage</PackageRoot>
+      <PackageDir>$(PackageRoot)\CzBuCHi.SwitchNormalizer</PackageDir>
+      <PackageZip>$(MSBuildProjectDirectory)\..\bin\CzBuCHi.SwitchNormalizer_$(Version).zip</PackageZip>
+    </PropertyGroup>
+    <MakeDir Directories="$(PackageDir);$(MSBuildProjectDirectory)\..\bin" />
+    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
+    <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageZip)" Overwrite="true" />
+    <Message Importance="high" Text="Package: $(PackageZip)" />
+  </Target>
+</Project>

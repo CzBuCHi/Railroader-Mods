@@ -1,0 +1,11 @@
+﻿<Project>
+  <Import Project="$(MSBuildThisFileDirectory)Paths.user" Condition="Exists('$(MSBuildThisFileDirectory)Paths.user')" />
+  <PropertyGroup>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Steam\steamapps\common\Railroader</GameDir>
+    <GameManagedDir>$(GameDir)\Railroader_Data\Managed</GameManagedDir>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+</Project>

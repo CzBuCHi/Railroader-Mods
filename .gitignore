@@ -1,0 +1,8 @@
+﻿﻿**/bin/
+**/obj/
+artifacts/
+.vs/
+*.user
+bin/
+work/
+Paths.user

@@ -1,4 +1,4 @@
-﻿# WaybillMap 1.5.1
+﻿# WaybillMap 1.5.2
 
 Native Railroader 0.6.x map mod. Identifier: `czbuchi/waybill-map`. Includes the former SwitchNormalizer functionality. No RailForge/UMM is needed.
 
@@ -23,9 +23,9 @@ All logical cars are available, including parked/distant vehicles without loaded
 
 The former custom track-relative sizing, UI text labels and eight-point gap adjustment are removed. Native track styles and switch markers are unchanged. The ported rendering logic and asset are licensed under MIT; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-A steam locomotive's connected rear tender is still merged into one marker: combined center and longer image, engine number/color, no second tender icon. Unmerged engines keep MapEnhancer's 0.8 child scale; merged engines extend that long axis by the combined/engine length ratio. A detached tender is a normal standalone wagon. Either tender orientation is supported. The original native locomotive graphics are hidden only while this layer is active and restored on hide/unload; native click targets are preserved. New markers do not intercept input.
+A steam locomotive's connected rear tender is still merged into one marker: combined center and longer image, engine number/color, no second tender icon. Unmerged engines keep MapEnhancer's 0.8 child scale; merged engines extend that long axis by the combined/engine length ratio. A detached tender is a normal standalone wagon. Either tender orientation is supported. The original native locomotive graphics are hidden only while this layer is active and restored on hide/unload; native click targets are preserved. Shift+click on a visible vehicle opens its native inspector, including locomotives and the combined locomotive/tender marker. Shift+click on a station building opens its native station window and refreshes its freight list, even when the player camera is far away. Small distant station targets use a 14-pixel hit radius. Ordinary clicks and track-location picking retain native handling.
 
-Destination colors use the game's destination lookup and area tag hue. Stored area colors can already be dark: first the brightest RGB channel is normalized to 1 for unspotted vehicles; spotted vehicles then retain 80% of that bright palette, with the same black text. This avoids darkening an already dark area color again. Repair/depot overrides also color locomotives. Vehicles without a destination use opaque `#ddd`. Colors/identifiers and consist membership refresh twice per second; world positions update every visible frame. No track colors or extra switch arrows are added.
+Destination colors use the game's destination lookup and area tag hue. Stored area colors can already be dark: first the brightest RGB channel is normalized to 1 for unspotted vehicles; unspotted vehicles also receive a 20% white mix, while spotted vehicles retain 60% of the full palette, with the same black text. This avoids darkening an already dark area color again. Repair/depot overrides also color locomotives. Vehicles without a destination use opaque `#ddd`. Colors/identifiers and consist membership refresh twice per second; world positions update every visible frame. No track colors or extra switch arrows are added.
 
 The upper-right panel follows this layout: Switch positions + Save/Restore on row one; Render + dropdown on row two; Follow selected car under the dropdown. The dropdown has three persistent modes:
 
@@ -53,7 +53,7 @@ dotnet publish WaybillMap/WaybillMap.csproj -c Release
 dotnet run --project tests/WaybillMap.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' WaybillMap/bin/Release/CzBuCHi.WaybillMap.dll
 ```
 
-Override GameDir through Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.5.1.zip`. It contains this mod's DLL, Info.json, README, LICENSE and third-party notices; game, Harmony and Newtonsoft DLLs are supplied by the game.
+Override GameDir through Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.5.2.zip`. It contains this mod's DLL, Info.json, README, LICENSE and third-party notices; game, Harmony and Newtonsoft DLLs are supplied by the game.
 
 Automated checks compare the source rendering constants, line layout, embedded sprite SHA-256, full-consist visibility at detail/yard zoom, overview sampling, tender pairing and bright/spotted color normalization. Migrated switch-profile tests cover backups, corruption, atomic failures and encoding. Installed-API checks cover native prefabs, text clipping/character-limit overrides, zoom/rotation, map dragging, lifecycle, following and authorized switch requests. These tests do not run Unity or prove in-game appearance.
 

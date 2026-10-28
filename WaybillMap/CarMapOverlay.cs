@@ -106,7 +106,30 @@ namespace WaybillMap
             // Area colors may already be stored dark. Match MapEnhancer's bright
             // unspotted palette first, then apply only a mild spotted distinction.
             var brightness = MarkerStyle.DestinationBrightness(tint.r, tint.g, tint.b, spotted);
-            return brightness == 0 ? Unassigned : new Color(tint.r * brightness, tint.g * brightness, tint.b * brightness, 1);
+            return brightness == 0 ? Unassigned : new Color(
+                MarkerStyle.DestinationChannel(tint.r, brightness, spotted),
+                MarkerStyle.DestinationChannel(tint.g, brightness, spotted),
+                MarkerStyle.DestinationChannel(tint.b, brightness, spotted), 1);
+        }
+
+        internal Car? CarAt(Ray ray)
+        {
+            if (root == null || !root.activeInHierarchy) return null;
+            Car? result = null; var best = float.PositiveInfinity; var engineHit = false;
+            foreach (var pair in markers)
+            {
+                var marker = pair.Value;
+                if (pair.Key == null || !marker.Canvas.enabled) continue;
+                var rect = marker.Body.rectTransform;
+                if (!new Plane(rect.forward, rect.position).Raycast(ray, out var distance)) continue;
+                var local = rect.InverseTransformPoint(ray.GetPoint(distance));
+                if (!rect.rect.Contains(new Vector2(local.x, local.y))) continue;
+                var engine = pair.Key is BaseLocomotive;
+                var score = local.sqrMagnitude;
+                if ((engine && !engineHit) || (engine == engineHit && score < best))
+                { result = pair.Key; best = score; engineHit = engine; }
+            }
+            return result;
         }
 
         private Marker Create(Car car)

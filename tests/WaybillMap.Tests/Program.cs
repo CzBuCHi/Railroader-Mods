@@ -36,10 +36,13 @@ internal static class Program
             "Selected cars and cabooses survive ordinary-car sampling");
         var normal = MarkerStyle.DestinationBrightness(0.5f, 0.45f, 0.1f, false);
         var spotted = MarkerStyle.DestinationBrightness(0.5f, 0.45f, 0.1f, true);
-        Check(Near(0.5 * normal, 1) && Near(0.45 * normal, 0.9) && Near(0.5 * spotted, 0.8),
-            "Dark stored area colors become bright unspotted colors and mildly darker spotted colors");
-        Check(Near(spotted / normal, 0.8) && Near(MarkerStyle.DestinationBrightness(0, 0, 0, true), 0),
+        Check(Near(0.5 * normal, 1) && Near(0.45 * normal, 0.9) && Near(0.5 * spotted, 0.6),
+            "Dark stored area colors become bright unspotted colors and distinctly darker spotted colors");
+        Check(Near(spotted / normal, 0.6) && Near(MarkerStyle.DestinationBrightness(0, 0, 0, true), 0),
             "Spotted hue is retained and an invalid black palette avoids division by zero");
+        Check(Near(MarkerStyle.DestinationChannel(0.1f, normal, false), 0.36) &&
+            Near(MarkerStyle.DestinationChannel(0.1f, spotted, true), 0.12),
+            "Unspotted palette adds white while spotted palette stays darker without fading the black caption");
         SwitchProfileTests.Run(); TenderPairingTests.Run();
         Inspect(args[0], args[1]);
         Console.WriteLine("PASS: " + checks + " native-rendering, filter, profile and installed-API checks.");
@@ -57,6 +60,11 @@ internal static class Program
         Check(Method(Type("UI.Map", "MapWindow"), "Start", 0) && windowFields.Contains("mapBuilder") && windowFields.Contains("rawImage"),
             "Map installation targets match installed game");
         Check(Method(Type("UI.Map", "MapDrag"), "OnDrag", 1), "Native mouse-drag prefix target exists");
+        Check(Method(Type("UI.Map", "MapWindow"), "OnClick", 1) && Method(Type("UI", "GameInput"), "get_IsShiftDown", 0) &&
+            Method(Type("UI.CarInspector", "CarInspector"), "Show", 1), "Shift-click patch and native car inspector APIs exist");
+        Check(Method(Type("Model", "StationAgent"), "Activate", 1) &&
+            Method(Type("Model", "StationAgent"), "ResolveReferences", 0) &&
+            Method(Type("Model", "StationAgent"), "UpdateCachedFreightCarList", 0), "Station activation and remote freight refresh APIs exist");
         Check(Method(Type("UI.Map", "MapIcon"), "SetZoom", 1) && Method(Type("UI.Map", "MapIcon"), "FixTextRotation", 0) &&
             Method(Type("UI.Map", "MapBuilder"), "get_IconScale", 0), "Native map-icon zoom and scoped text-rotation targets exist");
         var carFields = Type("Model", "Car").GetFields().Select(game.GetFieldDefinition).Select(f => game.GetString(f.Name)).ToArray();

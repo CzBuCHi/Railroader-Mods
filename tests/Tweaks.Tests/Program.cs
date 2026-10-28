@@ -57,6 +57,7 @@ internal static class Program
         Check(Warning(disabled) == null, "Disabled lubrication suppresses oil/hotbox button");
         Check(Warning(disabled, medium) == medium, "Unsupported/disabled cars do not hide a real oil warning");
         SettingsTests.Run();
+        TrainLengthTests.Run();
         InspectInstalledGame(args[0], args[1]);
         ManualPushTests.Run(args[0]);
         Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");
@@ -124,7 +125,10 @@ internal static class Program
             .Select(handle => modMetadata.GetString(modMetadata.GetTypeReference((TypeReferenceHandle)handle).Name)).ToArray();
         Check(interfaces.Contains("IModEntryPoint") && interfaces.Contains("IWorldLifecycle"), "Native lifecycle hooks present");
         var names = modMetadata.TypeDefinitions.Select(handle => modMetadata.GetString(modMetadata.GetTypeDefinition(handle).Name)).ToArray();
-        Check(!names.Any(name => new[] { "Autosave", "RepairSounds", "Prank", "BleedAll", "WaypointShortcut", "TrainLength" }.Any(name.Contains)), "Unrequested legacy features are absent from the compiled mod");
+        Check(!names.Any(name => new[] { "Autosave", "RepairSounds", "Prank", "BleedAll", "WaypointShortcut" }.Any(name.Contains)), "Unrequested legacy features are absent from the compiled mod");
+        Check(method("LocomotiveControlsHoverArea", "SummaryText", 0) && method("ConsistLength", "OfCars", 1),
+            "Native train summary and precise metric consist length API exist");
+        Check(names.Contains("TrainLengthPatch"), "Requested metric train-length patch is compiled");
         Check(new[] { "FollowAndSelectPatch", "FastStrongManPatch", "CopyCrewPatch", "RepairDestinationPatch" }.All(names.Contains), "All four newly requested additions compiled");
         Check(names.Contains("ControlModeButtons") && names.Contains("ConsistActions") && names.Contains("CarPanelPatch") && names.Contains("SleepUntilInterchangePatch"), "All four requested feature groups compiled");
         var members = modMetadata.MemberReferences.Select(handle => modMetadata.GetString(modMetadata.GetMemberReference(handle).Name)).ToArray();

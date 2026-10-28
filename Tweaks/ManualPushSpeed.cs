@@ -24,7 +24,7 @@ namespace Tweaks
             if (matches.Count != 1)
                 throw new NotSupportedException("Tweaks: expected exactly one native manual-push limit before AddVelocityToCar.");
             // Change only the cap. Native force/weight, host authority and collision code remain intact.
-            code[matches[0]].operand = NewLimit;
+            code[matches[0]].operand = NewLimit * (Settings.Current.ManualPushSpeedMph / 6f);
             return code;
         }
     }

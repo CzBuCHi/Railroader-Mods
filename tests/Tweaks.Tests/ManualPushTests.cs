@@ -65,6 +65,11 @@ internal static class ManualPushTests
         Program.Check(code.Select(instruction => instruction.opcode).SequenceEqual(patched.Select(instruction => instruction.opcode)),
             "Native force/weight calculation, host check and method calls are unchanged");
         Program.Check(Math.Abs(ManualPushSpeed.NewLimit / ManualPushSpeed.NativeLimit - 2f) < 0.00001f, "Manual-push speed cap doubles");
+        Settings.Current.ManualPushSpeedMph = 9f;
+        var custom = ManualPushSpeed.Apply(code).ToList();
+        Program.Check(Math.Abs((float)custom[changes[0]].operand - ManualPushSpeed.NewLimit * 1.5f) < 0.00001f,
+            "Manual push transpiler uses configured MPH cap");
+        Settings.Current = new Settings();
         foreach (var invalid in new[] {
             new List<CodeInstruction> { new CodeInstruction(OpCodes.Ret) },
             code.Concat(code).ToList(),

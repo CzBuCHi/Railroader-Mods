@@ -8,6 +8,9 @@ namespace Tweaks
     [HarmonyPatch(typeof(EngineRosterRow), nameof(EngineRosterRow.ActionJumpTo))]
     internal static class FollowAndSelectPatch
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => Settings.Current.RosterShiftFollow;
+
         [HarmonyPostfix]
         private static void Postfix(EngineRosterPanel ____parent, BaseLocomotive ____engine)
         {

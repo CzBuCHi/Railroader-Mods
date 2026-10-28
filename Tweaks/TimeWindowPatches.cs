@@ -15,6 +15,9 @@ namespace Tweaks
     [HarmonyPatch(typeof(TimeWindow), "GetSleepValues")]
     internal static class SleepUntilInterchangePatch
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => Settings.Current.SleepUntilNextInterchange;
+
         [HarmonyPrefix]
         private static bool Prefix(ref GameDateTime now, ref int targetHour, ref float hoursToSleep)
         {
@@ -35,6 +38,9 @@ namespace Tweaks
     [HarmonyPatch]
     internal static class SleepTooltipPatch
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => Settings.Current.SleepUntilNextInterchange;
+
         // Find native tooltip-bearing code by its literal, independent of lambda numbering.
         private const string Original = "Let time pass until the first scheduled interchange service of the day.";
         [HarmonyTargetMethods]

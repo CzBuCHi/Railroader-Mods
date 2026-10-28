@@ -1,4 +1,4 @@
-﻿# Tweaks 3.0.1 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.2 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
 
@@ -41,7 +41,39 @@ AE Waypoint has no mod button. When the game selects waypoint mode after setting
 
 If HUD button creation fails, the mode component restores the native dropdown and logs the error. HUD objects and owned icon textures are cleaned up on world unload/mod disable. Reopen native inspector/time windows after enabling/disabling the mod to refresh their existing content.
 
-The selected features are always enabled; this reduced port has no legacy settings page, settings import, or new configuration file. The oil warning threshold retains the old default of 50%.
+## JSON configuration
+
+There is no in-game settings UI. On first mod load, defaults are created at:
+
+`Documents\Railroader\ModSettings\czbuchi\tweaks.json`
+
+This uses Windows' actual Documents folder, including redirected/OneDrive Documents. Close the game, edit the JSON, and restart to apply changes. Settings are local to the Windows user, shared by saves, and kept outside the mod folder. Manual pushing uses the host's settings in multiplayer.
+
+```json
+{
+  "SleepUntilNextInterchange": true,
+  "ShowCarSpeed": true,
+  "ShowCarOil": true,
+  "ShowAirButton": true,
+  "ShowHandbrakeButton": true,
+  "ShowOilButton": true,
+  "ShowControlModeButtons": true,
+  "RosterShiftFollow": true,
+  "FasterManualPushing": true,
+  "CopyCrew": true,
+  "CopyRepairDestination": true,
+  "OilWarningPercent": 50.0,
+  "ManualPushSpeedMph": 6.0
+}
+```
+
+Each boolean enables the named feature independently. `ShowControlModeButtons: false` keeps the native dropdown. `FasterManualPushing: false` keeps the native 3-MPH cap. Oil displays still require the game's lubrication feature and a supported car.
+
+`OilWarningPercent` accepts 0–100; warnings appear strictly below this value. Hotboxes still warn even at 100% oil when `ShowOilButton` is enabled. `ManualPushSpeedMph` accepts 1–30 and changes only the speed cap, not pushing force; it applies only when `FasterManualPushing` is enabled.
+
+Missing keys retain defaults. Invalid JSON, unknown keys, incorrect types, or out-of-range numbers produce a log warning and use the complete default configuration for that run. Existing files are never rewritten, including invalid ones. Delete the file while the game is closed to regenerate defaults next start. Generated files use UTF-8 with BOM and CRLF.
+
+## Additional features
 
 ### Roster Shift-follow
 
@@ -84,9 +116,9 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.1.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.2.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
-Tests cover service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
+Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 
 In-game checks:
 

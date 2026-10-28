@@ -14,9 +14,9 @@ namespace Tweaks
         {
             var car = ____car;
             if (car == null) return;
-            if (!(car is BaseLocomotive))
+            if (Settings.Current.ShowCarSpeed && !(car is BaseLocomotive))
                 builder.AddField("Speed", () => car != null ? Mathf.RoundToInt(car.VelocityMphAbs) + " MPH" : "—", UIPanelBuilder.Frequency.Periodic);
-            if (car.EnableOiling)
+            if (Settings.Current.ShowCarOil && car.EnableOiling)
                 builder.AddField("Oiled", () => car != null && car.EnableOiling ? Mathf.RoundToInt(car.Oiled * 100f) + "%" : "—", UIPanelBuilder.Frequency.Periodic);
         }
     }

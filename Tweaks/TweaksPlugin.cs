@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using HarmonyLib;
 using Railroader.Modding;
 using TMPro;
@@ -16,11 +17,13 @@ namespace Tweaks
         public void OnModLoad(IModContext context)
         {
             if (harmony != null) return;
+            Settings.Current = Settings.Load(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "Railroader", "ModSettings", "czbuchi", "tweaks.json"), context.Log.Warning);
             harmony = new Harmony(HarmonyId);
             try
             {
                 harmony.PatchAll(typeof(TweaksPlugin).Assembly);
-                context.Log.Info("Loaded selected Tweaks 3.0.1 features.");
+                context.Log.Info("Loaded selected Tweaks 3.0.2 features.");
             }
             catch { harmony.UnpatchAll(HarmonyId); harmony = null; throw; }
         }
@@ -59,7 +62,7 @@ namespace Tweaks
             var dropdown = (TMP_Dropdown)AccessTools.Field(typeof(LocomotiveControlsUIAdapter), "modeDropdown").GetValue(adapter);
             var speed = (TMP_Text)AccessTools.Field(typeof(LocomotiveControlsUIAdapter), "speedLabel").GetValue(adapter);
             var modes = adapter.GetComponent<ControlModeButtons>() ?? adapter.gameObject.AddComponent<ControlModeButtons>();
-            modes.enabled = true; modes.Initialize(adapter, dropdown);
+            modes.enabled = Settings.Current.ShowControlModeButtons; if (modes.enabled) modes.Initialize(adapter, dropdown);
             var actions = adapter.GetComponent<ConsistActions>() ?? adapter.gameObject.AddComponent<ConsistActions>();
             actions.enabled = true; actions.Initialize(adapter, speed);
         }

@@ -10,6 +10,9 @@ namespace Tweaks
     [HarmonyPatch(typeof(BuilderExtensions), nameof(BuilderExtensions.AddRepairDestination), typeof(UIPanelBuilder), typeof(Car))]
     internal static class RepairDestinationPatch
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => Settings.Current.CopyRepairDestination;
+
         [HarmonyPostfix]
         private static void Postfix(UIPanelBuilder builder, Car car)
         {

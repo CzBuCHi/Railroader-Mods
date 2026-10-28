@@ -6,7 +6,7 @@ namespace Tweaks
 {
     internal static class HudRules
     {
-        internal const float OilWarningThreshold = 0.5f;
+        internal static float OilWarningThreshold => Settings.Current.OilWarningPercent / 100f;
         internal static int HighlightedMode(int nativeValue) => nativeValue >= 0 && nativeValue < 3 ? nativeValue : -1;
         internal static bool NeedsAir(bool hasSet, bool coupled, bool airConnected, float anglecock) =>
             hasSet && (coupled ? !airConnected || anglecock < 0.999f : anglecock > 0.001f);

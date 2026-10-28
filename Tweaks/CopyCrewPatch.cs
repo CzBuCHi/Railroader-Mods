@@ -12,6 +12,9 @@ namespace Tweaks
     [HarmonyPatch(typeof(BuilderExtensions), nameof(BuilderExtensions.AddTrainCrewDropdown), typeof(UIPanelBuilder), typeof(Car))]
     internal static class CopyCrewPatch
     {
+        [HarmonyPrepare]
+        private static bool Prepare() => Settings.Current.CopyCrew;
+
         [HarmonyPostfix]
         private static void Postfix(UIPanelBuilder builder, Car car, bool __result)
         {

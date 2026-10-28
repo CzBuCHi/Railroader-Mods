@@ -1,0 +1,54 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Newtonsoft.Json;
+using Tweaks;
+
+internal static class SettingsTests
+{
+    internal static void Run()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "Tweaks.SettingsTests." + Guid.NewGuid());
+        var path = Path.Combine(root, "profile", "tweaks.json");
+        var warnings = 0;
+        Settings Load() => Settings.Load(path, _ => warnings++);
+        try
+        {
+            var defaults = Load();
+            Program.Check(File.Exists(path) && warnings == 0, "First load creates settings and parent directory");
+            var bytes = File.ReadAllBytes(path);
+            Program.Check(bytes.Take(3).SequenceEqual(new byte[] { 239, 187, 191 }) &&
+                !File.ReadAllText(path).Replace("\r\n", "").Contains('\n'), "Settings use UTF-8 BOM and CRLF");
+            Program.Check(defaults.OilWarningPercent == 50 && defaults.ManualPushSpeedMph == 6 &&
+                typeof(Settings).GetProperties().Where(p => p.PropertyType == typeof(bool)).All(p => (bool)p.GetValue(defaults)!),
+                "Defaults retain all existing features");
+            File.WriteAllText(path, "{\"ShowCarSpeed\":false,\"OilWarningPercent\":25,\"ManualPushSpeedMph\":9}");
+            var custom = Load();
+            Program.Check(!custom.ShowCarSpeed && custom.ShowCarOil && custom.OilWarningPercent == 25 && custom.ManualPushSpeedMph == 9,
+                "Partial JSON overrides values and retains defaults for missing keys");
+            foreach (var property in typeof(Settings).GetProperties().Where(p => p.PropertyType == typeof(bool))) property.SetValue(custom, false);
+            File.WriteAllText(path, JsonConvert.SerializeObject(custom));
+            var disabled = Load();
+            Program.Check(typeof(Settings).GetProperties().Where(p => p.PropertyType == typeof(bool)).All(p => !(bool)p.GetValue(disabled)!),
+                "Every feature can be disabled in JSON");
+            Settings.Current = custom;
+            Program.Check(HudRules.OilWarningThreshold == 0.25f, "Oil warning uses configured percentage");
+            foreach (var invalid in new[] { "null", "{", "{\"ShowCarSpeed\":null}", "{\"ShowCarSpeed\":\"false\"}",
+                "{\"ShowCarSpeeed\":false}", "{\"OilWarningPercent\":101}", "{\"OilWarningPercent\":-1}",
+                "{\"OilWarningPercent\":NaN}", "{\"ManualPushSpeedMph\":0}", "{\"ManualPushSpeedMph\":31}", "{\"ManualPushSpeedMph\":1e100}" })
+            {
+                File.WriteAllText(path, invalid);
+                var before = warnings;
+                var fallback = Load();
+                Program.Check(warnings == before + 1 && fallback.ShowCarSpeed && fallback.ManualPushSpeedMph == 6 &&
+                    File.ReadAllText(path) == invalid, "Invalid config is reported, preserved and defaults restored: " + invalid);
+            }
+        }
+        finally
+        {
+            Settings.Current = new Settings();
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+}

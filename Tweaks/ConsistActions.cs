@@ -59,9 +59,9 @@ namespace Tweaks
             if (lastLocomotive == locomotive && Time.unscaledTime < nextScan) return;
             lastLocomotive = locomotive; nextScan = Time.unscaledTime + 0.5f;
             var cars = CurrentCars();
-            var airProblem = cars.Any(car => NeedsAir(car, Car.LogicalEnd.A) || NeedsAir(car, Car.LogicalEnd.B));
-            var brakes = cars.Count(car => car.air.handbrakeApplied);
-            warningCar = FindWarningCar(cars);
+            var airProblem = Settings.Current.ShowAirButton && cars.Any(car => NeedsAir(car, Car.LogicalEnd.A) || NeedsAir(car, Car.LogicalEnd.B));
+            var brakes = Settings.Current.ShowHandbrakeButton ? cars.Count(car => car.air.handbrakeApplied) : 0;
+            warningCar = Settings.Current.ShowOilButton ? FindWarningCar(cars) : null;
             buttons[0].gameObject.SetActive(airProblem);
             buttons[1].gameObject.SetActive(brakes > 0);
             buttons[2].gameObject.SetActive(warningCar != null);

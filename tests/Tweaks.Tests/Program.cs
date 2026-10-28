@@ -56,6 +56,7 @@ internal static class Program
         Check(Warning(low, hot) == hot, "Hotbox takes priority over low oil even at 100 percent oil");
         Check(Warning(disabled) == null, "Disabled lubrication suppresses oil/hotbox button");
         Check(Warning(disabled, medium) == medium, "Unsupported/disabled cars do not hide a real oil warning");
+        SettingsTests.Run();
         InspectInstalledGame(args[0], args[1]);
         ManualPushTests.Run(args[0]);
         Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");

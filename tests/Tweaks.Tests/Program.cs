@@ -10,7 +10,7 @@ using Tweaks;
 internal static class Program
 {
     private static int checks;
-    private static void Check(bool value, string name)
+    internal static void Check(bool value, string name)
     {
         if (!value) throw new Exception(name);
         checks++;
@@ -57,6 +57,7 @@ internal static class Program
         Check(Warning(disabled) == null, "Disabled lubrication suppresses oil/hotbox button");
         Check(Warning(disabled, medium) == medium, "Unsupported/disabled cars do not hide a real oil warning");
         InspectInstalledGame(args[0], args[1]);
+        ManualPushTests.Run(args[0]);
         Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");
     }
 
@@ -82,6 +83,13 @@ internal static class Program
         Check(method("Car", "get_EnableOiling", 0) && method("Car", "get_Oiled", 0) && method("Car", "get_HasHotbox", 0), "Native oil feature/car support and warning APIs exist");
         Check(method("CameraSelector", "ZoomToPoint", 1) && method("CameraSelector", "ZoomToCar", 2), "Native camera navigation methods exist");
         Check(method("Car", "get_LocationA", 0) && method("Car", "get_LocationB", 0), "Logical coupler-end positions exist");
+        Check(method("EngineRosterRow", "ActionJumpTo", 0) && method("EngineRosterPanel", "SelectEngine", 2), "Shift-follow roster targets exist");
+        var rowFields = type("EngineRosterRow").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();
+        Check(rowFields.Contains("_parent") && rowFields.Contains("_engine"), "Roster injection fields match installed game");
+        Check(method("GameInput", "get_IsShiftDown", 0), "Native Shift state API exists");
+        Check(method("TrainController", "HandleManualMoveCar", 2), "Host manual pushing target exists");
+        Check(method("BuilderExtensions", "AddTrainCrewDropdown", 2) && method("BuilderExtensions", "AddRepairDestination", 2), "Crew and repair-destination UI targets exist");
+        Check(method("Car", "get_SupportsTrainCrew", 0) && method("OverrideDestinationExtensions", "IsWriteAuthorized", 2), "Native crew eligibility and destination authorization APIs exist");
         var tooltipTargets = 0;
         foreach (var handle in type("TimeWindow").GetMethods())
         {
@@ -115,11 +123,14 @@ internal static class Program
             .Select(handle => modMetadata.GetString(modMetadata.GetTypeReference((TypeReferenceHandle)handle).Name)).ToArray();
         Check(interfaces.Contains("IModEntryPoint") && interfaces.Contains("IWorldLifecycle"), "Native lifecycle hooks present");
         var names = modMetadata.TypeDefinitions.Select(handle => modMetadata.GetString(modMetadata.GetTypeDefinition(handle).Name)).ToArray();
-        Check(!names.Any(name => new[] { "Autosave", "RepairSounds", "Prank", "CopyCrew", "BleedAll", "WaypointShortcut", "TrainLength" }.Any(name.Contains)), "Unrequested legacy features are absent from the compiled mod");
+        Check(!names.Any(name => new[] { "Autosave", "RepairSounds", "Prank", "BleedAll", "WaypointShortcut", "TrainLength" }.Any(name.Contains)), "Unrequested legacy features are absent from the compiled mod");
+        Check(new[] { "FollowAndSelectPatch", "FastStrongManPatch", "CopyCrewPatch", "RepairDestinationPatch" }.All(names.Contains), "All four newly requested additions compiled");
         Check(names.Contains("ControlModeButtons") && names.Contains("ConsistActions") && names.Contains("CarPanelPatch") && names.Contains("SleepUntilInterchangePatch"), "All four requested feature groups compiled");
         var members = modMetadata.MemberReferences.Select(handle => modMetadata.GetString(modMetadata.GetMemberReference(handle).Name)).ToArray();
-        Check(!members.Any(name => new[] { "SetHandbrake", "ApplyEndGearChange", "set_AnglecockSetting", "ApplyLocal", "SetGladhandsConnected" }.Contains(name)),
-            "HUD actions have no car/brake/air mutation calls or direct state-message writes");
+        Check(!members.Any(name => new[] { "SetHandbrake", "ApplyEndGearChange", "set_AnglecockSetting", "SetGladhandsConnected" }.Contains(name)),
+            "Air/handbrake controls still have no brake/air mutation calls");
+        Check(members.Contains("CheckAuthorizedToSendMessage") && members.Contains("IsWriteAuthorized") && members.Contains("SetOverrideDestination"),
+            "Copy features retain native authorization and destination APIs");
         Check(members.Contains("ZoomToPoint") && members.Contains("ZoomToCar"), "HUD navigation targets camera APIs");
     }
 }

@@ -1,4 +1,4 @@
-﻿# Tweaks 3.0.0 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.1 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
 
@@ -43,16 +43,28 @@ If HUD button creation fails, the mode component restores the native dropdown an
 
 The selected features are always enabled; this reduced port has no legacy settings page, settings import, or new configuration file. The oil warning threshold retains the old default of 50%.
 
+### Roster Shift-follow
+
+The eye button keeps its native follow action. Holding either Shift key while clicking also selects that locomotive for the control HUD. A normal click does not add selection behavior.
+
+### Faster manual pushing
+
+Manual pushing can reach 6 MPH instead of the native 3 MPH. Only the speed cap changes; native force divided by car weight, host authority, and other movement logic remain intact. In multiplayer, install the mod on the host for this physics change to take effect. The patch refuses to apply if the expected native speed-limit instruction has changed.
+
+### Copy crew and repair destination
+
+A compact copy-to-coupled icon is added to native crew controls when another eligible coupled vehicle has a different assignment. It copies the source's current crew to coupled locomotives, passenger cars, and cabooses supporting crews. Selecting None on the source clears those targets' crew assignments. The source is excluded, already-matching vehicles are skipped, and every target is checked through the native authorization API.
+
+A copy icon is added after a selected repair destination. It copies the current destination to other coupled cars the player is authorized to change; it does not clear destinations when the source has none. Both source and targets use the native repair-destination property permissions. Both copy actions resolve the current consist and current source values on click, then refresh the native panel.
+
+These explicit copy actions change assignments/destinations. The air, handbrake, and oil HUD buttons remain camera-only tools.
+
 ## Deliberately not included
 
 The following old Tweaks additions were not ported. Native game functionality remains available:
 
 - Rotating autosave slots, slot-count settings, renumbering/rollback, and the pause-menu latest-slot display.
 - Compact timetable departure text in the engine roster.
-- Shift-click eye to follow and select a roster locomotive.
-- Fast strong man / the 6-MPH manual pushing limit.
-- Copy repair destination to coupled cars.
-- Copy crew assignments to coupled vehicles.
 - Bleed all coupled cars from the inspector.
 - Consist length conversion from feet to meters in the HUD/tooltip.
 - A dedicated AE Waypoint mode button.
@@ -72,9 +84,9 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.0.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.1.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
-Tests cover daily/extra service selection, overdue/midnight/invalid service times, three-button highlights including no selection in waypoint mode, air fault conditions, oil/hotbox priority and feature gating, installed patch targets, the installed Sleep tooltip literal, compiled native lifecycle interfaces, omitted legacy features, and the absence of brake/air state-writing calls. They do not run Unity.
+Tests cover service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 
 In-game checks:
 
@@ -84,5 +96,8 @@ In-game checks:
 4. Check low oil and a hotbox: the red warning must take priority without changing either state.
 5. Select Manual, Road, Yard, then set a waypoint using the native game controls. AEWP must leave every mod mode button unselected. Check disabled buttons with MU enabled.
 6. Change selected locomotives, reload a world, and disable/re-enable the mod. Check for duplicate icons and restored native controls. Verify placement at the UI scales you use.
+7. Click a roster eye normally and with each Shift key. Only Shift should add locomotive selection.
+8. Test manual pushing on the host: it should retain acceleration behavior and stop adding velocity at the 6-MPH cap.
+9. Couple vehicles with different crews and repair destinations. Copy a crew, None, and a repair destination; confirm source/target permissions and excluded freight crew targets. Recheck that air/handbrake buttons only move the camera.
 
 Diagnostic prefix: `[Tweaks]`, plus the native mod-context lifecycle log.

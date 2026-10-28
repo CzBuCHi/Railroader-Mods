@@ -6,5 +6,7 @@
   <ItemGroup>
     <Compile Include="..\..\Tweaks\NextServiceSelection.cs" Link="NextServiceSelection.cs" />
     <Compile Include="..\..\Tweaks\HudRules.cs" Link="HudRules.cs" />
+    <Compile Include="..\..\Tweaks\ManualPushSpeed.cs" Link="ManualPushSpeed.cs" />
+    <Reference Include="0Harmony"><HintPath>$(GameManagedDir)\0Harmony.dll</HintPath></Reference>
   </ItemGroup>
 </Project>

@@ -2,13 +2,13 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.Teleporter</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>3.0.3</Version>
+    <Version>3.0.4</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
   </PropertyGroup>
   <ItemGroup>
-    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Core;Map.Runtime;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;Newtonsoft.Json;Relay;0Harmony;UnityEngine.CoreModule;UnityEngine.ImageConversionModule;UnityEngine.UI;UnityEngine.PhysicsModule;Unity.TextMeshPro;KinematicCharacterController" />
+    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Core;Map.Runtime;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;Newtonsoft.Json;Relay;0Harmony;UnityEngine.CoreModule;UnityEngine.TextRenderingModule;UnityEngine.ImageConversionModule;UnityEngine.UI;UnityEngine.PhysicsModule;Unity.TextMeshPro;KinematicCharacterController" />
     <Reference Include="@(GameReference)">
       <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
       <Private>false</Private>

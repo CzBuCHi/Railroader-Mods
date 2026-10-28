@@ -7,6 +7,7 @@ using Game.Scripting.Modding;
 using HarmonyLib;
 using Relay;
 using Relay.Native;
+using Relay.Types;
 using TMPro;
 using UI.Builder;
 using UI.Builder.Relay;
@@ -22,10 +23,6 @@ namespace Teleporter
     {
         private static readonly FieldInfo BuilderField = typeof(RelayUIPanelBuilder).GetField("_builder",
             BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new NotSupportedException("Relay builder field was changed.");
-        private static readonly FieldInfo ListField = AccessTools.Field(typeof(ListDetailController), "listController")
-            ?? throw new NotSupportedException("Native list controller was changed.");
-        private static readonly FieldInfo DetailField = AccessTools.Field(typeof(ListDetailController), "detailRectTransform")
-            ?? throw new NotSupportedException("Native detail panel was changed.");
         private static readonly FieldInfo ContainerField = AccessTools.Field(typeof(UIPanelBuilder), "_container")
             ?? throw new NotSupportedException("Native panel container was changed.");
 
@@ -33,8 +30,6 @@ namespace Teleporter
         {
             if (BuilderField.FieldType != typeof(UIPanelBuilder))
                 throw new NotSupportedException("Unsupported Relay UI builder.");
-            if (ListField.FieldType != typeof(ListController) || DetailField.FieldType != typeof(RectTransform))
-                throw new NotSupportedException("Unsupported native grouped list.");
             if (ContainerField.FieldType != typeof(RectTransform))
                 throw new NotSupportedException("Unsupported native panel container.");
         }
@@ -65,6 +60,7 @@ namespace Teleporter
             {
                 var container = (RectTransform)ContainerField.GetValue(Builder(args[0]));
                 if (container.GetComponent<RectMask2D>() == null) container.gameObject.AddComponent<RectMask2D>();
+                ConfigureVertical(container);
                 return Value.Null();
             });
             module.DefineFunction("scrollView", 2, args =>
@@ -80,41 +76,82 @@ namespace Teleporter
                     viewport.gameObject.AddComponent<RectMask2D>();
                 var layout = root.GetComponent<LayoutElement>();
                 layout.minWidth = 0; layout.preferredWidth = 0; layout.flexibleWidth = 1;
+                layout.minHeight = 0; layout.preferredHeight = 0; layout.flexibleHeight = 1;
                 var content = scroll.content;
                 var fitter = content.GetComponent<ContentSizeFitter>();
                 if (fitter != null) fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-                var vertical = content.GetComponent<VerticalLayoutGroup>();
-                if (vertical != null) { vertical.childControlWidth = true; vertical.childForceExpandWidth = true; }
+                ConfigureVertical(content);
                 content.anchorMin = new Vector2(0, content.anchorMin.y);
                 content.anchorMax = new Vector2(1, content.anchorMax.y);
                 content.offsetMin = new Vector2(0, content.offsetMin.y);
                 content.offsetMax = new Vector2(0, content.offsetMax.y);
                 return Value.Null();
             });
-            module.DefineFunction("locationEditor", 5, args =>
+            module.DefineFunction("editorColumns", 3, args =>
             {
-                var entries = BookmarkCatalog.Create(Plugin.Store.Current);
-                var selected = entries.FirstOrDefault(entry => entry.Group == args[1].AsString() && entry.Name == args[2].AsString())
-                    ?? entries.FirstOrDefault();
-                var state = new UIState<string>(args[4].AsBool() ? "" : selected?.Id ?? "");
                 var context = Interpreter.CurrentCallContext;
-                var closure = args[3].AsClosure();
-                var view = Builder(args[0]).AddListDetail(Items(entries), state, (detail, entry) =>
+                var left = args[1].AsClosure(); var right = args[2].AsClosure();
+                var body = Builder(args[0]).HStack(columns =>
                 {
-                    try
-                    {
-                        context.CallClosure(closure, new[] {
-                            RelayUIPanelBuilder.Create(detail).Wrap(),
-                            entry == null ? Value.Null() : Value.String(entry.Group),
-                            entry == null ? Value.Null() : Value.String(entry.Name)
-                        });
-                    }
-                    catch (Exception error) { Report(error); }
-                }, listWidth: 220f);
-                // Let the list share available height with the Preferences footer below it.
-                var layout = view.GetComponent<LayoutElement>() ?? view.gameObject.AddComponent<LayoutElement>();
-                layout.minWidth = 0; layout.preferredWidth = 0; layout.flexibleWidth = 1;
-                layout.minHeight = 0; layout.preferredHeight = 0; layout.flexibleHeight = 1;
+                    var leftRoot = columns.VStack(panel => context.CallClosure(left, new[] { RelayUIPanelBuilder.Create(panel).Wrap() }));
+                    ConfigureVertical(leftRoot);
+                    var leftLayout = Flexible(leftRoot);
+                    leftLayout.minWidth = 170; leftLayout.preferredWidth = 210; leftLayout.flexibleWidth = 0;
+                    var rightRoot = columns.VStack(panel => context.CallClosure(right, new[] { RelayUIPanelBuilder.Create(panel).Wrap() }));
+                    ConfigureVertical(rightRoot); Flexible(rightRoot);
+                });
+                var row = body.GetComponent<HorizontalLayoutGroup>();
+                row.spacing = 12; row.childControlWidth = true; row.childForceExpandWidth = false;
+                row.childControlHeight = true; row.childForceExpandHeight = true;
+                Flexible(body);
+                return Value.Null();
+            });
+            module.DefineFunction("actionBar", 2, args =>
+            {
+                var context = Interpreter.CurrentCallContext; var closure = args[1].AsClosure();
+                var row = Builder(args[0]).ButtonStrip(bar => context.CallClosure(closure, new[] { RelayUIPanelBuilder.Create(bar).Wrap() }));
+                ConfigureBar(row, false);
+                return Value.Null();
+            });
+            module.DefineFunction("button", 3, args =>
+            {
+                var context = Interpreter.CurrentCallContext; var closure = args[2].AsClosure();
+                var control = Builder(args[0]).AddButtonCompact(args[1].AsString(), () => Invoke(context, closure));
+                FixedHeight(control.RectTransform, 28);
+                return NativeConfigurableElement.Wrap(control);
+            });
+            module.DefineFunction("selectorRow", 5, args =>
+            {
+                var context = Interpreter.CurrentCallContext; var closure = args[4].AsClosure();
+                var control = Builder(args[0]).AddButtonSelectable(args[2].AsString(), args[3].AsBool(), () => Invoke(context, closure));
+                control.RectTransform.gameObject.name = "Teleporter.Location." + new BookmarkCatalog.Entry(args[1].AsString(), args[2].AsString()).Id;
+                FixedHeight(control.RectTransform, 25);
+                var label = control.RectTransform.GetComponentInChildren<TMP_Text>();
+                label.textWrappingMode = TextWrappingModes.NoWrap; label.overflowMode = TextOverflowModes.Ellipsis;
+                return Value.Null();
+            });
+            module.DefineFunction("editButton", 2, args =>
+            {
+                var context = Interpreter.CurrentCallContext; var closure = args[1].AsClosure();
+                var footer = Builder(args[0]).ButtonStrip(bar =>
+                {
+                    IConfigurableElement? control = null;
+                    foreach (var name in new[] { "Edit", "Pencil", "Customize" })
+                        if (SpriteLibrary.TryGet(name, out _)) { control = bar.AddIconButton(name, () => Invoke(context, closure)); break; }
+                    control = control ?? bar.AddButtonCompact(TextSprites.Copy, () => Invoke(context, closure));
+                    FixedHeight(control.RectTransform, 28);
+                    control.RectTransform.Square(28);
+                    var layout = control.RectTransform.GetComponent<LayoutElement>();
+                    layout.minWidth = 28; layout.preferredWidth = 28; layout.flexibleWidth = 0;
+                    control.Tooltip("Edit locations", "Open the location editor.");
+                });
+                ConfigureBar(footer, true);
+                return Value.Null();
+            });
+            module.DefineFunction("spacer", 1, args =>
+            {
+                var space = Builder(args[0]).VStack(_ => { });
+                Flexible(space);
                 return Value.Null();
             });
             module.DefineFunction("locationRow", 4, args =>
@@ -126,8 +163,9 @@ namespace Teleporter
                     try { Plugin.Runtime.Teleport(Plugin.Store.Get(group, name)); }
                     catch (Exception error) { Report(error); }
                 });
-                var rowLayout = row.GetComponent<LayoutElement>() ?? row.gameObject.AddComponent<LayoutElement>();
-                rowLayout.minWidth = 0; rowLayout.preferredWidth = 0; rowLayout.flexibleWidth = 1;
+                FixedHeight(row, 26);
+                var layout = row.GetComponent<LayoutElement>();
+                layout.minWidth = 0; layout.preferredWidth = 0; layout.flexibleWidth = 1;
                 var label = row.GetComponentInChildren<TMP_Text>();
                 label.textWrappingMode = TextWrappingModes.NoWrap;
                 label.overflowMode = TextOverflowModes.Ellipsis;
@@ -147,15 +185,50 @@ namespace Teleporter
                     try { callContext.CallClosure(closure, new[] { Value.String(value) }); }
                     catch (Exception error) { Report(error); }
                 });
-                builder.AddField(args[1].AsString(), input);
+                builder.FieldLabelWidth = 100;
+                var field = builder.AddField(args[1].AsString(), input);
+                FixedHeight(field.RectTransform, 30);
                 return Value.Null();
             });
             return module;
         }
 
         private static TeleporterPlugin Plugin => TeleporterPlugin.RequireActive();
-        private static IEnumerable<UIPanelBuilder.ListItem<BookmarkCatalog.Entry>> Items(IEnumerable<BookmarkCatalog.Entry> entries) =>
-            entries.Select(entry => new UIPanelBuilder.ListItem<BookmarkCatalog.Entry>(entry.Id, entry, entry.Group, entry.Name));
+        private static void ConfigureVertical(RectTransform root)
+        {
+            var vertical = root.GetComponent<VerticalLayoutGroup>();
+            if (vertical == null) return;
+            vertical.childControlWidth = true; vertical.childForceExpandWidth = true;
+            vertical.childControlHeight = true; vertical.childForceExpandHeight = false;
+            vertical.spacing = 6;
+        }
+        private static LayoutElement Flexible(RectTransform root)
+        {
+            var layout = root.GetComponent<LayoutElement>() ?? root.gameObject.AddComponent<LayoutElement>();
+            layout.minWidth = 0; layout.preferredWidth = 0; layout.flexibleWidth = 1;
+            layout.minHeight = 0; layout.preferredHeight = 0; layout.flexibleHeight = 1;
+            return layout;
+        }
+        private static void FixedHeight(RectTransform root, float height)
+        {
+            var fitter = root.GetComponent<ContentSizeFitter>();
+            if (fitter != null) fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+            var layout = root.GetComponent<LayoutElement>() ?? root.gameObject.AddComponent<LayoutElement>();
+            layout.minHeight = height; layout.preferredHeight = height; layout.flexibleHeight = 0;
+        }
+        private static void ConfigureBar(RectTransform root, bool right)
+        {
+            FixedHeight(root, 32);
+            var row = root.GetComponent<HorizontalLayoutGroup>();
+            row.childControlWidth = true; row.childForceExpandWidth = false;
+            row.childControlHeight = true; row.childForceExpandHeight = false;
+            row.childAlignment = right ? TextAnchor.MiddleRight : TextAnchor.MiddleLeft;
+        }
+        private static void Invoke(Interpreter.CallContext context, Closure closure)
+        {
+            try { context.CallClosure(closure, Array.Empty<Value>()); }
+            catch (Exception error) { Report(error); }
+        }
         private static Value Strings(IEnumerable<string> items) => Value.Array(items.Select(Value.String).ToList());
         private static UIPanelBuilder Builder(Value value)
         {

@@ -46,21 +46,19 @@ func openEditor() {
 
 func buildMain(b) {
     tp.clipWindow(b)
-    b.button("Edit locations...", openEditor).tooltip("Manage saved locations", "Select a location in the separate editor to change it.")
-    var entries = tp.groups().filter((group) => !tp.locations(group).isEmpty)
-    if entries.isEmpty {
-        b.labelEmptyState("No saved locations. Open Edit locations to add one.")
-        return
-    }
-    // One clipped scroll box: section headers are groups, icon/label rows are locations.
     tp.scrollView(b, (rows) => {
-        for group in entries {
+        var groups = tp.groups().filter((group) => !tp.locations(group).isEmpty)
+        if groups.isEmpty { rows.label("No saved locations. Use the edit icon below to add one.") }
+        for group in groups {
             rows.section(group)
-            for name in tp.locations(group) {
-                tp.locationRow(rows, name, group, name)
-            }
+            for name in tp.locations(group) { tp.locationRow(rows, name, group, name) }
         }
     })
+    tp.editButton(b, openEditor)
+}
+
+func actionButton(builder, label, action) {
+    return tp.button(builder, label, action)
 }
 
 // Temporary adapter. Replace only this function once Relay has an official text input API.
@@ -74,19 +72,37 @@ func completed(error, message) {
     refresh()
 }
 
+func ensureSelection() {
+    if creating { return }
+    if tp.locations(currentGroup).contains(selectedLocation) { return }
+    for group in tp.groups() {
+        var names = tp.locations(group)
+        if !names.isEmpty {
+            currentGroup = group
+            selectedLocation = names.first()
+            return
+        }
+    }
+    creating = true
+    newGroup = currentGroup
+    newLocation = ""
+}
+
 func buildEditor(b) {
     tp.clipWindow(b)
-    b.button("New location", () => {
-        creating = true
-        newGroup = currentGroup
-        newLocation = ""
-        editForName = ""
-        confirmation = ""
-        status = ""
-        refresh()
+    ensureSelection()
+    tp.actionBar(b, (bar) => {
+        actionButton(bar, "New location", () => {
+            creating = true
+            newGroup = currentGroup
+            newLocation = ""
+            editForName = ""
+            confirmation = ""
+            status = ""
+            editorWindow.setNeedsRebuild()
+        }).width(120)
     })
-    // Native list/detail remains useful for selecting and editing existing locations.
-    tp.locationEditor(b, currentGroup, selectedLocation, buildEditorDetail, creating)
+    tp.editorColumns(b, buildLocationList, buildEditorForm)
     if !creating {
         b.section("Preferences")
         b.fieldToggle("Open Teleporter on world load", () => tp.autoOpen(), (enabled) => {
@@ -95,35 +111,39 @@ func buildEditor(b) {
     }
 }
 
-func buildEditorDetail(b, group, name) {
-    // Native list/detail creates an initial empty detail before applying its selection.
-    if group == null && !creating {
-        b.labelEmptyState("Select a location on the left, or click New location.")
-        return
-    }
-    if group != null {
-        if creating || currentGroup != group || selectedLocation != name {
-            var rebuildEditor = creating
-            currentGroup = group
-            selectedLocation = name
-            creating = false
-            confirmation = ""
-            status = ""
-            if rebuildEditor { editorWindow?.setNeedsRebuild() }
+func buildLocationList(b) {
+    tp.scrollView(b, (list) => {
+        var groups = tp.groups().filter((group) => !tp.locations(group).isEmpty)
+        if groups.isEmpty { list.label("No saved locations.") }
+        for group in groups {
+            list.section(group)
+            for name in tp.locations(group) {
+                tp.selectorRow(list, group, name, !creating && group == currentGroup && name == selectedLocation, () => {
+                    currentGroup = group
+                    selectedLocation = name
+                    creating = false
+                    confirmation = ""
+                    status = ""
+                    editorWindow.setNeedsRebuild()
+                })
+            }
         }
-        if editForGroup != group || editForName != name {
-            editGroup = group
-            editName = name
-            editForGroup = group
-            editForName = name
-        }
+    })
+}
+
+func buildEditorForm(b) {
+    if !creating && (editForGroup != currentGroup || editForName != selectedLocation) {
+        editGroup = currentGroup
+        editName = selectedLocation
+        editForGroup = currentGroup
+        editForName = selectedLocation
     }
-    b.vScrollView((form) => {
+    tp.scrollView(b, (form) => {
         if creating {
             form.section("Add current view")
             textInput(form, "Group", newGroup, (value) => { newGroup = value })
             textInput(form, "Location name", newLocation, (value) => { newLocation = value })
-            form.button("Add current view", () => {
+            actionButton(form, "Add current view", () => {
                 var error = tp.add(newGroup, newLocation)
                 if error == null {
                     currentGroup = newGroup.trim()
@@ -137,7 +157,7 @@ func buildEditorDetail(b, group, name) {
             form.section("Saved view")
             textInput(form, "Group", editGroup, (value) => { editGroup = value; confirmation = "" })
             textInput(form, "Location name", editName, (value) => { editName = value; confirmation = "" })
-            form.button("Save name / group", () => {
+            actionButton(form, "Save name / group", () => {
                 var error = tp.rename(currentGroup, selectedLocation, editGroup, editName)
                 if error == null {
                     currentGroup = editGroup.trim()
@@ -145,21 +165,21 @@ func buildEditorDetail(b, group, name) {
                 }
                 completed(error, "Location name and group saved.")
             })
-            form.button(confirmation == "replace" ? "Confirm replace" : "Replace with current view", () => {
+            actionButton(form, confirmation == "replace" ? "Confirm replace" : "Replace with current view", () => {
                 if confirmation != "replace" { confirmation = "replace"; refresh(); return }
                 completed(tp.replace(currentGroup, selectedLocation), "Saved view replaced.")
             }).tooltip("Replace", "Click twice to overwrite this saved camera view.")
-            form.button(confirmation == "delete" ? "Confirm delete" : "Delete", () => {
+            actionButton(form, confirmation == "delete" ? "Confirm delete" : "Delete", () => {
                 if confirmation != "delete" { confirmation = "delete"; refresh(); return }
                 completed(tp.remove(currentGroup, selectedLocation), "Saved view deleted.")
             }).tooltip("Delete", "Click twice to delete this saved location.")
             var groups = tp.groups()
             var index = groups.indexOf(currentGroup)
             form.hStack((order) => {
-                order.button("Move group up", () => {
+                actionButton(order, "Move group up", () => {
                     completed(tp.moveGroup(currentGroup, -1), "Group order saved.")
                 }).disable(index == 0)
-                order.button("Move group down", () => {
+                actionButton(order, "Move group down", () => {
                     completed(tp.moveGroup(currentGroup, 1), "Group order saved.")
                 }).disable(index == groups.count - 1)
             })

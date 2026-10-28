@@ -37,6 +37,8 @@ internal static class RelayUiTests
         internal readonly List<string> Content = new List<string>();
         internal readonly Dictionary<string, Action> Selections = new Dictionary<string, Action>();
         internal Panel? Detail;
+        internal Panel? Left;
+        internal readonly List<string> Trace = new List<string>();
         internal bool Clipped;
         internal int ScrollBoxes;
         internal void Click(string name)
@@ -153,7 +155,7 @@ internal static class RelayUiTests
             try { callback(); return Value.Null(); } catch (Exception error) { return Value.String(error.Message); }
         };
         tp.DefineFunction("groups", 0, _ => strings(store.Current.Groups.Select(group => group.Name)));
-        tp.DefineFunction("locations", 1, args => strings(store.Current.Groups.Single(group => group.Name == args[0].AsString()).Locations.Keys.OrderBy(name => name)));
+        tp.DefineFunction("locations", 1, args => strings(store.Current.Groups.FirstOrDefault(group => group.Name == args[0].AsString())?.Locations.Keys.OrderBy(name => name) ?? Enumerable.Empty<string>()));
         tp.DefineFunction("autoOpen", 0, _ => Value.Bool(store.Current.AutoOpenTeleporterWindow));
         tp.DefineFunction("setAutoOpen", 1, args => action(() => store.SetAutoOpen(args[0].AsBool())));
         tp.DefineFunction("add", 2, args => action(() => store.Add(args[0].AsString(), args[1].AsString(), Program.View(captureX))));
@@ -162,17 +164,6 @@ internal static class RelayUiTests
         tp.DefineFunction("rename", 4, args => action(() => store.Rename(args[0].AsString(), args[1].AsString(), args[2].AsString(), args[3].AsString())));
         tp.DefineFunction("moveGroup", 2, args => action(() => store.MoveGroup(args[0].AsString(), args[1].AsInt())));
         var browserClicks = new List<string>();
-        Action<Panel, List<BookmarkCatalog.Entry>> catalog = (panel, entries) =>
-        {
-            string? previousGroup = null;
-            foreach (var entry in entries)
-            {
-                if (entry.Group != previousGroup) panel.Content.Add("group:" + entry.Group);
-                previousGroup = entry.Group;
-                panel.Content.Add("row:" + entry.Group + ":" + entry.Name);
-                panel.Rows.Add(entry.Name);
-            }
-        };
         tp.DefineFunction("clipWindow", 1, args =>
         {
             var panel = (Panel)args[0].AsTypeInstance().NativeObject;
@@ -183,6 +174,7 @@ internal static class RelayUiTests
         {
             var panel = (Panel)args[0].AsTypeInstance().NativeObject;
             panel.ScrollBoxes++;
+            panel.Trace.Add("scroll");
             Callback1(args[1])(PanelType.Wrap(panel));
             return Value.Null();
         });
@@ -196,29 +188,43 @@ internal static class RelayUiTests
             panel.Selections[entry.Id] = () => browserClicks.Add(entry.Group + ":" + entry.Name);
             return Value.Null();
         });
-        tp.DefineFunction("locationEditor", 5, args =>
+        tp.DefineFunction("editorColumns", 3, args =>
         {
             var panel = (Panel)args[0].AsTypeInstance().NativeObject;
-            var entries = BookmarkCatalog.Create(store.Current);
-            catalog(panel, entries);
-            var context = Interpreter.CurrentCallContext;
-            var closure = args[3].AsClosure();
-            Action<BookmarkCatalog.Entry?> select = entry =>
-            {
-                panel.Detail = new Panel();
-                context.CallClosure(closure, new[] {
-                    PanelType.Wrap(panel.Detail), entry == null ? Value.Null() : Value.String(entry.Group),
-                    entry == null ? Value.Null() : Value.String(entry.Name)
-                });
-            };
-            foreach (var entry in entries) panel.Selections[entry.Id] = () => select(entry);
-            select(null);
-            if (!args[4].AsBool())
-            {
-                var selected = entries.FirstOrDefault(entry => entry.Group == args[1].AsString() && entry.Name == args[2].AsString())
-                    ?? entries.FirstOrDefault();
-                if (selected != null) select(selected);
-            }
+            panel.Left = new Panel(); panel.Detail = new Panel();
+            Callback1(args[1])(PanelType.Wrap(panel.Left));
+            Callback1(args[2])(PanelType.Wrap(panel.Detail));
+            panel.Rows.AddRange(panel.Left.Rows);
+            panel.Content.AddRange(panel.Left.Content);
+            foreach (var selection in panel.Left.Selections) panel.Selections.Add(selection.Key, selection.Value);
+            return Value.Null();
+        });
+        tp.DefineFunction("selectorRow", 5, args =>
+        {
+            var panel = (Panel)args[0].AsTypeInstance().NativeObject;
+            var entry = new BookmarkCatalog.Entry(args[1].AsString(), args[2].AsString());
+            panel.Rows.Add(entry.Name);
+            panel.Content.Add("row:" + entry.Group + ":" + entry.Name);
+            panel.Selections[entry.Id] = Callback(args[4]);
+            return Value.Null();
+        });
+        tp.DefineFunction("actionBar", 2, args =>
+        {
+            Callback1(args[1])(args[0]);
+            return Value.Null();
+        });
+        tp.DefineFunction("button", 3, args =>
+        {
+            var panel = (Panel)args[0].AsTypeInstance().NativeObject;
+            var control = new Control { Click = Callback(args[2]) };
+            panel.Buttons[args[1].AsString()] = control;
+            return ControlValue(control);
+        });
+        tp.DefineFunction("editButton", 2, args =>
+        {
+            var panel = (Panel)args[0].AsTypeInstance().NativeObject;
+            panel.Buttons["@edit"] = new Control { Click = Callback(args[1]) };
+            panel.Trace.Add("editFooter");
             return Value.Null();
         });
         tp.DefineFunction("inputField", 4, args =>
@@ -238,8 +244,9 @@ internal static class RelayUiTests
         var editor = ui.Windows["czbuchi.teleporter.editor"];
         Program.Check(!main.Open && !editor.Open, "Windows initially hidden");
         main.Show();
-        Program.Check(main.Panel.Buttons.Keys.SequenceEqual(new[] { "Edit locations..." }), "Main window contains no edit actions");
-        main.Panel.Click("Edit locations...");
+        Program.Check(main.Panel.Buttons.Keys.SequenceEqual(new[] { "@edit" }), "Main window contains no edit actions");
+        Program.Check(main.Panel.Trace.Last() == "editFooter", "Icon editor button is after the content even for an empty profile");
+        main.Panel.Click("@edit");
         Program.Check(editor.Open && editor.Panel.Detail!.Inputs.Count == 2, "Editor opens new-location form on the right when empty");
         Program.Check(!editor.Panel.Toggles.Any() && !editor.Panel.Detail!.Toggles.Any(), "Preferences hidden during creation");
         editor.Panel.Detail!.Inputs["Group"]("Yard");
@@ -249,7 +256,7 @@ internal static class RelayUiTests
         Program.Check(main.Panel.Rows.SequenceEqual(new[] { "Saved view" }), "Main has grouped location list");
         Program.Check(editor.Panel.Detail!.InputValues["Location name"] == "Saved view", "Newly added view has editable name");
         Program.Check(editor.Panel.Toggles.ContainsKey("Open Teleporter on world load") && !editor.Panel.Detail.Toggles.Any(),
-            "Preferences are below the split list, outside its right detail");
+            "Preferences are below the two-column body, outside its right form");
         captureX = 20;
         editor.Panel.Detail.Click("Replace with current view"); ui.Flush();
         Program.Check(replaces == 0, "First replace click only confirms");
@@ -261,7 +268,7 @@ internal static class RelayUiTests
         editor.Panel.Detail.Inputs["Location name"]("Saved view");
         editor.Panel.Detail.Click("Add current view"); ui.Flush();
         Program.Check(store.Current.Groups[0].Locations.Count == 1, "Duplicate add does not overwrite saved view");
-        editor.Panel.Selections[BookmarkCatalog.Create(store.Current).Single().Id]();
+        editor.Panel.Selections[BookmarkCatalog.Create(store.Current).Single().Id](); ui.Flush();
         editor.Panel.Detail!.Click("Delete"); ui.Flush();
         Program.Check(deletes == 0, "First delete click only confirms");
         editor.Panel.Detail!.Click("Confirm delete"); ui.Flush();
@@ -277,19 +284,22 @@ internal static class RelayUiTests
         Program.Check(main.Panel.Content.SequenceEqual(new[] { "group:Yard", "row:Yard:Alpha", "row:Yard:Beta", "group:Station", "row:Station:Alpha" }),
             "Group headers precede sorted locations and duplicate names retain the correct group");
         Program.Check(main.Panel.Detail == null, "Main window has no detail column");
-        Program.Check(editor.Panel.Rows.SequenceEqual(main.Panel.Rows) && editor.Panel.Detail != null, "Editor lists the same locations with a right detail column");
+        Program.Check(editor.Panel.Rows.SequenceEqual(main.Panel.Rows) && editor.Panel.Detail != null, "Editor lists the same locations in its independent left column");
+        Program.Check(editor.Panel.Left != null && editor.Panel.Left.ScrollBoxes == 1 && editor.Panel.Detail!.ScrollBoxes == 1,
+            "Editor list and form are independent scroll boxes, not a list/detail component");
+        Program.Check(main.Panel.Trace.Last() == "editFooter", "Populated main window keeps icon editor button below scroll content");
         Program.Check(main.Panel.Clipped && main.Panel.ScrollBoxes == 1 && editor.Panel.Clipped,
             "Main uses one clipped scroll box and both window roots request clipping");
         var stationId = BookmarkCatalog.Create(store.Current).Single(entry => entry.Group == "Station").Id;
         main.Panel.Selections[stationId](); main.Panel.Selections[stationId]();
         Program.Check(browserClicks.SequenceEqual(new[] { "Station:Alpha", "Station:Alpha" }), "Same main row can teleport repeatedly with one click");
         var jumpsBefore = browserClicks.Count;
-        editor.Panel.Selections[stationId]();
+        editor.Panel.Selections[stationId](); ui.Flush();
         Program.Check(editor.Panel.Detail!.InputValues["Group"] == "Station" && browserClicks.Count == jumpsBefore,
             "Editor selection chooses the correct duplicate-named view without teleporting");
         editor.Panel.Detail.Click("Delete"); ui.Flush();
         var yardId = BookmarkCatalog.Create(store.Current).First(entry => entry.Group == "Yard").Id;
-        editor.Panel.Selections[yardId]();
+        editor.Panel.Selections[yardId](); ui.Flush();
         Program.Check(editor.Panel.Detail!.Buttons.ContainsKey("Delete") && !editor.Panel.Detail.Buttons.ContainsKey("Confirm delete"),
             "Selecting a different location cancels pending confirmation");
         editor.Panel.Detail.Inputs["Group"]("New group");

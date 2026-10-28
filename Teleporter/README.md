@@ -1,4 +1,4 @@
-﻿# Teleporter 3.0.3 - Relay UI + native DLL
+﻿# Teleporter 3.0.4 - Relay UI + native DLL
 
 For Railroader 0.6.x. Identifier: `czbuchi/teleporter`.
 
@@ -20,16 +20,16 @@ The scroll box stretches to the available width and clips its content to its vie
 
 Groups follow the saved group order; locations are sorted by name within each group. Empty groups are omitted from the list. Adding, replacing, deleting, and reordering are kept out of this window.
 
-**Edit locations...** opens a separate editor. Both windows can be moved and resized.
+The icon-only **Edit locations** button in the bottom-right corner opens a separate editor. Its tooltip identifies the action. The icon uses the game's edit/pencil/customize sprite when available, with its native Copy glyph as a fallback. Both windows can be moved and resized.
 
 ## Editor
 
-- The left side retains the native purchase-style grouped list. Selecting a row opens its editing controls on the right; it does not teleport the camera.
+- The editor has two independent columns: a grouped selection list on the left and the selected location's form on the right. Each column scrolls on its own. The old list/detail component is no longer used. Selecting a location does not teleport the camera.
 - Click **New location** to display the add form on the right. Enter group/name, then **Add current view**. A new group is created if needed; an existing name is never silently overwritten.
 - Select a saved location to replace its view or delete it. Both actions require a second click to confirm; selecting another location cancels pending confirmation.
 - Change the Group and Location name fields and click **Save name / group** to rename a saved location or move it into another group. The saved position, orientation, zoom, and camera mode remain unchanged. A destination-name collision is rejected without overwriting either view.
 - Move the selected location's group up/down using the controls on the right.
-- **Preferences**, including Open Teleporter on world load, is a footer below the entire list/detail component. It is hidden while adding a new location.
+- **Preferences**, including Open Teleporter on world load, is below both columns. It is hidden while adding a new location.
 
 The main window and editor refresh after successful changes. Text fields update their draft values while typing. The editor stores nothing until an action is confirmed.
 
@@ -87,19 +87,21 @@ The DLL patches `ScriptInterpreterFactory.CreatePackScopedBuilder` with a Harmon
 
 The `textInput(...)` helper in Main.rl is the temporary text-input adapter. It calls `tp.inputField(...)`, which unwraps the native panel builder and adds the game's standard text field. Once an official Relay input API is released, update this helper to its documented signature; no future API shape is assumed and no built-in Relay method is overridden.
 
-The main window's group loop and sections live in Main.rl. `tp.scrollView(...)` creates a native vertical scroll view with width constraints and viewport clipping; `tp.locationRow(...)` creates a native destination-icon/label row. `tp.clipWindow(...)` clips the root content. `tp.locationEditor(...)` retains the game's list/detail control with a 220-pixel list on the left and a Relay callback that builds the editing panel on the right. Its height shares available space with the Preferences footer. Selection identifiers encode both group and location names so identical names in different groups remain distinct. `tp.rename(...)` moves/renames the stored view without capturing the current camera. Other bridge functions handle group/name lists, capture for add/replace, deletion, ordering, and auto-open. The DLL uses native strategy camera state capture/restore, validated reflection for camera-mode selection and inertia reset, and no camera update transpilers.
+Main.rl owns grouping, selection, and forms. `tp.scrollView(...)` adds a clipped native vertical scroll view; `tp.locationRow(...)` adds a destination-icon/label row. `tp.clipWindow(...)` clips the root and disables forced vertical expansion of ordinary controls. `tp.editorColumns(...)` creates a horizontal container with a 210-pixel preferred left column (170-pixel minimum) and a flexible right column; both host their own scroll views. Only these content areas expand vertically. Buttons, inputs, rows, and header/footer bars have explicit heights. `tp.editButton(...)` adds the icon-only, right-aligned main footer. `tp.button(...)` and `tp.actionBar(...)` create fixed-height form/header actions. There is no dependency on ListDetailController or its private fields.
+
+Selection callbacks retain both group and location names so identical names in different groups remain distinct. `tp.rename(...)` moves/renames the stored view without capturing the current camera. Other bridge functions handle lists, capture for add/replace, deletion, ordering, and auto-open. The DLL uses native strategy camera state capture/restore, validated reflection for camera-mode selection and inertia reset, and no camera update transpilers.
 
 ## Validation and remaining in-game checks
 
-The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers all groups in one scroll box, icon-row targets, duplicate names across groups, repeated teleport requests, editor selection and right-hand forms, rename/move without camera capture, collision rejection, two-step replacement/deletion, refreshes, footer placement, hidden preferences in add mode, and world cleanup. The catalog, persistence, backups, failed writes, and installed API members are also checked. A separate PowerShell test covers the migration script.
+The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers groups and icon-row targets, duplicate names, repeated teleport requests, separate editor columns and scroll areas, the icon footer after content (including an empty profile), rename/move, collision rejection, confirmation, refreshes, preference placement, and world cleanup. Storage and installed API members are checked too. A separate PowerShell test covers migration. These tests do not measure Unity rectangles or verify rendered layout.
 
 These tests do not run Unity. Check in game:
 
 1. Open the toolbar window; verify group headers and destination icons, with all locations in one scroll box. Resize narrow and use long labels/many entries; no content should draw beyond the window or scroll viewport. Click icons in different groups, then the same icon again.
-2. Open the editor; verify the same list is on the left and selecting a location displays controls on the right without teleporting. Click New location, type a group/name, and add a first-person view. Move and rotate, then return and compare heading and pitch.
+2. Open the editor using the main window's bottom-right icon; verify New location is a normal-height header button, and the independent left list and right form fill the available body. Resize short/narrow and scroll both areas. Selecting a location must not teleport. Add a first-person view, move and rotate, then return and compare heading and pitch.
 3. Repeat in tracking view with a different zoom and while following a train. Verify the bookmark stays at the saved absolute location.
 4. Confirm the first replace/delete click changes only the confirmation label; the second performs the edit.
-5. Rename/move a view using Save name / group. Confirm its saved camera is unchanged, the lists refresh, and occupied target names are rejected. Verify Preferences is below the entire editor split and disappears in New location mode.
+5. Rename/move a view using Save name / group. Confirm its saved camera is unchanged, the lists refresh, and occupied target names are rejected. Verify Preferences is below both editor columns and disappears in New location mode.
 6. Close/reopen both windows, reload a world, and disable/re-enable the mod. Verify no duplicate toolbar icons or stale windows.
 7. Check long-distance loading, repeated clicks, and multiplayer clients. Bookmark data remains local to each player.
 

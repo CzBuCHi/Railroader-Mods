@@ -31,12 +31,9 @@ internal static class InstalledApiTests
         Program.Check(method("UIPanelBuilder", "VScrollView", 1), "Native shared scroll box exists");
         Program.Check(method("UIPanelBuilder", "AddInputField", 4), "Native text input overload exists");
         Program.Check(method("UIPanelBuilder", "AddLocationFieldFallback", 2), "Wagon-style location row exists");
-        Program.Check(method("UIPanelBuilder", "AddListDetail", 5), "Native purchase-style grouped list exists");
-        foreach (var fieldName in new[] { "listController", "detailRectTransform" })
-            Program.Check(type("ListDetailController").GetFields().Select(handle => metadata.GetFieldDefinition(handle))
-                .Any(field => metadata.GetString(field.Name) == fieldName), "Native list adapter field exists: " + fieldName);
-        Program.Check(type("ListController").GetFields().Select(handle => metadata.GetFieldDefinition(handle))
-            .Any(field => metadata.GetString(field.Name) == "OnSelectItem"), "Native per-click selection callback exists");
+        Program.Check(method("UIPanelBuilder", "HStack", 1) && method("UIPanelBuilder", "VStack", 1), "Independent editor column builders exist");
+        Program.Check(method("UIPanelBuilder", "AddButtonSelectable", 3), "Native selectable editor row exists");
+        Program.Check(method("UIPanelBuilder", "ButtonStrip", 1) && method("UIPanelBuilder", "AddButtonCompact", 2), "Fixed header/footer controls exist");
         Program.Check(method("StrategyCameraController", "CaptureState", 0) && method("StrategyCameraController", "Restore", 1), "Native camera state methods exist");
         foreach (var fieldName in new[] { "_movementVelocity", "_distanceVelocity", "_angleXVelocity", "_angleYVelocity" })
             Program.Check(type("StrategyCameraController").GetFields().Select(handle => metadata.GetFieldDefinition(handle))

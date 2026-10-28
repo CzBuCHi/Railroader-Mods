@@ -8,9 +8,9 @@ Native DLL mod with a toolbar icon. Click to restore switch positions; Shift-cli
 
 See [installation, profile location, and checks](SwitchNormalizer/README.md).
 
-## Teleporter 3.0.3
+## Teleporter 3.0.4
 
-Hybrid native DLL and Relay mod. The main window shows all groups as section headers with destination-icon location rows inside one clipped scroll box. The editor keeps the game's grouped list on the left and editing controls on the right, including rename/move without changing the saved view. Preferences sit below the editor split and are hidden while adding. The DLL handles exact camera bookmarks, local profiles, the toolbar, and small native UI adapters. See [Teleporter guide](Teleporter/README.md).
+Hybrid native DLL and Relay mod. The main window shows groups and destination-icon rows inside one clipped scroll box, with an icon-only editor button at the bottom right. The editor uses two independent scrollable columns, without the game's list/detail component. Controls have fixed heights; only the scroll areas expand. Rename/move preserves the saved view. Preferences sit below the columns and are hidden while adding. See [Teleporter guide](Teleporter/README.md).
 
 Build from the repository root:
 
@@ -28,4 +28,4 @@ SwitchNormalizer targets .NET Framework 4.7.2; Teleporter targets 4.8 to match t
 
 ZIP output: `bin/CzBuCHi.SwitchNormalizer_3.0.0.zip`. Publishing only builds the package; it does not install or launch the game.
 
-Teleporter ZIP output: `bin/CzBuCHi.Teleporter_3.0.3.zip`. The game already supplies its Harmony dependency; no separate loader or bundled Harmony copy is needed. RailForge migration is a one-time standalone script included in this ZIP; the DLL never reads RF configuration. See its guide for invocation.
+Teleporter ZIP output: `bin/CzBuCHi.Teleporter_3.0.4.zip`. The game already supplies its Harmony dependency; no separate loader or bundled Harmony copy is needed. RailForge migration is a one-time standalone script included in this ZIP; the DLL never reads RF configuration. See its guide for invocation.

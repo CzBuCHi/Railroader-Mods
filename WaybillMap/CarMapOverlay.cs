@@ -36,7 +36,7 @@ namespace WaybillMap
         private Dictionary<Car, Car> tenders = new Dictionary<Car, Car>();
         private readonly HashSet<Car> retained = new HashSet<Car>();
         private readonly List<Car> removed = new List<Car>();
-        private static readonly Color Unassigned = new Color32(221, 221, 221, 255);
+        private static readonly Color Unassigned = new Color32(MarkerStyle.UnassignedChannel, MarkerStyle.UnassignedChannel, MarkerStyle.UnassignedChannel, 255);
         private sealed class Entry
         {
             internal Car Car = null!;
@@ -52,6 +52,7 @@ namespace WaybillMap
             internal Canvas Canvas = null!;
             internal VehicleMapTag Tag = null!;
             internal float Zoom = float.NaN;
+            internal string? LastLabel;
         }
 
         internal void Initialize(RawImage _, MapBuilder mapBuilder)
@@ -102,7 +103,10 @@ namespace WaybillMap
             var ops = OpsController.Shared;
             if (ops == null || !ops.TryGetDestinationInfo(car, out _, out var spotted, out _, out var destination)) return Unassigned;
             var tint = ops.AreaForCarPosition(destination)?.tagColor ?? Unassigned;
-            return new Color(MarkerStyle.DestinationChannel(tint.r, spotted), MarkerStyle.DestinationChannel(tint.g, spotted), MarkerStyle.DestinationChannel(tint.b, spotted), 1);
+            // Area colors may already be stored dark. Match MapEnhancer's bright
+            // unspotted palette first, then apply only a mild spotted distinction.
+            var brightness = MarkerStyle.DestinationBrightness(tint.r, tint.g, tint.b, spotted);
+            return brightness == 0 ? Unassigned : new Color(tint.r * brightness, tint.g * brightness, tint.b * brightness, 1);
         }
 
         private Marker Create(Car car)
@@ -116,6 +120,9 @@ namespace WaybillMap
             if (body == null || text == null) { Object.Destroy(icon.gameObject); throw new InvalidOperationException("Native map icon layout changed."); }
             var tag = icon.gameObject.AddComponent<VehicleMapTag>(); tag.Text = text;
             if (!(car is BaseLocomotive)) body.sprite = wagonSprite;
+            // 0.6's locomotive prefab can constrain/mask its numeric caption. Wagon
+            // labels must be independent two-line blocks, as in the old prefab.
+            if (text.transform != icon.transform) text.transform.SetParent(icon.transform, false);
             body.transform.localScale = Vector3.one * MapEnhancerStyle.ChildScale;
             text.transform.localScale = Vector3.one * MapEnhancerStyle.ChildScale;
             if (!(car is BaseLocomotive))
@@ -126,6 +133,11 @@ namespace WaybillMap
                 text.autoSizeTextContainer = true; text.transform.localPosition = Vector3.zero;
             }
             text.richText = true;
+            text.margin = Vector4.zero; text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Overflow; text.maskable = false;
+            text.maxVisibleCharacters = text.maxVisibleWords = text.maxVisibleLines = int.MaxValue;
+            text.firstVisibleCharacter = 0;
+            text.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             foreach (var collider in icon.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
             foreach (var graphic in icon.GetComponentsInChildren<Graphic>(true)) graphic.raycastTarget = false;
             icon.OnClick = null;
@@ -175,8 +187,17 @@ namespace WaybillMap
                     marker.Body.transform.localScale = new Vector3(MapEnhancerStyle.ChildScale,
                         engine ? MapEnhancerStyle.EngineScaleY(car.carLength, length) : MapEnhancerStyle.WagonScaleY(length), MapEnhancerStyle.ChildScale);
                     marker.Body.color = entry.Color;
-                    marker.Text.color = MarkerStyle.UseDarkText(entry.Color.r, entry.Color.g, entry.Color.b, entry.Color.a) ? Color.black : Color.white;
-                    marker.Icon.SetText(entry.Label);
+                    marker.Text.color = Color.black;
+                    if (marker.LastLabel != entry.Label)
+                    {
+                        marker.Icon.SetText(entry.Label);
+                        if (!engine)
+                        {
+                            marker.Text.rectTransform.sizeDelta = marker.Text.GetPreferredValues(entry.Label);
+                            marker.Text.transform.localPosition = Vector3.zero;
+                        }
+                        marker.LastLabel = entry.Label;
+                    }
                     marker.Canvas.enabled = true;
                     if (marker.Zoom != zoom) { marker.Icon.SetZoom(zoom); marker.Zoom = zoom; }
                     marker.Tag.FixRotation();

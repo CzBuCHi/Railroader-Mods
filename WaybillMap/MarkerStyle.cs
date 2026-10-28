@@ -6,21 +6,11 @@ namespace WaybillMap
     {
         internal const byte UnassignedChannel = 221; // #ddd
 
-        internal static string Label(string reportingMark, string number, bool tender) =>
-            tender || string.IsNullOrWhiteSpace(reportingMark) ? number : reportingMark + "\n" + number;
-
-        internal static float DestinationChannel(float channel, bool spotted) => channel * (spotted ? 0.85f : 1f);
-
-        internal static bool UseDarkText(double r, double g, double b, double alpha)
+        internal static float DestinationBrightness(float r, float g, float b, bool spotted)
         {
-            // Compare black/white contrast after compositing onto the dark map.
-            r = r * alpha + 0.08 * (1 - alpha);
-            g = g * alpha + 0.08 * (1 - alpha);
-            b = b * alpha + 0.08 * (1 - alpha);
-            var luminance = 0.2126 * Linear(r) + 0.7152 * Linear(g) + 0.0722 * Linear(b);
-            return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05);
+            var peak = Math.Max(r, Math.Max(g, b));
+            return peak <= 0.0001f ? 0 : (spotted ? 0.8f : 1f) / peak;
         }
 
-        private static double Linear(double channel) => channel <= 0.04045 ? channel / 12.92 : Math.Pow((channel + 0.055) / 1.055, 2.4);
     }
 }

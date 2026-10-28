@@ -21,8 +21,11 @@ internal static class Program
         Check(MapEnhancerStyle.FontSize == 19, "Wagon typography uses the source's 19-unit size");
         Check(MapEnhancerStyle.Label("GTW", "17620", false) == "<line-height=70%>GTW\n17620" &&
             MapEnhancerStyle.Label("ASNR", "2", true) == "2", "Source line spacing and single-line engine/tender labels are retained");
-        Check(MapEnhancerStyle.SamplingStride(92, 0.1f) == 1 && MapEnhancerStyle.SamplingStride(92, 0.4f) == 3,
-            "Existing overlap filter uses native icon extent and native zoom, without a new gap formula");
+        Check(new[] { 0.2f, 0.4f, 0.8f, 1.2f }.All(zoom => MapEnhancerStyle.SamplingStride(92, zoom) == 1),
+            "Detail and yard zoom show every car, allowing the reference's modest overlap");
+        Check(MapEnhancerStyle.SamplingStride(92, 2f) > 1, "Overview still supports wagon decluttering");
+        Check(Enumerable.Range(0, 4).All(i => MapVisibility.Show(2, false, false, false, i, MapEnhancerStyle.SamplingStride(92, 0.4f))),
+            "Four spotted wagons remain four displayed wagons at normal zoom");
         Check(MapVisibility.Show(0, true, false, false, 1, 10) && !MapVisibility.Show(0, false, true, false, 0, 1),
             "Locomotives-only filter excludes cabooses");
         Check(MapVisibility.Show(1, false, true, false, 1, 10) && !MapVisibility.Show(1, false, false, true, 0, 1),
@@ -31,10 +34,12 @@ internal static class Program
             "Overlap sampling retains stable consist indices");
         Check(MapVisibility.Show(2, false, false, true, 1, 10) && MapVisibility.Show(2, false, true, false, 1, 10),
             "Selected cars and cabooses survive ordinary-car sampling");
-        Check(Near(MarkerStyle.DestinationChannel(0.8f, true), 0.68) && MarkerStyle.DestinationChannel(0.8f, false) == 0.8f,
-            "Requested mild spotted dimming is retained over the source rendering port");
-        Check(MarkerStyle.UseDarkText(221 / 255d, 221 / 255d, 221 / 255d, 1) && !MarkerStyle.UseDarkText(0.05, 0.05, 0.3, 1),
-            "Light and dark waybill backgrounds retain contrasting text");
+        var normal = MarkerStyle.DestinationBrightness(0.5f, 0.45f, 0.1f, false);
+        var spotted = MarkerStyle.DestinationBrightness(0.5f, 0.45f, 0.1f, true);
+        Check(Near(0.5 * normal, 1) && Near(0.45 * normal, 0.9) && Near(0.5 * spotted, 0.8),
+            "Dark stored area colors become bright unspotted colors and mildly darker spotted colors");
+        Check(Near(spotted / normal, 0.8) && Near(MarkerStyle.DestinationBrightness(0, 0, 0, true), 0),
+            "Spotted hue is retained and an invalid black palette avoids division by zero");
         SwitchProfileTests.Run(); TenderPairingTests.Run();
         Inspect(args[0], args[1]);
         Console.WriteLine("PASS: " + checks + " native-rendering, filter, profile and installed-API checks.");
@@ -75,6 +80,9 @@ internal static class Program
             "Rendering uses real native map icons and source-style world transforms");
         Check(members.Contains("set_autoSizeTextContainer") && members.Contains("set_fontSize") && members.Contains("set_enableAutoSizing"),
             "Copied MapEnhancer typography settings are applied to real native text components");
+        Check(members.Contains("set_overflowMode") && members.Contains("set_maskable") && members.Contains("GetPreferredValues") &&
+            members.Contains("set_maxVisibleCharacters"), "Wagon identifiers cannot inherit the locomotive caption's clipping and character limits");
+        Check(members.Contains("get_black"), "Renderer explicitly requests black caption text instead of brightness-based white text");
         Check(members.Contains("TryGetDestinationInfo") && members.Contains("AreaForCarPosition") && members.Contains("SetMapCenter"),
             "Destination color and selected-car following APIs are retained");
         Check(members.Contains("CanSetSwitch") && members.Contains("CheckAuthorizedToSendMessage") && members.Contains("ApplyLocal"),

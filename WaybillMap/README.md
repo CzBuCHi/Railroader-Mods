@@ -1,4 +1,4 @@
-﻿# WaybillMap 1.5.0
+﻿# WaybillMap 1.5.1
 
 Native Railroader 0.6.x map mod. Identifier: `czbuchi/waybill-map`. Includes the former SwitchNormalizer functionality. No RailForge/UMM is needed.
 
@@ -17,6 +17,7 @@ All logical cars are available, including parked/distant vehicles without loaded
 - Use MapEnhancer's original `traincar.png` for wagons (embedded, byte-for-byte unchanged).
 - Scale image/text children by 0.8; stretch wagon image Y by `carLength / 11`.
 - Set wagon text to 19 units, fixed size, left alignment, auto-sized text container, centered local position and `<line-height=70%>` reporting mark/number rows. Engines and tenders use the number alone.
+- Captions are independent of the 0.6 locomotive prefab's masks and numeric character limits. The full two-line block gets its preferred dimensions and overflow is allowed, so identifiers are not truncated to one or two letters. All vehicle text is black, including spotted vehicles.
 - Use native `MapIcon.SetZoom` and the map's actual IconScale. MapEnhancer's 180-degree text rotation rule applies only to this mod's own icons.
 - Place engines on the upper world-space layer and wagons below them. The two depth layers are anchored below the map camera so terrain height cannot push a marker above the camera. The map render texture provides viewport clipping.
 
@@ -24,13 +25,13 @@ The former custom track-relative sizing, UI text labels and eight-point gap adju
 
 A steam locomotive's connected rear tender is still merged into one marker: combined center and longer image, engine number/color, no second tender icon. Unmerged engines keep MapEnhancer's 0.8 child scale; merged engines extend that long axis by the combined/engine length ratio. A detached tender is a normal standalone wagon. Either tender orientation is supported. The original native locomotive graphics are hidden only while this layer is active and restored on hide/unload; native click targets are preserved. New markers do not intercept input.
 
-Destination colors use the game's destination lookup and area tag colors. This includes repair/depot overrides, so a locomotive assigned to a repair destination is colored too. Cars at their destination retain 85% of the base RGB color, rather than the native half-strength dimming. Vehicles without a destination use opaque `#ddd`. Colors/identifiers and consist membership refresh twice per second; world positions update every visible frame. No track colors or extra switch arrows are added.
+Destination colors use the game's destination lookup and area tag hue. Stored area colors can already be dark: first the brightest RGB channel is normalized to 1 for unspotted vehicles; spotted vehicles then retain 80% of that bright palette, with the same black text. This avoids darkening an already dark area color again. Repair/depot overrides also color locomotives. Vehicles without a destination use opaque `#ddd`. Colors/identifiers and consist membership refresh twice per second; world positions update every visible frame. No track colors or extra switch arrows are added.
 
 The upper-right panel follows this layout: Switch positions + Save/Restore on row one; Render + dropdown on row two; Follow selected car under the dropdown. The dropdown has three persistent modes:
 
 - **Locomotives only**: no wagon or caboose icons.
 - **Locomotives + caboose**: locomotive and caboose icons, useful for the whole-map overview.
-- **All vehicles** (default): wagons are sampled per mechanically coupled consist when native icon extents overlap. This uses the native image height and zoom; image dimensions are never stretched to manufacture a gap. Cabooses and the selected car are retained. Standalone cars are retained. Locomotives always render last.
+- **All vehicles** (default): complete consists are shown at detail/yard zoom (native icon scale up to 1.2). Some neighboring overlap is intentional, as in the reference. Only overview zoom samples wagons per consist; cabooses and the selected car are retained. Four ordinary cars therefore remain four markers at normal zoom. Standalone cars are retained. Locomotives always render last.
 
 The filter and **Follow selected car** preference are stored using the game's local map preferences. Following centers the map on `TrainController.SelectedCar`, including when selection changes; with no selected car it leaves the current center. Following works while the map is open, independently of vehicle-layer visibility. Dragging the map automatically unchecks Follow selected car before the native pan is applied. A click or zoom wheel alone does not disable follow.
 
@@ -52,9 +53,9 @@ dotnet publish WaybillMap/WaybillMap.csproj -c Release
 dotnet run --project tests/WaybillMap.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' WaybillMap/bin/Release/CzBuCHi.WaybillMap.dll
 ```
 
-Override GameDir through Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.5.0.zip`. It contains this mod's DLL, Info.json, README, LICENSE and third-party notices; game, Harmony and Newtonsoft DLLs are supplied by the game.
+Override GameDir through Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.5.1.zip`. It contains this mod's DLL, Info.json, README, LICENSE and third-party notices; game, Harmony and Newtonsoft DLLs are supplied by the game.
 
-Automated checks compare the source rendering constants, line layout, embedded sprite SHA-256, filters, tender pairing, mild spotted colors and contrast. Migrated switch-profile tests cover backups, corruption, atomic failures and encoding. Installed-API checks cover native prefabs, zoom/rotation, map dragging, lifecycle, following and authorized switch requests. These tests do not run Unity or prove in-game appearance.
+Automated checks compare the source rendering constants, line layout, embedded sprite SHA-256, full-consist visibility at detail/yard zoom, overview sampling, tender pairing and bright/spotted color normalization. Migrated switch-profile tests cover backups, corruption, atomic failures and encoding. Installed-API checks cover native prefabs, text clipping/character-limit overrides, zoom/rotation, map dragging, lifecycle, following and authorized switch requests. These tests do not run Unity or prove in-game appearance.
 
 In game, check:
 

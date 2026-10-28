@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.WaybillMap</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>1.5.0</Version>
+    <Version>1.5.1</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>

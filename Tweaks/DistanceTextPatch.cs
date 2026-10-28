@@ -7,7 +7,7 @@ namespace Tweaks
     internal static class DistanceTextPatch
     {
         [HarmonyPrepare]
-        private static bool Prepare() => Settings.Current.ShowDistancesInMeters;
+        private static bool Prepare() => Settings.Current.UseMeters;
 
         [HarmonyPrefix]
         private static bool Prefix(float distanceInMeters, ref string __result)

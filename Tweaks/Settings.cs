@@ -12,8 +12,7 @@ namespace Tweaks
         public bool SleepUntilNextInterchange { get; set; } = true;
         public bool ShowCarSpeed { get; set; } = true;
         public bool ShowCarOil { get; set; } = true;
-        public bool ShowTrainLengthInMeters { get; set; } = true;
-        public bool ShowDistancesInMeters { get; set; } = true;
+        public bool UseMeters { get; set; } = true;
         public bool ShowAirButton { get; set; } = true;
         public bool ShowHandbrakeButton { get; set; } = true;
         public bool ShowOilButton { get; set; } = true;
@@ -38,6 +37,16 @@ namespace Tweaks
                     return defaults;
                 }
                 var json = JObject.Parse(File.ReadAllText(path));
+                // Read older profiles without resetting their unrelated settings.
+                bool? legacyMeters = null;
+                foreach (var key in new[] { "ShowDistancesInMeters", "ShowTrainLengthInMeters" })
+                {
+                    if (!json.TryGetValue(key, out var value)) continue;
+                    if (value.Type != JTokenType.Boolean) throw new InvalidDataException("Invalid setting: " + key);
+                    legacyMeters = (legacyMeters ?? false) || value.Value<bool>();
+                    json.Remove(key);
+                }
+                if (json["UseMeters"] == null && legacyMeters.HasValue) json["UseMeters"] = legacyMeters.Value;
                 // Reject typos and incorrect scalar types instead of silently changing intent.
                 foreach (var property in json.Properties())
                 {

@@ -9,7 +9,7 @@ namespace Tweaks
     internal static class TrainLengthPatch
     {
         [HarmonyPrepare]
-        private static bool Prepare() => Settings.Current.ShowTrainLengthInMeters;
+        private static bool Prepare() => Settings.Current.UseMeters;
 
         [HarmonyPostfix]
         private static void Postfix(ref string __result)

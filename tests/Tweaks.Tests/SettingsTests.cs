@@ -18,6 +18,9 @@ internal static class SettingsTests
             var defaults = Load();
             Program.Check(File.Exists(path) && warnings == 0, "First load creates settings and parent directory");
             var bytes = File.ReadAllBytes(path);
+            var generated = File.ReadAllText(path);
+            Program.Check(generated.Contains("\"UseMeters\": true") && !generated.Contains("ShowDistancesInMeters") &&
+                !generated.Contains("ShowTrainLengthInMeters"), "Generated defaults contain only the unified UseMeters option");
             Program.Check(bytes.Take(3).SequenceEqual(new byte[] { 239, 187, 191 }) &&
                 !File.ReadAllText(path).Replace("\r\n", "").Contains('\n'), "Settings use UTF-8 BOM and CRLF");
             Program.Check(defaults.OilWarningPercent == 50 && defaults.ManualPushSpeedMph == 6 &&
@@ -27,6 +30,13 @@ internal static class SettingsTests
             var custom = Load();
             Program.Check(!custom.ShowCarSpeed && custom.ShowCarOil && custom.OilWarningPercent == 25 && custom.ManualPushSpeedMph == 9,
                 "Partial JSON overrides values and retains defaults for missing keys");
+            File.WriteAllText(path, "{\"UseMeters\":false}");
+            Program.Check(!Load().UseMeters, "Unified metric option can be disabled");
+            File.WriteAllText(path, "{\"ShowDistancesInMeters\":false,\"ShowTrainLengthInMeters\":true,\"ShowCarSpeed\":false}");
+            var legacy = Load();
+            Program.Check(legacy.UseMeters && !legacy.ShowCarSpeed, "Old metric options preserve other settings and enable meters if either was enabled");
+            File.WriteAllText(path, "{\"UseMeters\":false,\"ShowDistancesInMeters\":true}");
+            Program.Check(!Load().UseMeters, "Explicit unified metric option overrides old keys");
             foreach (var property in typeof(Settings).GetProperties().Where(p => p.PropertyType == typeof(bool))) property.SetValue(custom, false);
             File.WriteAllText(path, JsonConvert.SerializeObject(custom));
             var disabled = Load();

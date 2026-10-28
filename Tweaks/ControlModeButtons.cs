@@ -26,7 +26,6 @@ namespace Tweaks
         private int highlighted = -1;
         private bool creationFailed;
         private static readonly string[] Titles = { "Manual", "AE Road", "AE Yard" };
-        private static readonly string[] Icons = { TextSprites.MouseLeft, TextSprites.Coupled, TextSprites.Spotted };
         private static readonly string[] Descriptions = {
             "Control the locomotive manually.", "Auto Engineer: road mode.",
             "Auto Engineer: yard mode."
@@ -117,13 +116,19 @@ namespace Tweaks
                 buttonRect.offsetMin = new Vector2(i == 0 ? 0f : 1f, 0f);
                 buttonRect.offsetMax = new Vector2(i == buttons.Length - 1 ? 0f : -1f, 0f);
                 var label = result.Item2;
-                label.text = Icons[i].Replace("<sprite ", "<sprite tint=1 "); label.richText = true;
+                label.text = string.Empty;
                 label.enableAutoSizing = true; label.fontSizeMin = 9f; label.fontSizeMax = 16f;
                 label.alignment = TextAlignmentOptions.Center;
                 label.margin = Vector4.zero;
                 var labelRect = label.GetComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
                 labelRect.offsetMin = new Vector2(1f, 1f); labelRect.offsetMax = new Vector2(-1f, -1f);
+                var glyph = new GameObject("ModeIcon", typeof(RectTransform));
+                var glyphRect = glyph.GetComponent<RectTransform>();
+                glyphRect.SetParent(buttonRect, false);
+                glyphRect.anchorMin = Vector2.zero; glyphRect.anchorMax = Vector2.one;
+                glyphRect.offsetMin = new Vector2(3f, 2f); glyphRect.offsetMax = new Vector2(-3f, -2f);
+                glyph.AddComponent<ControlModeIcon>().Initialize(label, i);
                 var tooltip = buttonRect.GetComponent<UITooltipProvider>() ?? buttonRect.gameObject.AddComponent<UITooltipProvider>();
                 tooltip.TooltipInfo = new TooltipInfo(Titles[i], Descriptions[i]);
                 buttons[i] = buttonRect.GetComponent<Button>();

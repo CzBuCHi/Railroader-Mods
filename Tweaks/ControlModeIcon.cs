@@ -1,0 +1,79 @@
+﻿using System;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Tweaks
+{
+    // Vector glyphs stay sharp at different UI scales and require no sprite atlas.
+    internal sealed class ControlModeIcon : MaskableGraphic
+    {
+        private TMP_Text? label;
+        private int mode;
+
+        internal void Initialize(TMP_Text source, int index)
+        {
+            label = source; mode = index; raycastTarget = false;
+            color = source.color; SetVerticesDirty();
+        }
+
+        private void LateUpdate()
+        {
+            // Native button transitions tint the TMP label, including disabled states.
+            if (label != null && color != label.color) color = label.color;
+        }
+
+        protected override void OnPopulateMesh(VertexHelper mesh)
+        {
+            mesh.Clear();
+            if (mode == 0)
+            {
+                // Open hand: thumb, four fingers and palm.
+                Path(mesh, 3.2f, 22,10, 15,20, 8,33, 8,38, 12,40, 20,31,
+                    20,52, 24,55, 28,52, 28,35, 28,58, 32,60, 36,57, 36,35,
+                    36,55, 40,57, 44,54, 44,34, 44,47, 48,49, 52,46, 52,24,
+                    48,14, 43,10, 22,10);
+            }
+            else if (mode == 1)
+            {
+                // Main line: parallel rails and sleepers.
+                for (var y = 12; y <= 54; y += 7) Path(mesh, 2.5f, 14,y, 50,y);
+                Path(mesh, 3.5f, 21,8, 21,58);
+                Path(mesh, 3.5f, 43,8, 43,58);
+            }
+            else
+            {
+                // Yard: a straight track with a turnout diverging to the right.
+                for (var y = 12; y <= 54; y += 7) Path(mesh, 2.5f, 8,y, 34,y);
+                Path(mesh, 3.5f, 14,8, 14,58);
+                Path(mesh, 3.5f, 28,8, 28,58);
+                Path(mesh, 3.5f, 14,23, 22,36, 43,58);
+                Path(mesh, 3.5f, 28,23, 36,36, 57,58);
+                Path(mesh, 2.5f, 26,43, 44,31);
+                Path(mesh, 2.5f, 33,50, 51,38);
+                Path(mesh, 2.5f, 40,57, 58,45);
+            }
+        }
+
+        private void Path(VertexHelper mesh, float width, params float[] points)
+        {
+            var rect = GetPixelAdjustedRect();
+            var scale = Math.Min(rect.width, rect.height) / 64f;
+            var origin = rect.center - Vector2.one * (32f * scale);
+            for (var i = 0; i + 3 < points.Length; i += 2)
+            {
+                var a = origin + new Vector2(points[i], points[i + 1]) * scale;
+                var b = origin + new Vector2(points[i + 2], points[i + 3]) * scale;
+                var delta = (b - a).normalized;
+                var normal = new Vector2(-delta.y, delta.x) * (width * scale / 2f);
+                var start = mesh.currentVertCount;
+                mesh.AddVert(a - normal, color, Vector2.zero);
+                mesh.AddVert(a + normal, color, Vector2.zero);
+                mesh.AddVert(b + normal, color, Vector2.zero);
+                mesh.AddVert(b - normal, color, Vector2.zero);
+                mesh.AddTriangle(start, start + 1, start + 2);
+                mesh.AddTriangle(start, start + 2, start + 3);
+            }
+        }
+    }
+}

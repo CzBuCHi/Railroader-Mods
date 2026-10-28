@@ -21,7 +21,6 @@ namespace Tweaks
         private UIBuilderAssets? assets;
         private readonly Button[] buttons = new Button[3];
         private readonly ControlModeIcon[] icons = new ControlModeIcon[3];
-        private readonly Image[] selectionFills = new Image[3];
         private Color hudColor;
         private readonly Graphic[] backgrounds = new Graphic[3];
         private int highlighted = -1;
@@ -58,22 +57,13 @@ namespace Tweaks
             // OnDisable cleans up the list without stealing keyboard focus.
             if (dropdown.gameObject.activeSelf) dropdown.gameObject.SetActive(false);
             strip!.SetActive(true);
-            for (var i = 0; i < buttons.Length; i++)
-            {
-                buttons[i].interactable = dropdown.interactable;
-                var fill = hudColor;
-                if (!dropdown.interactable) fill.a *= 0.5f;
-                selectionFills[i].color = fill;
-            }
+            for (var i = 0; i < buttons.Length; i++) buttons[i].interactable = dropdown.interactable;
             var selectedMode = HudRules.HighlightedMode(dropdown.value);
             if (highlighted == selectedMode) return;
             highlighted = selectedMode;
             for (var i = 0; i < buttons.Length; i++)
             {
                 var active = i == highlighted;
-                // A native selected sprite can be an outline with a transparent center.
-                // Keep the native border and explicitly fill the area behind the glyph.
-                selectionFills[i].gameObject.SetActive(active);
                 icons[i].SetSelected(active);
             }
         }
@@ -136,15 +126,6 @@ namespace Tweaks
                 var labelRect = label.GetComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
                 labelRect.offsetMin = new Vector2(1f, 1f); labelRect.offsetMax = new Vector2(-1f, -1f);
-                var fillObject = new GameObject("SelectedFill", typeof(RectTransform), typeof(Image));
-                var fillRect = fillObject.GetComponent<RectTransform>();
-                fillRect.SetParent(buttonRect, false);
-                fillRect.anchorMin = Vector2.zero; fillRect.anchorMax = Vector2.one;
-                fillRect.offsetMin = new Vector2(3f, 3f); fillRect.offsetMax = new Vector2(-3f, -3f);
-                var fillImage = fillObject.GetComponent<Image>();
-                fillImage.sprite = null; fillImage.color = hudColor; fillImage.raycastTarget = false;
-                selectionFills[i] = fillImage;
-                fillObject.SetActive(false);
                 var glyph = new GameObject("ModeIcon", typeof(RectTransform));
                 var glyphRect = glyph.GetComponent<RectTransform>();
                 glyphRect.SetParent(buttonRect, false);

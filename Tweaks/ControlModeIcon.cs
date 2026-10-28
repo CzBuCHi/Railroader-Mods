@@ -28,7 +28,7 @@ namespace Tweaks
         private void RefreshColor()
         {
             // Dialog label colors differ from the surrounding locomotive HUD icons.
-            Color tint = selected ? (Color)new Color32(35, 33, 27, 255) : hudColor;
+            Color tint = selected ? Color.white : hudColor;
             if (button != null && !button.interactable) tint.a *= 0.5f;
             if (color != tint) color = tint;
         }

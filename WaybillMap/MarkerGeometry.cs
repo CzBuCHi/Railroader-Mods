@@ -12,12 +12,12 @@ namespace WaybillMap
 
         internal static bool TryCreate(double ax, double ay, double bx, double by,
             double uvX, double uvY, double uvWidth, double uvHeight,
-            double left, double bottom, double width, double height, out MarkerGeometry marker)
+            double left, double bottom, double width, double height, out MarkerGeometry marker, double carLength = 12)
         {
             marker = default;
             if (!Finite(ax) || !Finite(ay) || !Finite(bx) || !Finite(by) || !Finite(uvWidth) || !Finite(uvHeight) ||
                 !Finite(uvX) || !Finite(uvY) || !Finite(left) || !Finite(bottom) || !Finite(width) || !Finite(height) ||
-                Math.Abs(uvWidth) < 1e-9 || Math.Abs(uvHeight) < 1e-9 || width <= 0 || height <= 0) return false;
+                Math.Abs(uvWidth) < 1e-9 || Math.Abs(uvHeight) < 1e-9 || width <= 0 || height <= 0 || !Finite(carLength) || carLength <= 0) return false;
             ax = left + (ax - uvX) / uvWidth * width;
             bx = left + (bx - uvX) / uvWidth * width;
             ay = bottom + (ay - uvY) / uvHeight * height;
@@ -27,9 +27,9 @@ namespace WaybillMap
             var x = (ax + bx) * 0.5; var y = (ay + by) * 0.5;
             var axisX = length > 1e-6 ? dx / length : 1;
             var axisY = length > 1e-6 ? dy / length : 0;
-            // Badge dimensions must leave room for a readable road number.
-            var halfLength = Math.Max(21, length * 0.42);
-            var halfWidth = Math.Max(8, Math.Min(12, length * 0.1));
+            // Follow vehicle length, leaving a coupler gap instead of enlarging badges for text.
+            var halfLength = Math.Max(0.75, length * 0.45);
+            var halfWidth = Math.Max(0.65, length / carLength * 1.8);
             var extentX = Math.Abs(axisX) * (halfLength + 0.75) + Math.Abs(axisY) * (halfWidth + 0.75);
             var extentY = Math.Abs(axisY) * (halfLength + 0.75) + Math.Abs(axisX) * (halfWidth + 0.75);
             if (x + extentX < left || x - extentX > left + width || y + extentY < bottom || y - extentY > bottom + height)
@@ -39,6 +39,9 @@ namespace WaybillMap
         }
 
         private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+        internal bool ShowLabel => HalfLength * 2 >= 14 && HalfWidth * 2 >= 9;
+        internal bool ShowNumber => HalfLength * 2 >= 14 && HalfWidth * 2 >= 5;
 
         internal double ReadableAngle
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
+using Helpers;
 using Model;
 using TMPro;
 using UI.Map;
@@ -12,7 +13,7 @@ using Object = UnityEngine.Object;
 namespace WaybillMap
 {
     // Native locomotive icons are baked into the map texture, below our wagon UI.
-    // Mirror their existing graphics in the final UI layer; originals retain clicks.
+    // Draw compact copies last and temporarily hide native graphics; originals retain clicks.
     internal sealed class LocomotiveTopLayer
     {
         private static readonly FieldInfo IconField = AccessTools.Field(typeof(Car), "MapIcon");
@@ -20,6 +21,7 @@ namespace WaybillMap
         private readonly Dictionary<BaseLocomotive, Copy> copies = new Dictionary<BaseLocomotive, Copy>();
         private readonly HashSet<BaseLocomotive> current = new HashSet<BaseLocomotive>();
         private readonly List<BaseLocomotive> removed = new List<BaseLocomotive>();
+        private readonly Vector3[] corners = new Vector3[4];
 
         private sealed class Copy
         {
@@ -27,6 +29,9 @@ namespace WaybillMap
             internal RectTransform SourceRect = null!, Rect = null!;
             internal GameObject Host = null!;
             internal Graphic[] SourceGraphics = null!, Graphics = null!;
+            internal bool[] EnabledBeforeHide = null!;
+            internal bool Hidden;
+            internal RectTransform? Body;
         }
 
         internal LocomotiveTopLayer(RectTransform layer) { parent = layer; }
@@ -42,21 +47,26 @@ namespace WaybillMap
                 current.Add(locomotive);
                 var source = (MapIcon?)IconField.GetValue(locomotive);
                 if (copies.TryGetValue(locomotive, out var copy) && copy.Source != source)
-                { copy.Host.SetActive(false); Object.Destroy(copy.Host); copies.Remove(locomotive); copy = null; }
+                { Destroy(copy); copies.Remove(locomotive); copy = null; }
                 if (source == null || !(source.transform is RectTransform sourceRect))
-                { if (copy != null) copy.Host.SetActive(false); continue; }
+                { if (copy != null) { Restore(copy); copy.Host.SetActive(false); } continue; }
                 if (copy == null)
                 {
                     copy = Create(source, sourceRect, mapImage.gameObject.layer);
                     copies.Add(locomotive, copy);
                 }
-                Position(copy, camera, mapImage);
+                try
+                {
+                    if (Position(copy, locomotive, camera, mapImage)) Hide(copy);
+                    else Restore(copy);
+                }
+                catch { Restore(copy); copy.Host.SetActive(false); throw; }
             }
             removed.Clear();
             foreach (var pair in copies)
                 if (pair.Key == null || !current.Contains(pair.Key)) removed.Add(pair.Key!);
             foreach (var car in removed)
-            { copies[car].Host.SetActive(false); Object.Destroy(copies[car].Host); copies.Remove(car); }
+            { Destroy(copies[car]); copies.Remove(car); }
         }
 
         private Copy Create(MapIcon source, RectTransform sourceRect, int layer)
@@ -81,27 +91,43 @@ namespace WaybillMap
             rect.anchorMin = rect.anchorMax = parent.pivot;
             rect.pivot = sourceRect.pivot;
             rect.sizeDelta = sourceRect.rect.size;
+            var originals = source.GetComponentsInChildren<Graphic>(true);
+            RectTransform? body = null;
+            foreach (var graphic in originals) if (graphic is Image) { body = graphic.rectTransform; break; }
             return new Copy { Source = source, SourceRect = sourceRect, Rect = rect, Host = host,
-                SourceGraphics = source.GetComponentsInChildren<Graphic>(true), Graphics = graphics };
+                SourceGraphics = originals, Graphics = graphics, EnabledBeforeHide = new bool[originals.Length], Body = body };
         }
 
-        private void Position(Copy copy, Camera camera, RawImage image)
+        private bool Position(Copy copy, BaseLocomotive locomotive, Camera camera, RawImage image)
         {
             var uv = image.uvRect; var bounds = image.rectTransform.rect;
             if (!copy.Source.isActiveAndEnabled || Math.Abs(uv.width) < 1e-6 || Math.Abs(uv.height) < 1e-6)
-            { copy.Host.SetActive(false); return; }
+            { copy.Host.SetActive(false); return false; }
             var source = copy.SourceRect;
             var origin = Project(camera, source.position, uv, bounds);
             var b = Project(camera, source.TransformPoint(Vector3.right), uv, bounds);
             var c = Project(camera, source.TransformPoint(Vector3.up), uv, bounds);
             if (origin.z <= 0f)
-            { copy.Host.SetActive(false); return; }
+            { copy.Host.SetActive(false); return false; }
             var along = (Vector2)(b - origin); var across = (Vector2)(c - origin);
+            if (copy.Body == null || !locomotive.LocationF.IsValid || !locomotive.LocationR.IsValid)
+            { copy.Host.SetActive(false); return false; }
+            copy.Body.GetWorldCorners(corners);
+            var p0 = Project(camera, corners[0], uv, bounds);
+            var p1 = Project(camera, corners[1], uv, bounds);
+            var p2 = Project(camera, corners[2], uv, bounds);
+            var nativeLength = Math.Max(((Vector2)(p1 - p0)).magnitude, ((Vector2)(p2 - p1)).magnitude);
+            var graph = Track.Graph.Shared.Current;
+            locomotive.GetPositionFR(graph, out var front, out var rear);
+            var projectedFront = Project(camera, WorldTransformer.GameToWorld(front), uv, bounds);
+            var projectedRear = Project(camera, WorldTransformer.GameToWorld(rear), uv, bounds);
+            var fit = (float)MarkerStyle.LocomotiveScale(((Vector2)(projectedFront - projectedRear)).magnitude, nativeLength);
+            if (fit <= 0f) { copy.Host.SetActive(false); return false; }
             copy.Rect.anchoredPosition = origin;
             copy.Rect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(along.y, along.x) * Mathf.Rad2Deg);
             var cross = along.x * across.y - along.y * across.x;
-            copy.Rect.localScale = new Vector3(along.magnitude,
-                across.magnitude * (cross < 0f ? -1f : 1f), 1f);
+            copy.Rect.localScale = new Vector3(along.magnitude * fit,
+                across.magnitude * fit * (cross < 0f ? -1f : 1f), 1f);
             for (var i = 0; i < Math.Min(copy.Graphics.Length, copy.SourceGraphics.Length); i++)
             {
                 var original = copy.SourceGraphics[i]; var graphic = copy.Graphics[i];
@@ -112,6 +138,36 @@ namespace WaybillMap
                 if (original is TMP_Text originalText && graphic is TMP_Text text) text.text = originalText.text;
             }
             copy.Host.SetActive(true);
+            return true;
+        }
+
+        private static void Hide(Copy copy)
+        {
+            if (copy.Hidden) return;
+            for (var i = 0; i < copy.SourceGraphics.Length; i++)
+            {
+                var graphic = copy.SourceGraphics[i];
+                if (graphic == null) continue;
+                copy.EnabledBeforeHide[i] = graphic.enabled;
+                graphic.enabled = false;
+            }
+            copy.Hidden = true;
+        }
+
+        private static void Restore(Copy copy)
+        {
+            if (!copy.Hidden) return;
+            for (var i = 0; i < copy.SourceGraphics.Length; i++)
+                if (copy.SourceGraphics[i] != null) copy.SourceGraphics[i].enabled = copy.EnabledBeforeHide[i];
+            copy.Hidden = false;
+        }
+
+        private static void Destroy(Copy copy)
+        { Restore(copy); copy.Host.SetActive(false); Object.Destroy(copy.Host); }
+
+        internal void Suspend()
+        {
+            foreach (var copy in copies.Values) { Restore(copy); copy.Host.SetActive(false); }
         }
 
         private static Vector3 Project(Camera camera, Vector3 world, Rect uv, Rect bounds)
@@ -124,7 +180,7 @@ namespace WaybillMap
         internal void Clear()
         {
             foreach (var copy in copies.Values)
-            { copy.Host.SetActive(false); Object.Destroy(copy.Host); }
+                Destroy(copy);
             copies.Clear(); current.Clear(); removed.Clear();
         }
     }

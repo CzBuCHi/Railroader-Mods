@@ -16,7 +16,7 @@ Hybrid native DLL and Relay mod. The main window shows groups and destination-ic
 
 Selected native port: next-interchange Sleep, wagon speed/oil, metric distances and train length, camera-only fault HUD buttons, Manual/Road/Yard controls (none selected in AEWP), roster Shift-follow, a default 6-MPH manual pushing cap, and crew/repair-destination copying. JSON settings control each feature, oil threshold, and manual-push cap; no settings UI is added. See the [full included/excluded list and configuration](Tweaks/README.md).
 
-## WaybillMap 1.1.1
+## WaybillMap 1.2.0
 
 Standalone native mod displaying all non-locomotive cars on the map as numbered, oriented badges using native destination/waybill tag colors and #ddd for cars without a waybill. Distant parked cars are included without loading their detailed models. Map > Display > Waybill cars toggles the layer and persists through the game's map preferences. See the [WaybillMap guide](WaybillMap/README.md).
 
@@ -43,4 +43,4 @@ Teleporter ZIP output: `bin/CzBuCHi.Teleporter_3.0.5.zip`. The game already supp
 
 Tweaks ZIP output: `bin/CzBuCHi.Tweaks_3.0.10.zip`.
 
-WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.1.1.zip`.
+WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.2.0.zip`.

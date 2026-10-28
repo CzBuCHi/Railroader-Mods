@@ -6,6 +6,14 @@ namespace WaybillMap
     {
         internal const byte UnassignedChannel = 221; // #ddd
 
+        internal static string Label(string reportingMark, string number, bool tender) =>
+            tender || string.IsNullOrWhiteSpace(reportingMark) ? number : reportingMark + "\n" + number;
+
+        internal static double LocomotiveScale(double projectedCarLength, double nativeIconLength) =>
+            double.IsNaN(projectedCarLength) || double.IsNaN(nativeIconLength) || double.IsInfinity(projectedCarLength) ||
+            double.IsInfinity(nativeIconLength) || projectedCarLength <= 0 || nativeIconLength <= 0
+                ? 0 : Math.Min(0.8, projectedCarLength * 0.9 / nativeIconLength);
+
         internal static bool UseDarkText(double r, double g, double b, double alpha)
         {
             // Compare black/white contrast after compositing onto the dark map.

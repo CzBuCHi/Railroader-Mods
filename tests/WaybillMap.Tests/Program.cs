@@ -21,15 +21,28 @@ internal static class Program
     {
         Check(Create(0.4, 0.5, 0.6, 0.5, out var horizontal) && Near(horizontal.X, 0) && Near(horizontal.Y, 0) &&
             Near(horizontal.AxisX, 1) && Near(horizontal.AxisY, 0), "Horizontal car projects to centered rectangle");
-        Check(Near(horizontal.HalfLength, 50.4) && Near(horizontal.HalfWidth, 12), "Length follows projected body and badge width is bounded");
+        Check(Near(horizontal.HalfLength, 54) && Near(horizontal.HalfWidth, 18), "Body length and width follow physical vehicle dimensions");
         Check(Create(0.5, 0.4, 0.5, 0.6, out var vertical) && Near(vertical.AxisX, 0) && Near(vertical.AxisY, 1) &&
-            Near(vertical.HalfLength, 33.6), "Vertical car respects map aspect ratio");
+            Near(vertical.HalfLength, 36), "Vertical car respects map aspect ratio");
         Check(Create(0.4, 0.3, 0.6, 0.7, out var diagonal) && Near(diagonal.AxisX * diagonal.AxisX + diagonal.AxisY * diagonal.AxisY, 1),
             "Diagonal marker direction is normalized");
         Check(Create(0.6, 0.5, 0.4, 0.5, out var reversed) && Near(reversed.X, horizontal.X) && Near(reversed.HalfLength, horizontal.HalfLength) &&
             Near(reversed.AxisX, -horizontal.AxisX), "Reversing logical ends retains marker footprint");
-        Check(Create(0.5, 0.5, 0.5, 0.5, out var tiny) && Near(tiny.HalfLength, 21) && Near(tiny.HalfWidth, 8),
-            "Distant car badges retain space for a readable road number without division by zero");
+        Check(Create(0.5, 0.5, 0.5, 0.5, out var tiny) && Near(tiny.HalfLength, 0.75) && Near(tiny.HalfWidth, 0.65) && !tiny.ShowLabel,
+            "Distant markers stay compact and hide labels that would overlap neighboring cars");
+        Check(horizontal.ShowLabel, "Labels are shown when projected vehicle size provides enough room");
+        Check(MarkerGeometry.TryCreate(0.4, 0.5, 0.47, 0.5, 0, 0, 1, 1, -300, -200, 600, 400, out var longCoach, 28) &&
+            longCoach.ShowNumber && !longCoach.ShowLabel, "Long passenger car keeps its number when two-line label no longer fits");
+        Check(Create(0.4, 0.5, 0.5, 0.5, out var car1) && Create(0.5, 0.5, 0.6, 0.5, out var car2) &&
+            car2.X - car1.X > car1.HalfLength + car2.HalfLength + 1.5, "Adjacent vehicles leave a visible coupler gap");
+        Check(MarkerStyle.Label("GTW", "17620", false) == "GTW\n17620" && MarkerStyle.Label("ASNR", "2", true) == "2",
+            "Cars use reporting-mark/number rows and tenders retain number-only labels");
+        Check(MarkerStyle.Label("", "250", false) == "250", "Missing reporting mark does not add an empty row");
+        var fit = MarkerStyle.LocomotiveScale(40, 100);
+        Check(Near(fit, 0.36) && fit * 100 < 40, "Large vanilla engine marker shrinks within actual engine length");
+        Check(Near(MarkerStyle.LocomotiveScale(100, 40), 0.8), "Already compact engine marker is never enlarged");
+        Check(MarkerStyle.LocomotiveScale(0, 100) == 0 && MarkerStyle.LocomotiveScale(40, double.NaN) == 0,
+            "Invalid locomotive projection cannot produce a broken UI transform");
         Check(Near(horizontal.ReadableAngle, reversed.ReadableAngle), "Road numbers do not turn upside down when the car reverses");
         Check(diagonal.ReadableAngle >= -90 && diagonal.ReadableAngle <= 90 && vertical.ReadableAngle >= -90 && vertical.ReadableAngle <= 90,
             "Rotated road numbers remain in the readable half-plane");

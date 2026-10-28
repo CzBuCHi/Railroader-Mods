@@ -25,7 +25,7 @@ namespace WaybillMap
         private LocomotiveTopLayer? locomotiveLayer;
         private bool stopped, warned;
         private float nextRefresh;
-        private readonly List<(Car Car, Color Color, string Number)> cars = new List<(Car, Color, string)>();
+        private readonly List<(Car Car, Color Color, string Label, string Number)> cars = new List<(Car, Color, string, string)>();
         private readonly List<MapMarker> markers = new List<MapMarker>();
         private readonly List<CarMapGraphic> batches = new List<CarMapGraphic>();
         private readonly List<TextMeshProUGUI> labels = new List<TextMeshProUGUI>();
@@ -67,6 +67,7 @@ namespace WaybillMap
             if (window == null || !window.IsShown || !WaybillMapPlugin.CarsOption.IsOn ||
                 camera == null || !camera.isActiveAndEnabled || controller == null || Graph.Shared == null)
             {
+                locomotiveLayer?.Suspend();
                 root.SetActive(false); nextRefresh = 0f;
                 return;
             }
@@ -85,7 +86,7 @@ namespace WaybillMap
                     {
                         var channel = MarkerStyle.UnassignedChannel;
                         Color tint = car.Waybill.HasValue ? CarTagColor.For(car, OpsController.Shared) : new Color32(channel, channel, channel, 255);
-                        cars.Add((car, tint, car.Ident.RoadNumber));
+                        cars.Add((car, tint, MarkerStyle.Label(car.Ident.ReportingMark, car.Ident.RoadNumber, car.CarType.IsTender), car.Ident.RoadNumber));
                     }
                     catch (Exception error) { Report(error); }
                 }
@@ -104,8 +105,8 @@ namespace WaybillMap
                     var b = camera.WorldToViewportPoint(WorldTransformer.GameToWorld(graph.GetPosition(car.LocationB)));
                     if (a.z <= 0f || b.z <= 0f) continue;
                     if (MarkerGeometry.TryCreate(a.x, a.y, b.x, b.y, uv.x, uv.y, uv.width, uv.height,
-                        rect.xMin, rect.yMin, rect.width, rect.height, out var geometry))
-                        markers.Add(new MapMarker(geometry, entry.Color, entry.Number));
+                        rect.xMin, rect.yMin, rect.width, rect.height, out var geometry, car.carLength))
+                        markers.Add(new MapMarker(geometry, entry.Color, entry.Label, entry.Number));
                 }
                 catch (Exception error) { Report(error); }
             }
@@ -137,22 +138,23 @@ namespace WaybillMap
                 rect.anchorMin = rect.anchorMax = labelLayer!.pivot;
                 rect.pivot = new Vector2(0.5f, 0.5f);
                 text.font = TMP_Settings.defaultFontAsset;
-                text.fontSize = 11f; text.fontSizeMin = 8f; text.fontSizeMax = 12f;
+                text.fontSize = 11f; text.fontSizeMin = 4f; text.fontSizeMax = 12f;
+                text.lineSpacing = -1f;
                 text.enableAutoSizing = true;
                 text.alignment = TextAlignmentOptions.Center;
                 text.textWrappingMode = TextWrappingModes.NoWrap;
                 text.overflowMode = TextOverflowModes.Truncate;
-                text.margin = new Vector4(2f, 0f, 2f, 0f);
+                text.margin = new Vector4(1f, 0f, 1f, 0f);
                 text.raycastTarget = false; text.richText = false;
                 labels.Add(text);
             }
             for (var i = 0; i < labels.Count; i++)
             {
                 var label = labels[i];
-                label.gameObject.SetActive(i < markers.Count);
+                label.gameObject.SetActive(i < markers.Count && markers[i].Geometry.ShowNumber);
                 if (i >= markers.Count) continue;
                 var marker = markers[i]; var geometry = marker.Geometry; var tint = marker.Color;
-                label.text = marker.Number;
+                label.text = geometry.ShowLabel ? marker.Label : marker.Number;
                 label.color = MarkerStyle.UseDarkText(tint.r, tint.g, tint.b, tint.a) ? Color.black : Color.white;
                 var rect = label.rectTransform;
                 rect.anchoredPosition = new Vector2((float)geometry.X, (float)geometry.Y);

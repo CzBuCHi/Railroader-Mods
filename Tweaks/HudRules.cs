@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Tweaks
+{
+    internal static class HudRules
+    {
+        internal const float OilWarningThreshold = 0.5f;
+        internal static int HighlightedMode(int nativeValue) => nativeValue >= 0 && nativeValue < 3 ? nativeValue : -1;
+        internal static bool NeedsAir(bool hasSet, bool coupled, bool airConnected, float anglecock) =>
+            hasSet && (coupled ? !airConnected || anglecock < 0.999f : anglecock > 0.001f);
+        internal static T? FindWarning<T>(IEnumerable<T> cars, Func<T, bool> oilEnabled, Func<T, bool> hotbox, Func<T, float> oil) where T : class =>
+            cars.Where(car => oilEnabled(car) && (hotbox(car) || oil(car) < OilWarningThreshold))
+                .OrderByDescending(hotbox).ThenBy(oil).FirstOrDefault();
+    }
+}

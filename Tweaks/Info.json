@@ -1,0 +1,11 @@
+﻿{
+  "identifier": "czbuchi/tweaks",
+  "version": "3.0.0",
+  "name": "Tweaks",
+  "author": "CzBuCHi",
+  "license": "MIT",
+  "description": "Next-interchange sleep, car speed/oil, consist actions and Manual/Road/Yard HUD buttons.",
+  "scope": "optional",
+  "assemblies": ["CzBuCHi.Tweaks.dll"],
+  "dependencies": { "required": ["rr/game >=0.6.0 <0.7.0"] }
+}

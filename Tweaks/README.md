@@ -1,4 +1,4 @@
-﻿# Tweaks 3.0.8 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.9 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
 
@@ -37,7 +37,7 @@ These are navigation tools. They do not connect hoses, turn anglecocks, release 
 
 Three icon buttons replace the visible native Control Mode dropdown: Manual, AE Road, and AE Yard. They call the native mode-change handler and mirror the native dropdown's enabled state, including MU restrictions. The hidden dropdown remains the backend.
 
-The symbols are an open hand (Manual), straight rails (Road), and a branching turnout (Yard). These vector icons scale with the UI and retain the mode tooltips. Their gold-beige tint is taken from neighboring native HUD icons, with the game's default button icon tint as fallback. The selected mode has a gold-beige fill and dark symbol for contrast; disabled symbols use half opacity. Waypoint mode leaves all three unselected.
+The symbols are an open hand (Manual), straight rails (Road), and a branching turnout (Yard). These vector icons scale with the UI and retain the mode tooltips. Their gold-beige tint is taken from neighboring native HUD icons, with the game's default button icon tint as fallback. The selected mode has an explicit solid gold-beige inset behind a dark symbol, independent of native selected-sprite transparency; disabled symbols use half opacity. Waypoint mode leaves all three unselected.
 
 AE Waypoint has no mod button. When the game selects waypoint mode after setting a waypoint, all three mod buttons remain unselected. No waypoint shortcut or automatic mode-selection patch is installed.
 
@@ -132,7 +132,7 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.8.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.9.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
 Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, metric train-length formatting and native length API, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed tutorial source is transformed and executed in the real Relay VM with stub world/UI/math bindings: both rounding helpers, scope, changed-helper rejection and unchanged file contents are checked. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 

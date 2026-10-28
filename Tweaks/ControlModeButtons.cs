@@ -21,11 +21,9 @@ namespace Tweaks
         private UIBuilderAssets? assets;
         private readonly Button[] buttons = new Button[3];
         private readonly ControlModeIcon[] icons = new ControlModeIcon[3];
+        private readonly Image[] selectionFills = new Image[3];
         private Color hudColor;
         private readonly Graphic[] backgrounds = new Graphic[3];
-        private readonly Sprite?[] normalSprites = new Sprite?[3];
-        private readonly Color[] normalColors = new Color[3];
-        private readonly ColorBlock[] normalButtonColors = new ColorBlock[3];
         private int highlighted = -1;
         private bool creationFailed;
         private static readonly string[] Titles = { "Manual", "AE Road", "AE Yard" };
@@ -60,27 +58,22 @@ namespace Tweaks
             // OnDisable cleans up the list without stealing keyboard focus.
             if (dropdown.gameObject.activeSelf) dropdown.gameObject.SetActive(false);
             strip!.SetActive(true);
-            for (var i = 0; i < buttons.Length; i++) buttons[i].interactable = dropdown.interactable;
+            for (var i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].interactable = dropdown.interactable;
+                var fill = hudColor;
+                if (!dropdown.interactable) fill.a *= 0.5f;
+                selectionFills[i].color = fill;
+            }
             var selectedMode = HudRules.HighlightedMode(dropdown.value);
             if (highlighted == selectedMode) return;
             highlighted = selectedMode;
-            var selected = assets!.buttonSelected;
-            var selectedBackground = selected.targetGraphic;
             for (var i = 0; i < buttons.Length; i++)
             {
                 var active = i == highlighted;
-                var palette = active ? selected.colors : normalButtonColors[i];
-                if (active)
-                {
-                    palette.normalColor = Color.white;
-                    palette.highlightedColor = Color.white;
-                    palette.selectedColor = Color.white;
-                    palette.colorMultiplier = 1f;
-                }
-                buttons[i].colors = palette;
-                if (backgrounds[i] is Image image)
-                    image.sprite = active && selectedBackground is Image selectedImage ? selectedImage.sprite : normalSprites[i];
-                backgrounds[i].color = active ? hudColor : normalColors[i];
+                // A native selected sprite can be an outline with a transparent center.
+                // Keep the native border and explicitly fill the area behind the glyph.
+                selectionFills[i].gameObject.SetActive(active);
                 icons[i].SetSelected(active);
             }
         }
@@ -143,6 +136,15 @@ namespace Tweaks
                 var labelRect = label.GetComponent<RectTransform>();
                 labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
                 labelRect.offsetMin = new Vector2(1f, 1f); labelRect.offsetMax = new Vector2(-1f, -1f);
+                var fillObject = new GameObject("SelectedFill", typeof(RectTransform), typeof(Image));
+                var fillRect = fillObject.GetComponent<RectTransform>();
+                fillRect.SetParent(buttonRect, false);
+                fillRect.anchorMin = Vector2.zero; fillRect.anchorMax = Vector2.one;
+                fillRect.offsetMin = new Vector2(3f, 3f); fillRect.offsetMax = new Vector2(-3f, -3f);
+                var fillImage = fillObject.GetComponent<Image>();
+                fillImage.sprite = null; fillImage.color = hudColor; fillImage.raycastTarget = false;
+                selectionFills[i] = fillImage;
+                fillObject.SetActive(false);
                 var glyph = new GameObject("ModeIcon", typeof(RectTransform));
                 var glyphRect = glyph.GetComponent<RectTransform>();
                 glyphRect.SetParent(buttonRect, false);
@@ -155,10 +157,7 @@ namespace Tweaks
                 buttons[i] = buttonRect.GetComponent<Button>();
                 backgrounds[i] = buttons[i].targetGraphic ??
                     throw new System.InvalidOperationException("Native compact button has no target graphic.");
-                normalSprites[i] = (backgrounds[i] as Image)?.sprite;
-                normalColors[i] = hudColor;
                 backgrounds[i].color = hudColor;
-                normalButtonColors[i] = buttons[i].colors;
             }
             highlighted = -1;
             strip = candidate;

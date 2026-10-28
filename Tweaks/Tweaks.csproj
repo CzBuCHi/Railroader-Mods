@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.Tweaks</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>3.0.8</Version>
+    <Version>3.0.9</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>

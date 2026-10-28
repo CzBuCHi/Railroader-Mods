@@ -22,12 +22,14 @@ namespace WaybillMap
         private Window? window;
         private GameObject? root;
         private RectTransform? markerLayer, labelLayer;
+        private LocomotiveTopLayer? locomotiveLayer;
         private bool stopped, warned;
         private float nextRefresh;
         private readonly List<(Car Car, Color Color, string Number)> cars = new List<(Car, Color, string)>();
         private readonly List<MapMarker> markers = new List<MapMarker>();
         private readonly List<CarMapGraphic> batches = new List<CarMapGraphic>();
         private readonly List<TextMeshProUGUI> labels = new List<TextMeshProUGUI>();
+        private readonly List<BaseLocomotive> locomotives = new List<BaseLocomotive>();
 
         internal void Initialize(RawImage mapImage, MapBuilder mapBuilder)
         {
@@ -38,6 +40,7 @@ namespace WaybillMap
             Stretch(root.GetComponent<RectTransform>(), image.rectTransform);
             markerLayer = CreateLayer("Markers");
             labelLayer = CreateLayer("Numbers");
+            locomotiveLayer = new LocomotiveTopLayer(CreateLayer("Locomotives"));
             root.SetActive(false);
         }
 
@@ -72,10 +75,12 @@ namespace WaybillMap
             {
                 nextRefresh = Time.unscaledTime + 0.5f;
                 cars.Clear();
+                locomotives.Clear();
                 // The logical registry includes distant cars without loaded detailed models.
                 foreach (var car in controller.Cars)
                 {
-                    if (car == null || car is BaseLocomotive) continue;
+                    if (car == null) continue;
+                    if (car is BaseLocomotive locomotive) { locomotives.Add(locomotive); continue; }
                     try
                     {
                         var channel = MarkerStyle.UnassignedChannel;
@@ -118,6 +123,8 @@ namespace WaybillMap
                     Math.Min(MarkerGeometry.BatchSize, markers.Count - i * MarkerGeometry.BatchSize));
             }
             UpdateLabels();
+            try { locomotiveLayer?.Update(locomotives, camera, image); }
+            catch (Exception error) { Report(error); }
         }
 
         private void UpdateLabels()
@@ -164,8 +171,9 @@ namespace WaybillMap
         internal void Shutdown()
         {
             stopped = true; enabled = false;
+            locomotiveLayer?.Clear(); locomotiveLayer = null;
             if (root != null) { root.SetActive(false); Object.Destroy(root); root = null; }
-            cars.Clear(); markers.Clear(); batches.Clear(); labels.Clear();
+            cars.Clear(); markers.Clear(); batches.Clear(); labels.Clear(); locomotives.Clear();
         }
         private void OnDestroy() => Shutdown();
     }

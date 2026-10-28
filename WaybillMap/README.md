@@ -1,4 +1,4 @@
-﻿# WaybillMap 1.1.0
+﻿# WaybillMap 1.1.1
 
 Standalone native DLL mod for Railroader 0.6.x. Identifier: `czbuchi/waybill-map`. Independent of Tweaks; no RailForge/UMM is required.
 
@@ -10,7 +10,7 @@ Standalone native DLL mod for Railroader 0.6.x. Identifier: `czbuchi/waybill-map
 4. Enable **WaybillMap** in Manage Mods and apply.
 5. Open the map. Its gear/**Display** menu includes **Waybill cars**, enabled by default. The game stores this choice in its existing map preferences; no custom configuration file or window is needed.
 
-Every non-locomotive car in the logical world registry is included: freight cars, passenger cars, cabooses and tenders, whether coupled or parked and whether their detailed 3D model is loaded. Native locomotive icons remain unchanged. This adds local display only and is optional in multiplayer.
+Every non-locomotive car in the logical world registry is included: freight cars, passenger cars, cabooses and tenders, whether coupled or parked and whether their detailed 3D model is loaded. Locomotives keep their native appearance, including the arrow and number, and are drawn last above wagon rectangles and wagon numbers. The final layer mirrors their native graphics, position and zoom; it adds no click targets or world map icons, so the original locomotive icons retain native click handling. This adds local display only and is optional in multiplayer.
 
 Cars appear as broad rectangular badges with a dark outline and the car's road number centered inside, similar to the native locomotive marker. Badges follow the car's orientation; number text flips to remain readable. Text is black or white according to contrast against the fill. They follow the map's pan, zoom, resizing, UV orientation and floating world origin, and are clipped to the map image. A minimum badge size leaves room for the number at distant zoom levels; dense consists may overlap at those scales. Colors, numbers and the car list refresh every half second while the map is visible; positions update each frame. Nothing is scanned/drawn by this mod while the map or layer is hidden. Marker meshes are batched to avoid Unity UI's 16-bit vertex limit and text labels are pooled.
 
@@ -25,7 +25,7 @@ dotnet publish WaybillMap/WaybillMap.csproj -c Release
 dotnet run --project tests/WaybillMap.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' WaybillMap/bin/Release/CzBuCHi.WaybillMap.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.1.0.zip` without installing it or launching the game. The package contains only this mod's DLL, Info.json, README and LICENSE. No game/Harmony DLLs are shipped.
+Set GameDir via Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.1.1.zip` without installing it or launching the game. The package contains only this mod's DLL, Info.json, README and LICENSE. No game/Harmony DLLs are shipped.
 
 Tests exercise projection from camera viewport coordinates through the image's UV rectangle, aspect/resize, direction, offscreen rejection, edge overlap, invalid positions, number-badge bounds, readable text rotation and text contrast on light/dark/translucent fills. They also check the installed game API and compiled DLL's native lifecycle, map hook, registry/color/waybill/number references and absence of state-changing APIs. They do not run Unity or prove in-game rendering.
 

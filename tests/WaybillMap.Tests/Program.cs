@@ -73,6 +73,8 @@ internal static class Program
         Check(Method(Type("UI.Tags", "CarTagColor"), "For", 2), "Native destination tag color API exists");
         Check(Method(Type("Helpers", "WorldTransformer"), "GameToWorld", 1), "Floating world-origin conversion API exists");
         Check(Method(Type("UI.Windows", "Window"), "get_IsShown", 0), "Native map visibility API exists");
+        Check(Type("Model", "Car").GetFields().Select(game.GetFieldDefinition).Any(f => game.GetString(f.Name) == "MapIcon"),
+            "Native car map-icon field exists for the top locomotive layer");
 
         using var modStream = File.OpenRead(modPath);
         using var modPe = new PEReader(modStream);
@@ -93,6 +95,9 @@ internal static class Program
             "Overlay reads road numbers and waybill presence and renders centered text labels");
         Check(mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "RectMask2D") && members.Contains("set_raycastTarget"),
             "Overlay uses clipping and does not intercept map input");
+        Check(mod.TypeDefinitions.Select(mod.GetTypeDefinition).Any(t => mod.GetString(t.Name) == "LocomotiveTopLayer") &&
+            members.Contains("SetAsLastSibling") && members.Contains("set_overrideSorting"),
+            "Native locomotive graphic copies occupy the final layer without overriding window sorting");
         Check(!members.Any(n => new[] { "ApplyLocal", "Send", "SetOverrideDestination", "SetHandbrake", "SetGladhandsConnected" }.Contains(n)),
             "Display mod has no game-state mutation APIs");
     }

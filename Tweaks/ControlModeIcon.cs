@@ -9,16 +9,22 @@ namespace Tweaks
     {
         private Button? button;
         private Color hudColor;
+        private Texture? paletteTexture;
+        private Vector2 paletteUV;
         private bool selected;
         private int mode;
 
-        internal void Initialize(Button owner, Color tint, int index)
+        public override Texture mainTexture => !selected && paletteTexture != null ? paletteTexture : Texture2D.whiteTexture;
+
+        internal void Initialize(Button owner, HudButtonStyle style, int index)
         {
-            button = owner; hudColor = tint; mode = index; raycastTarget = false;
+            button = owner; hudColor = style.GlyphTint; mode = index; raycastTarget = false;
+            paletteTexture = style.PaletteTexture; paletteUV = style.PaletteUV; material = style.Material;
             RefreshColor(); SetVerticesDirty();
         }
 
-        internal void SetSelected(bool value) { selected = value; RefreshColor(); }
+        internal void SetSelected(bool value)
+        { if (selected == value) return; selected = value; RefreshColor(); SetMaterialDirty(); SetVerticesDirty(); }
 
         private void LateUpdate()
         {
@@ -77,10 +83,11 @@ namespace Tweaks
                 var delta = (b - a).normalized;
                 var normal = new Vector2(-delta.y, delta.x) * (width * scale / 2f);
                 var start = mesh.currentVertCount;
-                mesh.AddVert(a - normal, color, Vector2.zero);
-                mesh.AddVert(a + normal, color, Vector2.zero);
-                mesh.AddVert(b + normal, color, Vector2.zero);
-                mesh.AddVert(b - normal, color, Vector2.zero);
+                var uv = !selected && paletteTexture != null ? paletteUV : Vector2.zero;
+                mesh.AddVert(a - normal, color, uv);
+                mesh.AddVert(a + normal, color, uv);
+                mesh.AddVert(b + normal, color, uv);
+                mesh.AddVert(b - normal, color, uv);
                 mesh.AddTriangle(start, start + 1, start + 2);
                 mesh.AddTriangle(start, start + 2, start + 3);
             }

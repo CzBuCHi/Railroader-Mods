@@ -6,7 +6,7 @@ This orphan branch contains native mods for Railroader 0.6. Legacy RailForge mod
 
 Hybrid native DLL and Relay mod. The main window shows groups and destination-icon rows inside one clipped scroll box, with an icon-only editor button at the bottom right. The editor uses two independent scrollable columns, without the game's list/detail component. Controls have fixed heights; only the scroll areas expand. Rename/move preserves the saved view. Preferences sit below the columns and are hidden while adding. See [Teleporter guide](Teleporter/README.md).
 
-## Tweaks 3.0.10
+## Tweaks 3.0.11
 
 Selected native port: next-interchange Sleep, wagon speed/oil, metric distances and train length, camera-only fault HUD buttons, Manual/Road/Yard controls (none selected in AEWP), roster Shift-follow, a default 6-MPH manual pushing cap, and crew/repair-destination copying. JSON settings control each feature, oil threshold, and manual-push cap; no settings UI is added. See the [full included/excluded list and configuration](Tweaks/README.md).
 
@@ -31,6 +31,6 @@ All current mods target .NET Framework 4.8 with C# 9 and the installed game's fr
 
 Teleporter ZIP output: `bin/CzBuCHi.Teleporter_3.0.5.zip`. The game already supplies its Harmony dependency; no separate loader or bundled Harmony copy is needed.
 
-Tweaks ZIP output: `bin/CzBuCHi.Tweaks_3.0.10.zip`.
+Tweaks ZIP output: `bin/CzBuCHi.Tweaks_3.0.11.zip`.
 
 WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.5.0.zip`.

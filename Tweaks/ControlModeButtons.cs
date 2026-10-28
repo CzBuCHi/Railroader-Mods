@@ -2,7 +2,6 @@
 using TMPro;
 using UI;
 using UI.Builder;
-using UI.Common;
 using UI.EngineControls;
 using UI.Tooltips;
 using UI.Windows;
@@ -21,8 +20,6 @@ namespace Tweaks
         private UIBuilderAssets? assets;
         private readonly Button[] buttons = new Button[3];
         private readonly ControlModeIcon[] icons = new ControlModeIcon[3];
-        private Color hudColor;
-        private readonly Graphic[] backgrounds = new Graphic[3];
         private int highlighted = -1;
         private bool creationFailed;
         private static readonly string[] Titles = { "Manual", "AE Road", "AE Yard" };
@@ -74,14 +71,10 @@ namespace Tweaks
             if (creator == null || creator.builderAssets == null) return false;
             assets = creator.builderAssets;
             var source = dropdown!.GetComponent<RectTransform>();
-            hudColor = new Color32(217, 198, 166, 255);
-            // Read a neighboring native icon's tint before adding our own buttons.
-            foreach (var native in source.parent.GetComponentsInChildren<RailroaderButton>(true))
-            {
-                if (native.Content == null) continue;
-                hudColor = native.Content.color; hudColor.a = 1f;
-                break;
-            }
+            Canvas.ForceUpdateCanvases(); // Measure native spacing after the 75%/other UI scale layout has settled.
+            var style = HudButtonStyle.Find(source, assets.buttonCompact);
+            var coordinates = (RectTransform)source.parent;
+            var sourceBounds = HudButtonStyle.Bounds(source, coordinates);
             var candidate = new GameObject("CzBuCHi.Tweaks.ControlModes", typeof(RectTransform));
             candidate.SetActive(false);
             try
@@ -91,16 +84,21 @@ namespace Tweaks
             rect.anchorMin = source.anchorMin; rect.anchorMax = source.anchorMax;
             rect.pivot = source.pivot; rect.sizeDelta = source.sizeDelta;
             rect.anchoredPosition = source.anchoredPosition;
-            rect.localRotation = source.localRotation; rect.localScale = source.localScale;
+            rect.localRotation = Quaternion.identity; rect.localScale = Vector3.one;
+            var width = style.Width * buttons.Length + style.Gap * (buttons.Length - 1);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, style.Height);
+            var ownBounds = HudButtonStyle.Bounds(rect, coordinates);
+            var left = style.RowLeft.HasValue && Mathf.Abs(style.RowLeft.Value - sourceBounds.xMin) < style.Width * 2 ? style.RowLeft.Value : sourceBounds.xMin;
+            rect.anchoredPosition += new Vector2(left - ownBounds.xMin, sourceBounds.center.y - ownBounds.center.y);
             rect.SetSiblingIndex(source.GetSiblingIndex());
             var sourceLayout = source.GetComponent<LayoutElement>();
             if (sourceLayout != null)
             {
                 var layout = candidate.AddComponent<LayoutElement>();
                 layout.ignoreLayout = sourceLayout.ignoreLayout;
-                layout.minWidth = sourceLayout.minWidth; layout.minHeight = sourceLayout.minHeight;
-                layout.preferredWidth = sourceLayout.preferredWidth; layout.preferredHeight = sourceLayout.preferredHeight;
-                layout.flexibleWidth = sourceLayout.flexibleWidth; layout.flexibleHeight = sourceLayout.flexibleHeight;
+                layout.minWidth = layout.preferredWidth = width; layout.minHeight = layout.preferredHeight = style.Height;
+                layout.flexibleWidth = layout.flexibleHeight = 0;
             }
             for (var i = 0; i < buttons.Length; i++)
             {
@@ -114,10 +112,11 @@ namespace Tweaks
                 if (fitter != null) fitter.enabled = false;
                 var buttonLayout = buttonRect.GetComponent<LayoutGroup>();
                 if (buttonLayout != null) buttonLayout.enabled = false;
-                buttonRect.anchorMin = new Vector2(i / (float)buttons.Length, 0f);
-                buttonRect.anchorMax = new Vector2((i + 1) / (float)buttons.Length, 1f);
-                buttonRect.offsetMin = new Vector2(i == 0 ? 0f : 1f, 0f);
-                buttonRect.offsetMax = new Vector2(i == buttons.Length - 1 ? 0f : -1f, 0f);
+                buttonRect.anchorMin = buttonRect.anchorMax = new Vector2(0, 0.5f);
+                buttonRect.pivot = new Vector2(0, 0.5f);
+                buttonRect.sizeDelta = new Vector2(style.Width, style.Height);
+                buttonRect.anchoredPosition = new Vector2(i * (style.Width + style.Gap), 0);
+                style.Apply(buttonRect.GetComponent<Button>());
                 var label = result.Item2;
                 label.text = string.Empty;
                 label.enableAutoSizing = true; label.fontSizeMin = 9f; label.fontSizeMax = 16f;
@@ -132,13 +131,10 @@ namespace Tweaks
                 glyphRect.anchorMin = Vector2.zero; glyphRect.anchorMax = Vector2.one;
                 glyphRect.offsetMin = new Vector2(3f, 2f); glyphRect.offsetMax = new Vector2(-3f, -2f);
                 icons[i] = glyph.AddComponent<ControlModeIcon>();
-                icons[i].Initialize(buttonRect.GetComponent<Button>(), hudColor, i);
+                icons[i].Initialize(buttonRect.GetComponent<Button>(), style, i);
                 var tooltip = buttonRect.GetComponent<UITooltipProvider>() ?? buttonRect.gameObject.AddComponent<UITooltipProvider>();
                 tooltip.TooltipInfo = new TooltipInfo(Titles[i], Descriptions[i]);
                 buttons[i] = buttonRect.GetComponent<Button>();
-                backgrounds[i] = buttons[i].targetGraphic ??
-                    throw new System.InvalidOperationException("Native compact button has no target graphic.");
-                backgrounds[i].color = hudColor;
             }
             highlighted = -1;
             strip = candidate;

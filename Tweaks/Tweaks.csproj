@@ -2,13 +2,13 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.Tweaks</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>3.0.10</Version>
+    <Version>3.0.11</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
   </PropertyGroup>
   <ItemGroup>
-    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Relay;Core;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;0Harmony;Newtonsoft.Json;UnityEngine.CoreModule;UnityEngine.TextRenderingModule;UnityEngine.TextCoreFontEngineModule;UnityEngine.UI;Unity.TextMeshPro;UnityEngine.PhysicsModule" />
+    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Relay;Core;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;0Harmony;Newtonsoft.Json;UnityEngine.CoreModule;UnityEngine.TextRenderingModule;UnityEngine.TextCoreFontEngineModule;UnityEngine.UI;UnityEngine.UIModule;Unity.TextMeshPro;UnityEngine.PhysicsModule" />
     <Reference Include="@(GameReference)">
       <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
       <Private>false</Private>

@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>CzBuCHi.WaybillMap</AssemblyName>
+    <TargetFramework>net48</TargetFramework>
+    <Version>1.0.0</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <NoStdLib>true</NoStdLib>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <GameReference Include="mscorlib;System;System.Core;netstandard;Railroader.Modding;Railroader;Core;AssetPack.Common;KeyValue.Runtime;SimpleGraph.Runtime;0Harmony;UnityEngine.CoreModule;UnityEngine.TextRenderingModule;UnityEngine.TextCoreFontEngineModule;UnityEngine.UI;Unity.TextMeshPro;UnityEngine.PhysicsModule" />
+    <Reference Include="@(GameReference)">
+      <HintPath>$(GameManagedDir)\%(Identity).dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <None Update="Info.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="CheckGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(GameManagedDir)\Railroader.Modding.dll') Or !Exists('$(GameManagedDir)\0Harmony.dll')" Text="Railroader 0.6 and its bundled Harmony are required. Set GameDir." />
+  </Target>
+  <Target Name="PackageMod" AfterTargets="Publish">
+    <PropertyGroup>
+      <PackageRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\obj\$(Configuration)\NativePackage'))</PackageRoot>
+      <PackageDir>$(PackageRoot)\CzBuCHi.WaybillMap</PackageDir>
+      <PackageZip>$(MSBuildProjectDirectory)\..\bin\CzBuCHi.WaybillMap_$(Version).zip</PackageZip>
+    </PropertyGroup>
+    <Error Condition="!$([System.String]::Copy('$(PackageRoot)').StartsWith('$(MSBuildProjectDirectory)\obj\'))" Text="Package staging must stay inside the project obj directory." />
+    <RemoveDir Directories="$(PackageRoot)" />
+    <MakeDir Directories="$(PackageDir);$(MSBuildProjectDirectory)\..\bin" />
+    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
+    <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageZip)" Overwrite="true" />
+    <Message Importance="high" Text="Package: $(PackageZip)" />
+  </Target>
+</Project>

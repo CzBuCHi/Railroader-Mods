@@ -1,0 +1,11 @@
+﻿{
+  "identifier": "czbuchi/waybill-map",
+  "version": "1.0.0",
+  "name": "WaybillMap",
+  "author": "CzBuCHi",
+  "license": "MIT",
+  "description": "Show all wagons on the map, colored like their native waybill destination tags.",
+  "scope": "optional",
+  "assemblies": ["CzBuCHi.WaybillMap.dll"],
+  "dependencies": { "required": ["rr/game >=0.6.0 <0.7.0"] }
+}

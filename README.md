@@ -16,6 +16,10 @@ Hybrid native DLL and Relay mod. The main window shows groups and destination-ic
 
 Selected native port: next-interchange Sleep, wagon speed/oil, metric distances and train length, camera-only fault HUD buttons, Manual/Road/Yard controls (none selected in AEWP), roster Shift-follow, a default 6-MPH manual pushing cap, and crew/repair-destination copying. JSON settings control each feature, oil threshold, and manual-push cap; no settings UI is added. See the [full included/excluded list and configuration](Tweaks/README.md).
 
+## WaybillMap 1.0.0
+
+Standalone native mod displaying all non-locomotive cars on the map as oriented markers using native destination/waybill tag colors. Distant parked cars are included without loading their detailed models. Map > Display > Waybill cars toggles the layer and persists through the game's map preferences. See the [WaybillMap guide](WaybillMap/README.md).
+
 Build from the repository root:
 
 ```powershell
@@ -25,6 +29,8 @@ dotnet publish Teleporter/Teleporter.csproj -c Release
 dotnet run --project tests/Teleporter.Tests -c Release -- Teleporter/Scripts/Main.rl "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" Teleporter/bin/Release/CzBuCHi.Teleporter.dll
 dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" Tweaks/bin/Release/CzBuCHi.Tweaks.dll
+dotnet publish WaybillMap/WaybillMap.csproj -c Release
+dotnet run --project tests/WaybillMap.Tests -c Release -- "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" WaybillMap/bin/Release/CzBuCHi.WaybillMap.dll
 ```
 
 Default game location: `C:\Steam\steamapps\common\Railroader`. Override `GameDir` in an untracked `Paths.user` MSBuild project or pass `-p:GameDir="D:\path\Railroader"`.
@@ -36,3 +42,5 @@ ZIP output: `bin/CzBuCHi.SwitchNormalizer_3.0.0.zip`. Publishing only builds the
 Teleporter ZIP output: `bin/CzBuCHi.Teleporter_3.0.5.zip`. The game already supplies its Harmony dependency; no separate loader or bundled Harmony copy is needed.
 
 Tweaks ZIP output: `bin/CzBuCHi.Tweaks_3.0.10.zip`.
+
+WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.0.0.zip`.

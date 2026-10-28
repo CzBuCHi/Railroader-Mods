@@ -58,6 +58,7 @@ internal static class Program
         Check(Warning(disabled, medium) == medium, "Unsupported/disabled cars do not hide a real oil warning");
         SettingsTests.Run();
         TrainLengthTests.Run();
+        TutorialDistanceTests.Run(args[0]);
         InspectInstalledGame(args[0], args[1]);
         ManualPushTests.Run(args[0]);
         Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");
@@ -132,6 +133,7 @@ internal static class Program
         Check(method("Units", "DistanceText", 1) && method("LocationIndicatorController", "DirectionalText", 2),
             "Shared distance formatter and directional marker API exist");
         Check(names.Contains("DistanceTextPatch"), "Metric distance formatter patch is compiled");
+        Check(names.Contains("TutorialDistancePatch") && refs.Contains("Relay"), "Tutorial Relay loader patch is compiled");
         Check(new[] { "FollowAndSelectPatch", "FastStrongManPatch", "CopyCrewPatch", "RepairDestinationPatch" }.All(names.Contains), "All four newly requested additions compiled");
         Check(names.Contains("ControlModeButtons") && names.Contains("ConsistActions") && names.Contains("CarPanelPatch") && names.Contains("SleepUntilInterchangePatch"), "All four requested feature groups compiled");
         var members = modMetadata.MemberReferences.Select(handle => modMetadata.GetString(modMetadata.GetMemberReference(handle).Name)).ToArray();

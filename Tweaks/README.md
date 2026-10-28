@@ -1,4 +1,4 @@
-﻿# Tweaks 3.0.5 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.6 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
 
@@ -76,11 +76,13 @@ Missing keys retain defaults. Invalid JSON, unknown keys, incorrect types, or ou
 
 ## Additional features
 
-### Distances in meters
+### Metric distances
 
-`UseMeters` defaults to `true`. The game's shared distance formatter displays whole meters instead of feet or miles, including long distances. This covers directional objective/location markers, waypoint route distances, fast-forward distance remaining, track-construction progress and work-car distance summaries. Directional markers call this formatter, including those used for tutorial guidance. Rounding and number grouping follow the current locale.
+`UseMeters` defaults to `true`. Distances below 150 m use whole meters; from 150 m they use kilometers with up to two decimal places (150 m = 0.15 km, 1,609 m = 1.61 km). This covers directional objective/location markers, waypoint route distances, fast-forward distance remaining, track-construction progress and work-car distance summaries through the game's shared formatter. Rounding and number grouping follow the current locale.
 
-This targets `Model.Units.DistanceText`, not arbitrary UI text matching a number and `ft`. Literal distances embedded in tutorial prose and specialized displays bypassing this formatter are not rewritten. Speed units remain MPH. `UseMeters` controls both distances and train length. Set it to `false` and restart to retain native feet/miles.
+This targets `Model.Units.DistanceText`, not arbitrary UI text matching a number and `ft`. Tutorial condition distances use the same 150-m threshold: the tutorial has its own Relay helpers in `Tutorial/pagecontext.rl`, so the mod replaces just `distanceString` and `distanceStringCeil` in memory when that exact module is loaded. Normal distances round to the nearest displayed unit (1 m or 0.01 km); remaining distances round up. Relay interpolation retains the game's numeric formatting. No installed game file is changed. A changed helper layout logs a warning and keeps the native tutorial script. Restart the game after upgrading so an already-loaded tutorial module is recreated.
+
+Literal distances embedded in tutorial prose and other specialized displays bypassing these formatters are not rewritten. Speed units remain MPH. `UseMeters` controls distances, tutorial helpers and train length. Set it to `false` and restart to retain native feet/miles.
 
 ### Train length in meters
 
@@ -128,9 +130,9 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.5.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.6.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
-Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, metric train-length formatting and native length API, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
+Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, metric train-length formatting and native length API, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed tutorial source is transformed and executed in the real Relay VM with stub world/UI/math bindings: both rounding helpers, scope, changed-helper rejection and unchanged file contents are checked. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 
 In-game checks:
 

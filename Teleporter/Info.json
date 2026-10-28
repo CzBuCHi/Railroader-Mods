@@ -1,0 +1,11 @@
+﻿{
+  "identifier": "czbuchi/teleporter",
+  "version": "3.0.0",
+  "name": "Teleporter",
+  "author": "CzBuCHi",
+  "license": "MIT",
+  "description": "Saved camera views with a Relay location window and a separate editor.",
+  "scope": "optional",
+  "assemblies": ["CzBuCHi.Teleporter.dll"],
+  "dependencies": { "required": ["rr/game >=0.6.0 <0.7.0"] }
+}

@@ -9,7 +9,8 @@ namespace WaybillMap
     {
         internal readonly MarkerGeometry Geometry;
         internal readonly Color Color;
-        internal MapMarker(MarkerGeometry geometry, Color color) { Geometry = geometry; Color = color; }
+        internal readonly string Number;
+        internal MapMarker(MarkerGeometry geometry, Color color, string number) { Geometry = geometry; Color = color; Number = number; }
     }
 
     internal sealed class CarMapGraphic : MaskableGraphic

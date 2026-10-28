@@ -21,15 +21,22 @@ internal static class Program
     {
         Check(Create(0.4, 0.5, 0.6, 0.5, out var horizontal) && Near(horizontal.X, 0) && Near(horizontal.Y, 0) &&
             Near(horizontal.AxisX, 1) && Near(horizontal.AxisY, 0), "Horizontal car projects to centered rectangle");
-        Check(Near(horizontal.HalfLength, 50.4) && Near(horizontal.HalfWidth, 3.5), "Length follows projected body and width is bounded");
+        Check(Near(horizontal.HalfLength, 50.4) && Near(horizontal.HalfWidth, 12), "Length follows projected body and badge width is bounded");
         Check(Create(0.5, 0.4, 0.5, 0.6, out var vertical) && Near(vertical.AxisX, 0) && Near(vertical.AxisY, 1) &&
             Near(vertical.HalfLength, 33.6), "Vertical car respects map aspect ratio");
         Check(Create(0.4, 0.3, 0.6, 0.7, out var diagonal) && Near(diagonal.AxisX * diagonal.AxisX + diagonal.AxisY * diagonal.AxisY, 1),
             "Diagonal marker direction is normalized");
         Check(Create(0.6, 0.5, 0.4, 0.5, out var reversed) && Near(reversed.X, horizontal.X) && Near(reversed.HalfLength, horizontal.HalfLength) &&
             Near(reversed.AxisX, -horizontal.AxisX), "Reversing logical ends retains marker footprint");
-        Check(Create(0.5, 0.5, 0.5, 0.5, out var tiny) && Near(tiny.HalfLength, 2.5) && Near(tiny.HalfWidth, 1.25),
-            "Cars remain visible at distant zoom without division by zero");
+        Check(Create(0.5, 0.5, 0.5, 0.5, out var tiny) && Near(tiny.HalfLength, 21) && Near(tiny.HalfWidth, 8),
+            "Distant car badges retain space for a readable road number without division by zero");
+        Check(Near(horizontal.ReadableAngle, reversed.ReadableAngle), "Road numbers do not turn upside down when the car reverses");
+        Check(diagonal.ReadableAngle >= -90 && diagonal.ReadableAngle <= 90 && vertical.ReadableAngle >= -90 && vertical.ReadableAngle <= 90,
+            "Rotated road numbers remain in the readable half-plane");
+        Check(MarkerStyle.UseDarkText(221 / 255d, 221 / 255d, 221 / 255d, 1), "Unassigned #ddd badges get dark road numbers");
+        Check(MarkerStyle.UseDarkText(1, 1, 0, 1), "Bright waybill badges get dark road numbers");
+        Check(!MarkerStyle.UseDarkText(0.05, 0.05, 0.3, 1), "Dark waybill badges get white road numbers");
+        Check(!MarkerStyle.UseDarkText(1, 1, 1, 0.1), "Native dimming/transparency is included when choosing readable ink");
         Check(!Create(2, 0.5, 2.01, 0.5, out _), "Entirely offscreen car is culled");
         Check(Create(0.999, 0.5, 1.02, 0.5, out _), "Partially visible edge car is retained for masking");
         Check(MarkerGeometry.TryCreate(0.3, 0.3, 0.7, 0.3, 0.2, 0.1, 0.6, 0.4, -300, -200, 600, 400, out var cropped) &&
@@ -81,6 +88,9 @@ internal static class Program
         Check(members.Contains("get_Cars") && members.Contains("WorldToViewportPoint") && members.Contains("GameToWorld") && members.Contains("get_IsOn"),
             "Overlay reads logical car registry, projects camera positions and respects display toggle");
         Check(mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "CarTagColor"), "Compiled overlay uses native waybill/tag color rules");
+        Check(members.Contains("get_Ident") && members.Contains("get_Waybill") && members.Contains("set_text") &&
+            mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "TextMeshProUGUI"),
+            "Overlay reads road numbers and waybill presence and renders centered text labels");
         Check(mod.TypeReferences.Select(mod.GetTypeReference).Any(t => mod.GetString(t.Name) == "RectMask2D") && members.Contains("set_raycastTarget"),
             "Overlay uses clipping and does not intercept map input");
         Check(!members.Any(n => new[] { "ApplyLocal", "Send", "SetOverrideDestination", "SetHandbrake", "SetGladhandsConnected" }.Contains(n)),

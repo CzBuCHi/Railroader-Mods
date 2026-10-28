@@ -27,8 +27,9 @@ namespace WaybillMap
             var x = (ax + bx) * 0.5; var y = (ay + by) * 0.5;
             var axisX = length > 1e-6 ? dx / length : 1;
             var axisY = length > 1e-6 ? dy / length : 0;
-            var halfLength = Math.Max(2.5, length * 0.42);
-            var halfWidth = Math.Max(1.25, Math.Min(3.5, length * 0.08));
+            // Badge dimensions must leave room for a readable road number.
+            var halfLength = Math.Max(21, length * 0.42);
+            var halfWidth = Math.Max(8, Math.Min(12, length * 0.1));
             var extentX = Math.Abs(axisX) * (halfLength + 0.75) + Math.Abs(axisY) * (halfWidth + 0.75);
             var extentY = Math.Abs(axisY) * (halfLength + 0.75) + Math.Abs(axisX) * (halfWidth + 0.75);
             if (x + extentX < left || x - extentX > left + width || y + extentY < bottom || y - extentY > bottom + height)
@@ -38,5 +39,16 @@ namespace WaybillMap
         }
 
         private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+
+        internal double ReadableAngle
+        {
+            get
+            {
+                var angle = Math.Atan2(AxisY, AxisX) * 180 / Math.PI;
+                if (angle > 90) angle -= 180;
+                if (angle < -90) angle += 180;
+                return angle;
+            }
+        }
     }
 }

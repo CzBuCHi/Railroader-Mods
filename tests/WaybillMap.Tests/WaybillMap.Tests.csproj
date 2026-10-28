@@ -5,5 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\WaybillMap\MarkerGeometry.cs" Link="MarkerGeometry.cs" />
+    <Compile Include="..\..\WaybillMap\MarkerStyle.cs" Link="MarkerStyle.cs" />
   </ItemGroup>
 </Project>

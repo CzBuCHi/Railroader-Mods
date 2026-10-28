@@ -1,10 +1,10 @@
 ﻿{
   "identifier": "czbuchi/waybill-map",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "name": "WaybillMap",
   "author": "CzBuCHi",
   "license": "MIT",
-  "description": "Fixed-size destination-colored vehicle map, vehicle filters, selected-car follow and switch Save/Restore.",
+  "description": "Destination-colored vehicle map, combined locomotive/tender icons, vehicle filters, following and switch Save/Restore.",
   "scope": "optional",
   "assemblies": ["CzBuCHi.WaybillMap.dll"],
   "dependencies": { "required": ["rr/game >=0.6.0 <0.7.0"] }

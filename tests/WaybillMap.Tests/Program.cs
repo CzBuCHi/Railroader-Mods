@@ -29,7 +29,7 @@ internal static class Program
         Check(Create(0.6, 0.5, 0.4, 0.5, out var reversed) && Near(reversed.X, horizontal.X) && Near(reversed.HalfLength, horizontal.HalfLength) &&
             Near(reversed.AxisX, -horizontal.AxisX), "Reversing logical ends retains marker footprint");
         Check(Create(0.5, 0.5, 0.5, 0.5, out var tiny) && Near(tiny.HalfLength, horizontal.HalfLength) && Near(tiny.HalfWidth, horizontal.HalfWidth),
-            "Far-zoom symbols retain the same dimensions as close-zoom symbols");
+            "Projection alone does not stretch symbols when the baseline style is requested");
         Check(MarkerGeometry.TryCreate(0.4, 0.5, 0.47, 0.5, 0, 0, 1, 1, -300, -200, 600, 400, out var longCoach, 28) &&
             Near(longCoach.HalfWidth, horizontal.HalfWidth) && longCoach.HalfLength > horizontal.HalfLength, "Long coaches retain the same badge width and proportional length");
         Check(Create(0.4, 0.5, 0.5, 0.5, out var car1) && Create(0.5, 0.5, 0.6, 0.5, out var car2) &&
@@ -45,7 +45,19 @@ internal static class Program
         Check(MapVisibility.Show(1, false, true, false, 1, 12, 0.01) && !MapVisibility.Show(1, false, false, true, 0, 12, 3),
             "Locomotives-and-cabooses mode keeps train tails even at overview zoom");
         Check(Enumerable.Range(0, 9).Where(i => MapVisibility.Show(2, false, false, false, i, 12, 1)).SequenceEqual(new[] { 0, 3, 6 }),
-            "All-vehicles mode samples every third car when its screen spacing requires it");
+            "All-vehicles mode samples every third car with the compact reference gap");
+        Check(Near(MarkerLayout.ScaleForTrack(2), 1) && Near(MarkerLayout.ScaleForTrack(8), 8 / 2.4),
+            "Thin-track baseline is retained while thick track increases symbol width proportionally");
+        foreach (var ppm in new[] { 0.1, 0.5, 1d, 3d, 6d })
+        {
+            var size = MarkerLayout.ScaleForTrack(ppm * 2);
+            var layout = MarkerLayout.ForConsist(12, ppm, size);
+            var body = 12 * 2.4 * size * layout.LengthScale;
+            Check(Near(layout.Stride * 12 * ppm - body, 8), "Uniform sampled neighbors keep an eight-point gap at pixel scale " + ppm);
+            Check(MarkerGeometry.TryCreate(0.4, 0.5, 0.6, 0.5, 0, 0, 1, 1, -300, -200, 600, 400,
+                out var scaled, 12, size, layout.LengthScale) && Near(scaled.HalfWidth * 2, Math.Max(14.4, ppm * 2 * 6)),
+                "Vehicle/track width ratio remains consistent across zoom levels");
+        }
         Check(Enumerable.Range(0, 9).All(i => MapVisibility.Show(2, false, false, false, i, 12, 3)), "Close zoom renders every car");
         Check(MapVisibility.Show(2, false, false, true, 1, 12, 0.01) && MapVisibility.Show(2, false, true, false, 1, 12, 0.01),
             "Selected cars and cabooses survive automatic thinning in all-vehicles mode");
@@ -70,6 +82,7 @@ internal static class Program
             !MarkerGeometry.TryCreate(0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 400, out _), "Zero-size UV/image cannot divide by zero");
         Check(MarkerGeometry.BatchSize * 10 < 65535, "Each outlined-marker batch stays below Unity UI vertex limit, including pointed locomotives");
         SwitchProfileTests.Run();
+        TenderPairingTests.Run();
         Inspect(args[0], args[1]);
         Console.WriteLine("PASS: " + checks + " map geometry and installed API/compiled-mod checks.");
     }
@@ -87,6 +100,8 @@ internal static class Program
         Check(Method(window, "Start", 0), "Map window lifecycle patch target exists");
         var fields = window.GetFields().Select(game.GetFieldDefinition).Select(f => game.GetString(f.Name)).ToArray();
         Check(fields.Contains("rawImage") && fields.Contains("mapBuilder"), "Native map image and camera builder field names match");
+        Check(Type("UI.Map", "MapBuilder").GetFields().Select(game.GetFieldDefinition).Any(f => game.GetString(f.Name) == "_segmentLineWidth"),
+            "Native track width is available for symbol-size matching");
         Check(Method(Type("UI.Map", "MapDisplayOptions"), "Add", 1) &&
             Method(Type("UI.Map", "MapDisplayOption"), ".ctor", 3), "Native map display extension registry exists");
         Check(Method(Type("", "TrainController"), "get_Cars", 0), "Global logical car registry exists");

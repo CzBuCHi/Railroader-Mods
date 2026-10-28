@@ -1,4 +1,4 @@
-﻿# WaybillMap 1.3.0
+﻿# WaybillMap 1.4.0
 
 Native Railroader 0.6.x map mod. Identifier: `czbuchi/waybill-map`. Includes the former SwitchNormalizer functionality. No RailForge/UMM is needed.
 
@@ -11,7 +11,11 @@ Native Railroader 0.6.x map mod. Identifier: `czbuchi/waybill-map`. Includes the
 
 ## Vehicle layer
 
-All logical cars are available, including parked/distant vehicles without loaded detailed models. Icons retain a fixed size in UI points when the map zoom changes. Lengths remain proportional between vehicle types (2.4 points per meter of vehicle length); wagon and locomotive width is the same 14.4 points, 20% above the previous 12-point baseline. Locomotives have a pointed nose and are rendered in the last layer, above all wagon bodies and labels. Their oversized vanilla graphics are temporarily hidden and restored when the layer is hidden or the mod unloads; original native click targets remain.
+All logical cars are available, including parked/distant vehicles without loaded detailed models. The overview baseline is 14.4 UI points wide for both wagons and locomotives. When native tracks become thicker on screen, vehicle symbols widen proportionally to retain roughly the overview vehicle/track width ratio. Text scales with the symbols. Native track colors and widths are read, never changed.
+
+Lengths remain proportional between vehicle types, with a group-level adjustment to leave a small gap between sampled neighbors: about eight UI points, approximately half the gap in the original reference image. This target applies to ordinary evenly spaced cars; different vehicle lengths, curves, retained selected cars and cabooses can cause variations. Locomotives have a pointed nose and are rendered in the last layer, above all wagon bodies and labels. Their oversized vanilla graphics are temporarily hidden and restored when the layer is hidden or the mod unloads; original native click targets remain.
+
+A steam locomotive's mechanically connected rear tender is merged into its marker. The combined icon spans their joint center/length, uses the engine's number and destination color, and has the same width as wagons. The tender is not drawn again separately. A detached tender remains a standalone wagon when the vehicle filter allows it. Pairings update with consist membership, twice per second; either tender orientation is supported.
 
 Wagons use reporting mark and road number on two lines; tenders and locomotives use the road number. Text follows vehicle orientation and flips for readability. Black/white text is chosen for contrast. Shapes, labels and positions are clipped to the map image. Marker meshes are batched within Unity UI's vertex limit and labels are pooled.
 
@@ -21,7 +25,7 @@ The upper-right dropdown has three persistent modes:
 
 - **Locomotives only**: no wagon or caboose icons.
 - **Locomotives + caboose**: locomotive and caboose icons, useful for the whole-map overview.
-- **All vehicles** (default): wagons are sampled per mechanically coupled consist according to projected car spacing. Close zoom shows every wagon; farther out it shows every second, third, etc. Cabooses and the selected car are retained. Standalone cars are retained. Locomotives always render last.
+- **All vehicles** (default): wagons are sampled per mechanically coupled consist according to projected car spacing and symbol size, showing every second, third, etc. when necessary. Sampled body lengths are adjusted toward the small reference gap. Cabooses and the selected car are retained. Standalone cars are retained. Locomotives always render last.
 
 The filter and **Follow selected car** preference are stored using the game's local map preferences. Following centers the map on `TrainController.SelectedCar`, including when selection changes; with no selected car it leaves the current center. Following works while the map is open, independently of vehicle-layer visibility. Uncheck it to pan freely.
 
@@ -43,9 +47,9 @@ dotnet publish WaybillMap/WaybillMap.csproj -c Release
 dotnet run --project tests/WaybillMap.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' WaybillMap/bin/Release/CzBuCHi.WaybillMap.dll
 ```
 
-Override GameDir through Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.3.0.zip`. It contains only this mod's DLL, Info.json, README and LICENSE; game, Harmony and Newtonsoft DLLs are supplied by the game.
+Override GameDir through Paths.user or `-p:GameDir=...` if needed. Publishing creates `bin/CzBuCHi.WaybillMap_1.4.0.zip`. It contains only this mod's DLL, Info.json, README and LICENSE; game, Harmony and Newtonsoft DLLs are supplied by the game.
 
-Automated checks cover fixed-size projection through normal/flipped UVs, clipping/culling, label orientation, text contrast, gentle spotted dimming, the three filters and zoom sampling. Migrated switch-profile tests cover reversed-ID normalization, backups, corrupt-file rejection, atomic write failures and encoding. Metadata checks validate installed API targets, native lifecycle, map controls, following and authorized switch requests. These tests do not run Unity or prove UI layout/rendering or original-icon restoration.
+Automated checks cover projection through normal/flipped UVs, clipping/culling, track-relative sizing, sampled-gap invariants across zoom levels, tender pairing/detachment and merged geometry, label orientation, text contrast, gentle spotted dimming, the three filters and zoom sampling. Migrated switch-profile tests cover reversed-ID normalization, backups, corrupt-file rejection, atomic write failures and encoding. Metadata checks validate installed API targets, native lifecycle, map controls, following and authorized switch requests. These tests do not run Unity or prove UI layout/rendering or original-icon restoration.
 
 In game, check:
 

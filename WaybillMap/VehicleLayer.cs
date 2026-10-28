@@ -55,10 +55,12 @@ namespace WaybillMap
                 var label = labels[i]; label.gameObject.SetActive(i < Markers.Count);
                 if (i >= Markers.Count) continue;
                 var marker = Markers[i]; var g = marker.Geometry; var tint = marker.Color;
+                var textScale = (float)g.HalfWidth / 7.2f;
+                label.fontSizeMin = 4f * textScale; label.fontSizeMax = 12f * textScale;
                 label.text = marker.IsLocomotive ? marker.Number : marker.Label;
                 label.fontStyle = marker.IsLocomotive ? FontStyles.Bold : FontStyles.Normal;
                 label.color = MarkerStyle.UseDarkText(tint.r, tint.g, tint.b, tint.a) ? Color.black : Color.white;
-                var inset = marker.IsLocomotive ? 3f : 0f;
+                var inset = marker.IsLocomotive ? 3f * textScale : 0f;
                 label.rectTransform.anchoredPosition = new Vector2((float)g.X - (float)g.AxisX * inset / 2, (float)g.Y - (float)g.AxisY * inset / 2);
                 label.rectTransform.sizeDelta = new Vector2((float)g.HalfLength * 2 - inset, (float)g.HalfWidth * 2);
                 label.rectTransform.localRotation = Quaternion.Euler(0, 0, (float)g.ReadableAngle);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Helpers;
+using HarmonyLib;
 using Model;
 using Model.Ops;
 using Track;
@@ -24,9 +25,11 @@ namespace WaybillMap
         private readonly NativeMapIcons native = new NativeMapIcons();
         private readonly List<BaseLocomotive> locomotives = new List<BaseLocomotive>();
         private readonly List<Entry> cars = new List<Entry>();
+        private Dictionary<Car, Car> tenders = new Dictionary<Car, Car>();
         private bool stopped, warned;
         private float nextRefresh;
         private static readonly Color Unassigned = new Color32(MarkerStyle.UnassignedChannel, MarkerStyle.UnassignedChannel, MarkerStyle.UnassignedChannel, 255);
+        private static readonly System.Reflection.FieldInfo TrackWidth = AccessTools.Field(typeof(MapBuilder), "_segmentLineWidth");
         private sealed class Entry
         {
             internal Car Car = null!;
@@ -50,18 +53,24 @@ namespace WaybillMap
         private void Refresh(TrainController controller)
         {
             cars.Clear(); locomotives.Clear();
+            var registered = controller.Cars.Where(c => c != null).OrderBy(c => c.id, StringComparer.Ordinal).ToArray();
+            tenders = TenderPairing.Find(registered, c => c is SteamLocomotive steam && steam.hasTender,
+                c => c.set == null ? null : c.CoupledTo(c.EndToLogical(Car.End.R)), c => c.CarType.IsTender);
+            var merged = new HashSet<Car>(tenders.Values);
             var seen = new HashSet<Car>();
-            foreach (var anchor in controller.Cars.Where(c => c != null).OrderBy(c => c.id, StringComparer.Ordinal))
+            foreach (var anchor in registered)
             {
                 if (seen.Contains(anchor)) continue;
                 var group = anchor.set == null ? new[] { anchor } : anchor.EnumerateCoupled().Where(c => c != null).ToArray();
                 if (group.Length == 0) group = new[] { anchor };
-                var average = group.Average(c => Math.Max(1f, c.carLength));
+                var average = group.Sum(c => Math.Max(1f, c.carLength)) / Math.Max(1, group.Count(c => !merged.Contains(c)));
+                var index = 0;
                 for (var i = 0; i < group.Length; i++)
                 {
                     var car = group[i]; if (!seen.Add(car)) continue;
+                    if (merged.Contains(car)) continue;
                     if (car is BaseLocomotive locomotive) locomotives.Add(locomotive);
-                    try { cars.Add(new Entry { Car = car, Color = ColorFor(car), Index = i, AverageLength = average,
+                    try { cars.Add(new Entry { Car = car, Color = ColorFor(car), Index = index++, AverageLength = average,
                         Number = car.Ident.RoadNumber, Label = MarkerStyle.Label(car.Ident.ReportingMark, car.Ident.RoadNumber, car.CarType.IsTender) }); }
                     catch (Exception error) { Report(error); }
                 }
@@ -90,19 +99,30 @@ namespace WaybillMap
             wagons!.Markers.Clear(); engines!.Markers.Clear();
             var rect = image.rectTransform.rect; var uv = image.uvRect; var graph = Graph.Shared.Current;
             var pixelsPerMeter = rect.height / (2 * camera.orthographicSize);
+            var scale = MarkerLayout.ScaleForTrack((float)TrackWidth.GetValue(builder) * pixelsPerMeter);
             foreach (var entry in cars)
             {
                 var car = entry.Car; if (car == null || !car.LocationF.IsValid || !car.LocationR.IsValid) continue;
                 var engine = car is BaseLocomotive;
                 if (!MapVisibility.Show(WaybillMapPlugin.VehicleMode, engine, car.CarType.IsCaboose, car == controller.SelectedCar,
-                    entry.Index, entry.AverageLength, pixelsPerMeter)) continue;
+                    entry.Index, entry.AverageLength, pixelsPerMeter, scale)) continue;
                 try
                 {
-                    var a = camera.WorldToViewportPoint(WorldTransformer.GameToWorld(graph.GetPosition(car.LocationR)));
+                    var rear = car.LocationR;
+                    var length = car.carLength;
+                    if (tenders.TryGetValue(car, out var tender) && tender != null && tender.set != null && car.set != null &&
+                        car.CoupledTo(car.EndToLogical(Car.End.R)) == tender)
+                    {
+                        rear = tender.CoupledTo(tender.EndToLogical(Car.End.F)) == car ? tender.LocationR : tender.LocationF;
+                        if (!rear.IsValid) continue;
+                        length += tender.carLength;
+                    }
+                    var a = camera.WorldToViewportPoint(WorldTransformer.GameToWorld(graph.GetPosition(rear)));
                     var b = camera.WorldToViewportPoint(WorldTransformer.GameToWorld(graph.GetPosition(car.LocationF)));
                     if (a.z <= 0 || b.z <= 0) continue;
                     if (MarkerGeometry.TryCreate(a.x, a.y, b.x, b.y, uv.x, uv.y, uv.width, uv.height,
-                        rect.xMin, rect.yMin, rect.width, rect.height, out var geometry, car.carLength))
+                        rect.xMin, rect.yMin, rect.width, rect.height, out var geometry, length,
+                        scale, MarkerLayout.ForConsist(entry.AverageLength, pixelsPerMeter, scale).LengthScale))
                         (engine ? engines : wagons).Markers.Add(new MapMarker(geometry, entry.Color, entry.Label, entry.Number, engine));
                 }
                 catch (Exception error) { Report(error); }
@@ -120,7 +140,7 @@ namespace WaybillMap
         {
             stopped = true; enabled = false; native.Restore();
             if (root != null) { root.SetActive(false); Object.Destroy(root); root = null; }
-            cars.Clear(); locomotives.Clear();
+            cars.Clear(); locomotives.Clear(); tenders.Clear();
         }
         private void OnDestroy() => Shutdown();
     }

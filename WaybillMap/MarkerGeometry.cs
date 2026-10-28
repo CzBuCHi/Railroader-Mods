@@ -12,12 +12,14 @@ namespace WaybillMap
 
         internal static bool TryCreate(double ax, double ay, double bx, double by,
             double uvX, double uvY, double uvWidth, double uvHeight,
-            double left, double bottom, double width, double height, out MarkerGeometry marker, double carLength = 12)
+            double left, double bottom, double width, double height, out MarkerGeometry marker, double carLength = 12,
+            double scale = 1, double lengthScale = 1)
         {
             marker = default;
             if (!Finite(ax) || !Finite(ay) || !Finite(bx) || !Finite(by) || !Finite(uvWidth) || !Finite(uvHeight) ||
                 !Finite(uvX) || !Finite(uvY) || !Finite(left) || !Finite(bottom) || !Finite(width) || !Finite(height) ||
-                Math.Abs(uvWidth) < 1e-9 || Math.Abs(uvHeight) < 1e-9 || width <= 0 || height <= 0 || !Finite(carLength) || carLength <= 0) return false;
+                Math.Abs(uvWidth) < 1e-9 || Math.Abs(uvHeight) < 1e-9 || width <= 0 || height <= 0 || !Finite(carLength) || carLength <= 0 ||
+                !Finite(scale) || !Finite(lengthScale) || scale <= 0 || lengthScale <= 0) return false;
             ax = left + (ax - uvX) / uvWidth * width;
             bx = left + (bx - uvX) / uvWidth * width;
             ay = bottom + (ay - uvY) / uvHeight * height;
@@ -27,9 +29,9 @@ namespace WaybillMap
             var x = (ax + bx) * 0.5; var y = (ay + by) * 0.5;
             var axisX = length > 1e-6 ? dx / length : 1;
             var axisY = length > 1e-6 ? dy / length : 0;
-            // Fixed UI dimensions: 12-point baseline width +20%, independent of camera zoom.
-            var halfLength = Math.Max(7.2, carLength * 1.2);
-            var halfWidth = 7.2;
+            // Keep the overview baseline, widening in step with thick native track lines.
+            var halfLength = Math.Max(7.2, carLength * 1.2 * lengthScale) * scale;
+            var halfWidth = 7.2 * scale;
             var extentX = Math.Abs(axisX) * (halfLength + 0.75) + Math.Abs(axisY) * (halfWidth + 0.75);
             var extentY = Math.Abs(axisY) * (halfLength + 0.75) + Math.Abs(axisX) * (halfWidth + 0.75);
             if (x + extentX < left || x - extentX > left + width || y + extentY < bottom || y - extentY > bottom + height)

@@ -1,4 +1,4 @@
-﻿# Teleporter 3.0.2 - Relay UI + native DLL
+﻿# Teleporter 3.0.3 - Relay UI + native DLL
 
 For Railroader 0.6.x. Identifier: `czbuchi/teleporter`.
 
@@ -14,7 +14,9 @@ Keep the DLL and `Scripts/Main.rl` together. RailForge and UMM are not required.
 
 Open Teleporter using its portal icon in the top-right toolbar, or `/teleporter` in the game console.
 
-All saved locations appear together in one native list, styled like the wagon purchase list: group headings followed by their locations. No group dropdown or right-hand detail column is present. Click a location row to restore its saved view, including repeated clicks on the same row.
+All saved locations appear together in one scroll box: section headings show group names, followed by location rows with the native destination icon and location label. Click a destination icon to restore its saved view, including repeated clicks on the same icon. No group dropdown, selection highlight, or right-hand detail column is present.
+
+The scroll box stretches to the available width and clips its content to its viewport. Long location labels use ellipsis and keep their full name in the tooltip. Both windows also clip content at the window content boundary.
 
 Groups follow the saved group order; locations are sorted by name within each group. Empty groups are omitted from the list. Adding, replacing, deleting, and reordering are kept out of this window.
 
@@ -22,11 +24,12 @@ Groups follow the saved group order; locations are sorted by name within each gr
 
 ## Editor
 
-- The left side shows the same grouped location list as the main window. Selecting a row opens its editing controls on the right; it does not teleport the camera.
+- The left side retains the native purchase-style grouped list. Selecting a row opens its editing controls on the right; it does not teleport the camera.
 - Click **New location** to display the add form on the right. Enter group/name, then **Add current view**. A new group is created if needed; an existing name is never silently overwritten.
 - Select a saved location to replace its view or delete it. Both actions require a second click to confirm; selecting another location cancels pending confirmation.
+- Change the Group and Location name fields and click **Save name / group** to rename a saved location or move it into another group. The saved position, orientation, zoom, and camera mode remain unchanged. A destination-name collision is rejected without overwriting either view.
 - Move the selected location's group up/down using the controls on the right.
-- Set **Open Teleporter on world load** in the right-hand panel.
+- **Preferences**, including Open Teleporter on world load, is a footer below the entire list/detail component. It is hidden while adding a new location.
 
 The main window and editor refresh after successful changes. Text fields update their draft values while typing. The editor stores nothing until an action is confirmed.
 
@@ -84,20 +87,21 @@ The DLL patches `ScriptInterpreterFactory.CreatePackScopedBuilder` with a Harmon
 
 The `textInput(...)` helper in Main.rl is the temporary text-input adapter. It calls `tp.inputField(...)`, which unwraps the native panel builder and adds the game's standard text field. Once an official Relay input API is released, update this helper to its documented signature; no future API shape is assumed and no built-in Relay method is overridden.
 
-`tp.locationBrowser(...)` adds the game's native grouped list/detail control, hides its detail column, expands the list to fill the window, and connects row clicks to teleportation. `tp.locationEditor(...)` uses the same control with a 220-pixel list on the left and a Relay callback that builds the editing panel on the right. Selection identifiers encode both group and location names so identical location names in different groups remain distinct. Other bridge functions handle group/name lists, camera capture for add/replace, deletion, group ordering, and the auto-open preference. The DLL uses native strategy camera state capture/restore, validated reflection for camera-mode selection and inertia reset, and no camera update transpilers.
+The main window's group loop and sections live in Main.rl. `tp.scrollView(...)` creates a native vertical scroll view with width constraints and viewport clipping; `tp.locationRow(...)` creates a native destination-icon/label row. `tp.clipWindow(...)` clips the root content. `tp.locationEditor(...)` retains the game's list/detail control with a 220-pixel list on the left and a Relay callback that builds the editing panel on the right. Its height shares available space with the Preferences footer. Selection identifiers encode both group and location names so identical names in different groups remain distinct. `tp.rename(...)` moves/renames the stored view without capturing the current camera. Other bridge functions handle group/name lists, capture for add/replace, deletion, ordering, and auto-open. The DLL uses native strategy camera state capture/restore, validated reflection for camera-mode selection and inertia reset, and no camera update transpilers.
 
 ## Validation and remaining in-game checks
 
-The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers all groups in one list, group order, duplicate location names across groups, repeated one-click teleport requests, editor list selection and right-hand forms, two-step replacement/deletion, cancellation on selection change, error handling, refreshes, preferences, and world cleanup. The shared catalog, profile persistence, backups, failed writes, and installed API members used by the bridge are also checked. A separate PowerShell test covers the standalone migration script.
+The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers all groups in one scroll box, icon-row targets, duplicate names across groups, repeated teleport requests, editor selection and right-hand forms, rename/move without camera capture, collision rejection, two-step replacement/deletion, refreshes, footer placement, hidden preferences in add mode, and world cleanup. The catalog, persistence, backups, failed writes, and installed API members are also checked. A separate PowerShell test covers the migration script.
 
 These tests do not run Unity. Check in game:
 
-1. Open the toolbar window; verify every populated group appears in one purchase-style list, with no right column. Click rows in different groups without using a dropdown, then click the same row again.
+1. Open the toolbar window; verify group headers and destination icons, with all locations in one scroll box. Resize narrow and use long labels/many entries; no content should draw beyond the window or scroll viewport. Click icons in different groups, then the same icon again.
 2. Open the editor; verify the same list is on the left and selecting a location displays controls on the right without teleporting. Click New location, type a group/name, and add a first-person view. Move and rotate, then return and compare heading and pitch.
 3. Repeat in tracking view with a different zoom and while following a train. Verify the bookmark stays at the saved absolute location.
 4. Confirm the first replace/delete click changes only the confirmation label; the second performs the edit.
-5. Close/reopen both windows, reload a world, and disable/re-enable the mod. Verify no duplicate toolbar icons or stale windows.
-6. Check long-distance loading, repeated clicks, and multiplayer clients. Bookmark data remains local to each player.
+5. Rename/move a view using Save name / group. Confirm its saved camera is unchanged, the lists refresh, and occupied target names are rejected. Verify Preferences is below the entire editor split and disappears in New location mode.
+6. Close/reopen both windows, reload a world, and disable/re-enable the mod. Verify no duplicate toolbar icons or stale windows.
+7. Check long-distance loading, repeated clicks, and multiplayer clients. Bookmark data remains local to each player.
 
 Diagnostic prefix: `[Teleporter]` for toolbar errors; native mod-context logging for lifecycle, profile, bridge, and camera errors.
 

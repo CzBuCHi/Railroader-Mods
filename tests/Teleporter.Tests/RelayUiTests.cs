@@ -29,6 +29,7 @@ internal static class RelayUiTests
     {
         internal readonly Dictionary<string, Control> Buttons = new Dictionary<string, Control>();
         internal readonly Dictionary<string, Action<string>> Inputs = new Dictionary<string, Action<string>>();
+        internal readonly Dictionary<string, string> InputValues = new Dictionary<string, string>();
         internal readonly Dictionary<string, Action<int>> Dropdowns = new Dictionary<string, Action<int>>();
         internal readonly Dictionary<string, Action<bool>> Toggles = new Dictionary<string, Action<bool>>();
         internal readonly List<string> Rows = new List<string>();
@@ -36,6 +37,8 @@ internal static class RelayUiTests
         internal readonly List<string> Content = new List<string>();
         internal readonly Dictionary<string, Action> Selections = new Dictionary<string, Action>();
         internal Panel? Detail;
+        internal bool Clipped;
+        internal int ScrollBoxes;
         internal void Click(string name)
         {
             var control = Buttons[name];
@@ -156,6 +159,7 @@ internal static class RelayUiTests
         tp.DefineFunction("add", 2, args => action(() => store.Add(args[0].AsString(), args[1].AsString(), Program.View(captureX))));
         tp.DefineFunction("replace", 2, args => action(() => { replaces++; store.Replace(args[0].AsString(), args[1].AsString(), Program.View(captureX)); }));
         tp.DefineFunction("remove", 2, args => action(() => { deletes++; store.Delete(args[0].AsString(), args[1].AsString()); }));
+        tp.DefineFunction("rename", 4, args => action(() => store.Rename(args[0].AsString(), args[1].AsString(), args[2].AsString(), args[3].AsString())));
         tp.DefineFunction("moveGroup", 2, args => action(() => store.MoveGroup(args[0].AsString(), args[1].AsInt())));
         var browserClicks = new List<string>();
         Action<Panel, List<BookmarkCatalog.Entry>> catalog = (panel, entries) =>
@@ -169,13 +173,27 @@ internal static class RelayUiTests
                 panel.Rows.Add(entry.Name);
             }
         };
-        tp.DefineFunction("locationBrowser", 1, args =>
+        tp.DefineFunction("clipWindow", 1, args =>
         {
             var panel = (Panel)args[0].AsTypeInstance().NativeObject;
-            var entries = BookmarkCatalog.Create(store.Current);
-            catalog(panel, entries);
-            foreach (var entry in entries)
-                panel.Selections[entry.Id] = () => browserClicks.Add(entry.Group + ":" + entry.Name);
+            panel.Clipped = true;
+            return Value.Null();
+        });
+        tp.DefineFunction("scrollView", 2, args =>
+        {
+            var panel = (Panel)args[0].AsTypeInstance().NativeObject;
+            panel.ScrollBoxes++;
+            Callback1(args[1])(PanelType.Wrap(panel));
+            return Value.Null();
+        });
+        tp.DefineFunction("locationRow", 4, args =>
+        {
+            var panel = (Panel)args[0].AsTypeInstance().NativeObject;
+            var entry = new BookmarkCatalog.Entry(args[2].AsString(), args[3].AsString());
+            Program.Check(store.Get(entry.Group, entry.Name) != null, "Icon row targets an existing saved view");
+            panel.Rows.Add(args[1].AsString());
+            panel.Content.Add("row:" + entry.Group + ":" + entry.Name);
+            panel.Selections[entry.Id] = () => browserClicks.Add(entry.Group + ":" + entry.Name);
             return Value.Null();
         });
         tp.DefineFunction("locationEditor", 5, args =>
@@ -206,7 +224,10 @@ internal static class RelayUiTests
         tp.DefineFunction("inputField", 4, args =>
         {
             var callback = Callback1(args[3]);
-            ((Panel)args[0].AsTypeInstance().NativeObject).Inputs[args[1].AsString()] = text => callback(Value.String(text));
+            var panel = (Panel)args[0].AsTypeInstance().NativeObject;
+            var label = args[1].AsString();
+            panel.InputValues[label] = args[2].AsString();
+            panel.Inputs[label] = text => { panel.InputValues[label] = text; callback(Value.String(text)); };
             return Value.Null();
         });
         interpreter.RegisterNamedModule(railroader);
@@ -220,18 +241,22 @@ internal static class RelayUiTests
         Program.Check(main.Panel.Buttons.Keys.SequenceEqual(new[] { "Edit locations..." }), "Main window contains no edit actions");
         main.Panel.Click("Edit locations...");
         Program.Check(editor.Open && editor.Panel.Detail!.Inputs.Count == 2, "Editor opens new-location form on the right when empty");
+        Program.Check(!editor.Panel.Toggles.Any() && !editor.Panel.Detail!.Toggles.Any(), "Preferences hidden during creation");
         editor.Panel.Detail!.Inputs["Group"]("Yard");
         editor.Panel.Detail.Inputs["Location name"]("Saved view");
         editor.Panel.Detail.Click("Add current view"); ui.Flush();
         Program.Check(store.Get("Yard", "Saved view").Position.X == 10, "Relay add uses latest typed names");
         Program.Check(main.Panel.Rows.SequenceEqual(new[] { "Saved view" }), "Main has grouped location list");
-        Program.Check(editor.Panel.Detail!.Labels.Contains("Location:Saved view"), "Newly added view is selected in right detail");
+        Program.Check(editor.Panel.Detail!.InputValues["Location name"] == "Saved view", "Newly added view has editable name");
+        Program.Check(editor.Panel.Toggles.ContainsKey("Open Teleporter on world load") && !editor.Panel.Detail.Toggles.Any(),
+            "Preferences are below the split list, outside its right detail");
         captureX = 20;
         editor.Panel.Detail.Click("Replace with current view"); ui.Flush();
         Program.Check(replaces == 0, "First replace click only confirms");
         editor.Panel.Detail!.Click("Confirm replace"); ui.Flush();
         Program.Check(replaces == 1 && store.Get("Yard", "Saved view").Position.X == 20, "Second replace click stores current view");
         editor.Panel.Click("New location"); ui.Flush();
+        Program.Check(!editor.Panel.Toggles.Any() && !editor.Panel.Detail!.Toggles.Any(), "New mode removes editor preference footer");
         editor.Panel.Detail!.Inputs["Group"]("Yard");
         editor.Panel.Detail.Inputs["Location name"]("Saved view");
         editor.Panel.Detail.Click("Add current view"); ui.Flush();
@@ -252,23 +277,38 @@ internal static class RelayUiTests
         Program.Check(main.Panel.Content.SequenceEqual(new[] { "group:Yard", "row:Yard:Alpha", "row:Yard:Beta", "group:Station", "row:Station:Alpha" }),
             "Group headers precede sorted locations and duplicate names retain the correct group");
         Program.Check(main.Panel.Detail == null, "Main window has no detail column");
-        Program.Check(editor.Panel.Content.SequenceEqual(main.Panel.Content) && editor.Panel.Detail != null, "Editor uses the same list with a right detail column");
+        Program.Check(editor.Panel.Rows.SequenceEqual(main.Panel.Rows) && editor.Panel.Detail != null, "Editor lists the same locations with a right detail column");
+        Program.Check(main.Panel.Clipped && main.Panel.ScrollBoxes == 1 && editor.Panel.Clipped,
+            "Main uses one clipped scroll box and both window roots request clipping");
         var stationId = BookmarkCatalog.Create(store.Current).Single(entry => entry.Group == "Station").Id;
         main.Panel.Selections[stationId](); main.Panel.Selections[stationId]();
         Program.Check(browserClicks.SequenceEqual(new[] { "Station:Alpha", "Station:Alpha" }), "Same main row can teleport repeatedly with one click");
         var jumpsBefore = browserClicks.Count;
         editor.Panel.Selections[stationId]();
-        Program.Check(editor.Panel.Detail!.Labels.Contains("Group:Station") && browserClicks.Count == jumpsBefore,
+        Program.Check(editor.Panel.Detail!.InputValues["Group"] == "Station" && browserClicks.Count == jumpsBefore,
             "Editor selection chooses the correct duplicate-named view without teleporting");
         editor.Panel.Detail.Click("Delete"); ui.Flush();
         var yardId = BookmarkCatalog.Create(store.Current).First(entry => entry.Group == "Yard").Id;
         editor.Panel.Selections[yardId]();
         Program.Check(editor.Panel.Detail!.Buttons.ContainsKey("Delete") && !editor.Panel.Detail.Buttons.ContainsKey("Confirm delete"),
             "Selecting a different location cancels pending confirmation");
+        editor.Panel.Detail.Inputs["Group"]("New group");
+        editor.Panel.Detail.Inputs["Location name"]("Renamed Alpha");
+        var originalX = store.Get("Yard", "Alpha").Position.X;
+        editor.Panel.Detail.Click("Save name / group"); ui.Flush();
+        Program.Check(store.Get("New group", "Renamed Alpha").Position.X == originalX && replaces == 1,
+            "Rename/move preserves the original camera instead of capturing current view");
+        Program.Check(editor.Panel.Detail!.InputValues["Location name"] == "Renamed Alpha" && main.Panel.Rows.Contains("Renamed Alpha"),
+            "Rename updates selected detail and main list");
+        editor.Panel.Detail.Inputs["Group"]("Station");
+        editor.Panel.Detail.Inputs["Location name"]("Alpha");
+        editor.Panel.Detail.Click("Save name / group"); ui.Flush();
+        Program.Check(store.Get("New group", "Renamed Alpha").Position.X == originalX && store.Get("Station", "Alpha").Position.X == 50,
+            "Name collision does not replace either view");
         store.MoveGroup("Station", -1);
         main.Rebuild();
         Program.Check(main.Panel.Content.First() == "group:Station", "Main honors saved group order");
-        editor.Panel.Detail.Toggles["Open Teleporter on world load"](true); ui.Flush();
+        editor.Panel.Toggles["Open Teleporter on world load"](true); ui.Flush();
         Program.Check(store.Current.AutoOpenTeleporterWindow, "Editor preference saves through native API");
         interpreter.CallFunction("onWorldUnload", Value.Null());
         Program.Check(!main.Open && !editor.Open, "World unload closes both windows");

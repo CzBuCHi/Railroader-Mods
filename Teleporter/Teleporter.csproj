@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.Teleporter</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>3.0.2</Version>
+    <Version>3.0.3</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>

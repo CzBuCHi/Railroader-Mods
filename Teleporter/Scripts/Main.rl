@@ -8,6 +8,10 @@ var selectedLocation = ""
 var newGroup = ""
 var newLocation = ""
 var creating = false
+var editGroup = ""
+var editName = ""
+var editForGroup = ""
+var editForName = ""
 var confirmation = ""
 var status = ""
 
@@ -41,14 +45,22 @@ func openEditor() {
 }
 
 func buildMain(b) {
+    tp.clipWindow(b)
     b.button("Edit locations...", openEditor).tooltip("Manage saved locations", "Select a location in the separate editor to change it.")
     var entries = tp.groups().filter((group) => !tp.locations(group).isEmpty)
     if entries.isEmpty {
         b.labelEmptyState("No saved locations. Open Edit locations to add one.")
         return
     }
-    // Native purchase-style grouped list. Its detail column is hidden by the bridge.
-    tp.locationBrowser(b)
+    // One clipped scroll box: section headers are groups, icon/label rows are locations.
+    tp.scrollView(b, (rows) => {
+        for group in entries {
+            rows.section(group)
+            for name in tp.locations(group) {
+                tp.locationRow(rows, name, group, name)
+            }
+        }
+    })
 }
 
 // Temporary adapter. Replace only this function once Relay has an official text input API.
@@ -63,16 +75,24 @@ func completed(error, message) {
 }
 
 func buildEditor(b) {
+    tp.clipWindow(b)
     b.button("New location", () => {
         creating = true
         newGroup = currentGroup
         newLocation = ""
+        editForName = ""
         confirmation = ""
         status = ""
         refresh()
     })
-    // Same native list as the main window, with the right column enabled for editing.
+    // Native list/detail remains useful for selecting and editing existing locations.
     tp.locationEditor(b, currentGroup, selectedLocation, buildEditorDetail, creating)
+    if !creating {
+        b.section("Preferences")
+        b.fieldToggle("Open Teleporter on world load", () => tp.autoOpen(), (enabled) => {
+            completed(tp.setAutoOpen(enabled), "Preference saved.")
+        })
+    }
 }
 
 func buildEditorDetail(b, group, name) {
@@ -83,11 +103,19 @@ func buildEditorDetail(b, group, name) {
     }
     if group != null {
         if creating || currentGroup != group || selectedLocation != name {
+            var rebuildEditor = creating
             currentGroup = group
             selectedLocation = name
             creating = false
             confirmation = ""
             status = ""
+            if rebuildEditor { editorWindow?.setNeedsRebuild() }
+        }
+        if editForGroup != group || editForName != name {
+            editGroup = group
+            editName = name
+            editForGroup = group
+            editForName = name
         }
     }
     b.vScrollView((form) => {
@@ -107,8 +135,16 @@ func buildEditorDetail(b, group, name) {
             })
         } else {
             form.section("Saved view")
-            form.field("Group", currentGroup)
-            form.field("Location", selectedLocation)
+            textInput(form, "Group", editGroup, (value) => { editGroup = value; confirmation = "" })
+            textInput(form, "Location name", editName, (value) => { editName = value; confirmation = "" })
+            form.button("Save name / group", () => {
+                var error = tp.rename(currentGroup, selectedLocation, editGroup, editName)
+                if error == null {
+                    currentGroup = editGroup.trim()
+                    selectedLocation = editName.trim()
+                }
+                completed(error, "Location name and group saved.")
+            })
             form.button(confirmation == "replace" ? "Confirm replace" : "Replace with current view", () => {
                 if confirmation != "replace" { confirmation = "replace"; refresh(); return }
                 completed(tp.replace(currentGroup, selectedLocation), "Saved view replaced.")
@@ -128,10 +164,6 @@ func buildEditorDetail(b, group, name) {
                 }).disable(index == groups.count - 1)
             })
         }
-        form.section("Preferences")
-        form.fieldToggle("Open Teleporter on world load", () => tp.autoOpen(), (enabled) => {
-            completed(tp.setAutoOpen(enabled), "Preference saved.")
-        })
         if status != "" { form.label(status) }
     })
 }

@@ -86,6 +86,29 @@ namespace Teleporter
                 throw new InvalidOperationException("Select a saved location.");
         });
 
+        internal void Rename(string groupName, string name, string targetGroup, string targetName)
+        {
+            targetGroup = targetGroup.Trim(); targetName = targetName.Trim();
+            RequireName(targetGroup); RequireName(targetName);
+            Change(settings =>
+            {
+                var source = settings.Groups.Single(group => group.Name == groupName);
+                if (!source.Locations.TryGetValue(name, out var location))
+                    throw new InvalidOperationException("Select a saved location.");
+                if (groupName == targetGroup && name == targetName) return;
+                var destination = settings.Groups.FirstOrDefault(group => group.Name == targetGroup);
+                if (destination != null && destination.Locations.ContainsKey(targetName))
+                    throw new InvalidOperationException("This location already exists in the target group.");
+                if (destination == null)
+                {
+                    destination = new LocationGroup { Name = targetGroup };
+                    settings.Groups.Add(destination);
+                }
+                source.Locations.Remove(name);
+                destination.Locations.Add(targetName, location);
+            });
+        }
+
         internal void MoveGroup(string groupName, int delta) => Change(settings =>
         {
             if (delta != -1 && delta != 1) throw new ArgumentOutOfRangeException(nameof(delta));

@@ -26,6 +26,9 @@ internal static class InstalledApiTests
         Program.Check(parameters.Contains("packIdentifier") && parameters.Contains("tier"), "Harmony argument names match installed factory");
         Program.Check(type("RelayUIPanelBuilder").GetFields().Select(handle => metadata.GetFieldDefinition(handle))
             .Any(field => metadata.GetString(field.Name) == "_builder"), "Input adapter backing field exists");
+        Program.Check(type("UIPanelBuilder").GetFields().Select(handle => metadata.GetFieldDefinition(handle))
+            .Any(field => metadata.GetString(field.Name) == "_container"), "Window clipping container exists");
+        Program.Check(method("UIPanelBuilder", "VScrollView", 1), "Native shared scroll box exists");
         Program.Check(method("UIPanelBuilder", "AddInputField", 4), "Native text input overload exists");
         Program.Check(method("UIPanelBuilder", "AddLocationFieldFallback", 2), "Wagon-style location row exists");
         Program.Check(method("UIPanelBuilder", "AddListDetail", 5), "Native purchase-style grouped list exists");

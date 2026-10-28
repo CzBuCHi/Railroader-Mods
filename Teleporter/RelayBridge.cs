@@ -26,6 +26,8 @@ namespace Teleporter
             ?? throw new NotSupportedException("Native list controller was changed.");
         private static readonly FieldInfo DetailField = AccessTools.Field(typeof(ListDetailController), "detailRectTransform")
             ?? throw new NotSupportedException("Native detail panel was changed.");
+        private static readonly FieldInfo ContainerField = AccessTools.Field(typeof(UIPanelBuilder), "_container")
+            ?? throw new NotSupportedException("Native panel container was changed.");
 
         internal static void Validate()
         {
@@ -33,6 +35,8 @@ namespace Teleporter
                 throw new NotSupportedException("Unsupported Relay UI builder.");
             if (ListField.FieldType != typeof(ListController) || DetailField.FieldType != typeof(RectTransform))
                 throw new NotSupportedException("Unsupported native grouped list.");
+            if (ContainerField.FieldType != typeof(RectTransform))
+                throw new NotSupportedException("Unsupported native panel container.");
         }
 
         [HarmonyPostfix]
@@ -53,27 +57,38 @@ namespace Teleporter
             module.DefineFunction("add", 2, args => Action(() => Plugin.Store.Add(args[0].AsString(), args[1].AsString(), CameraBookmarks.Capture())));
             module.DefineFunction("replace", 2, args => Action(() => Plugin.Store.Replace(args[0].AsString(), args[1].AsString(), CameraBookmarks.Capture())));
             module.DefineFunction("remove", 2, args => Action(() => Plugin.Store.Delete(args[0].AsString(), args[1].AsString())));
+            module.DefineFunction("rename", 4, args => Action(() => Plugin.Store.Rename(args[0].AsString(), args[1].AsString(), args[2].AsString(), args[3].AsString())));
             module.DefineFunction("moveGroup", 2, args => Action(() => Plugin.Store.MoveGroup(args[0].AsString(), args[1].AsInt())));
             module.DefineFunction("autoOpen", 0, _ => Value.Bool(Plugin.Store.Current.AutoOpenTeleporterWindow));
             module.DefineFunction("setAutoOpen", 1, args => Action(() => Plugin.Store.SetAutoOpen(args[0].AsBool())));
-            module.DefineFunction("locationBrowser", 1, args =>
+            module.DefineFunction("clipWindow", 1, args =>
             {
-                var entries = BookmarkCatalog.Create(Plugin.Store.Current);
-                var view = Builder(args[0]).AddListDetail(Items(entries), new UIState<string>(""), (_, __) => { });
-                var split = view.GetComponent<ListDetailController>();
-                ((RectTransform)DetailField.GetValue(split)).gameObject.SetActive(false);
-                var list = (ListController)ListField.GetValue(split);
-                var layout = list.GetComponent<LayoutElement>();
-                layout.minWidth = 0; layout.preferredWidth = -1; layout.flexibleWidth = 1;
-                var select = list.OnSelectItem;
-                var lookup = entries.ToDictionary(entry => entry.Id);
-                list.OnSelectItem = id =>
-                {
-                    select?.Invoke(id);
-                    if (!lookup.TryGetValue(id, out var entry)) return;
-                    try { Plugin.Runtime.Teleport(Plugin.Store.Get(entry.Group, entry.Name)); }
-                    catch (Exception error) { Report(error); }
-                };
+                var container = (RectTransform)ContainerField.GetValue(Builder(args[0]));
+                if (container.GetComponent<RectMask2D>() == null) container.gameObject.AddComponent<RectMask2D>();
+                return Value.Null();
+            });
+            module.DefineFunction("scrollView", 2, args =>
+            {
+                var context = Interpreter.CurrentCallContext;
+                var closure = args[1].AsClosure();
+                var root = Builder(args[0]).VScrollView(rows =>
+                    context.CallClosure(closure, new[] { RelayUIPanelBuilder.Create(rows).Wrap() }));
+                var scroll = root.GetComponent<ScrollRect>();
+                scroll.horizontal = false;
+                var viewport = scroll.viewport;
+                if (viewport != null && viewport.GetComponent<RectMask2D>() == null)
+                    viewport.gameObject.AddComponent<RectMask2D>();
+                var layout = root.GetComponent<LayoutElement>();
+                layout.minWidth = 0; layout.preferredWidth = 0; layout.flexibleWidth = 1;
+                var content = scroll.content;
+                var fitter = content.GetComponent<ContentSizeFitter>();
+                if (fitter != null) fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                var vertical = content.GetComponent<VerticalLayoutGroup>();
+                if (vertical != null) { vertical.childControlWidth = true; vertical.childForceExpandWidth = true; }
+                content.anchorMin = new Vector2(0, content.anchorMin.y);
+                content.anchorMax = new Vector2(1, content.anchorMax.y);
+                content.offsetMin = new Vector2(0, content.offsetMin.y);
+                content.offsetMax = new Vector2(0, content.offsetMax.y);
                 return Value.Null();
             });
             module.DefineFunction("locationEditor", 5, args =>
@@ -84,7 +99,7 @@ namespace Teleporter
                 var state = new UIState<string>(args[4].AsBool() ? "" : selected?.Id ?? "");
                 var context = Interpreter.CurrentCallContext;
                 var closure = args[3].AsClosure();
-                Builder(args[0]).AddListDetail(Items(entries), state, (detail, entry) =>
+                var view = Builder(args[0]).AddListDetail(Items(entries), state, (detail, entry) =>
                 {
                     try
                     {
@@ -96,17 +111,28 @@ namespace Teleporter
                     }
                     catch (Exception error) { Report(error); }
                 }, listWidth: 220f);
+                // Let the list share available height with the Preferences footer below it.
+                var layout = view.GetComponent<LayoutElement>() ?? view.gameObject.AddComponent<LayoutElement>();
+                layout.minWidth = 0; layout.preferredWidth = 0; layout.flexibleWidth = 1;
+                layout.minHeight = 0; layout.preferredHeight = 0; layout.flexibleHeight = 1;
                 return Value.Null();
             });
             module.DefineFunction("locationRow", 4, args =>
             {
                 var builder = Builder(args[0]);
                 var group = args[2].AsString(); var name = args[3].AsString();
-                builder.AddLocationFieldFallback(args[1].AsString(), () =>
+                var row = builder.AddLocationFieldFallback(args[1].AsString(), () =>
                 {
                     try { Plugin.Runtime.Teleport(Plugin.Store.Get(group, name)); }
                     catch (Exception error) { Report(error); }
                 });
+                var rowLayout = row.GetComponent<LayoutElement>() ?? row.gameObject.AddComponent<LayoutElement>();
+                rowLayout.minWidth = 0; rowLayout.preferredWidth = 0; rowLayout.flexibleWidth = 1;
+                var label = row.GetComponentInChildren<TMP_Text>();
+                label.textWrappingMode = TextWrappingModes.NoWrap;
+                label.overflowMode = TextOverflowModes.Ellipsis;
+                var textLayout = label.GetComponent<LayoutElement>() ?? label.gameObject.AddComponent<LayoutElement>();
+                textLayout.minWidth = 0; textLayout.preferredWidth = 0; textLayout.flexibleWidth = 1;
                 return Value.Null();
             });
             // Temporary input adapter. Replace this one script call when Relay gains native text inputs.

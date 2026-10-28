@@ -67,6 +67,24 @@ internal static class Program
                 "Grouped list identifiers cannot collide on separators");
             Check(new BookmarkCatalog.Entry("Yard", "View").Id != new BookmarkCatalog.Entry("Yard", "view").Id,
                 "Grouped list identifiers preserve case-sensitive names");
+            store.Add("Rename", "Original", View(8, true));
+            store.Rename("Rename", "Original", "Rename", " Renamed ");
+            Check(new BookmarkStore(path).Get("Rename", "Renamed").Position.X == 8 && store.Get("Rename", "Renamed").FirstPerson,
+                "Rename persists original camera and mode");
+            store.Rename("Rename", "Renamed", "Moved", "New name");
+            Check(store.Get("Moved", "New name").Rotation.Y == 135 && store.Get("Moved", "New name").Distance == 40,
+                "Moving to a new group preserves rotation and zoom");
+            store.Add("Moved", "Occupied", View(9));
+            failed = false;
+            try { store.Rename("Moved", "New name", "Moved", "Occupied"); } catch (InvalidOperationException) { failed = true; }
+            Check(failed && store.Get("Moved", "New name").Position.X == 8 && store.Get("Moved", "Occupied").Position.X == 9,
+                "Rename collision preserves both views");
+            using (var locked = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                failed = false;
+                try { store.Rename("Moved", "New name", "Moved", "Failure"); } catch (IOException) { failed = true; }
+                Check(failed && store.Get("Moved", "New name").Position.X == 8, "Failed rename write preserves in-memory name and view");
+            }
             foreach (var text in new[] { "{", "{}", "{\"Groups\":null}", "{\"Groups\":[null]}", "{\"Groups\":[{\"Name\":\"X\",\"Locations\":null}]}" })
             {
                 File.WriteAllText(path, text);

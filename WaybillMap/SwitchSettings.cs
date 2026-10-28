@@ -1,9 +1,9 @@
 ﻿﻿using System;
 
-namespace SwitchNormalizer
+namespace WaybillMap
 {
 
-    public sealed class Settings
+    public sealed class SwitchSettings
     {
         public string[] ThrownSwitches { get; set; } = Array.Empty<string>();
     }

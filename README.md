@@ -2,12 +2,6 @@
 
 This orphan branch contains native mods for Railroader 0.6. Legacy RailForge mods and their history remain on `master` (checkpoint `575e7e2`). The empty root of this branch is `7ea4503`.
 
-## Switch Normalizer 3.0.0
-
-Native DLL mod with a toolbar icon. Click to restore switch positions; Shift-click to save them. Requires no RailForge, UMM, or Harmony.
-
-See [installation, profile location, and checks](SwitchNormalizer/README.md).
-
 ## Teleporter 3.0.5
 
 Hybrid native DLL and Relay mod. The main window shows groups and destination-icon rows inside one clipped scroll box, with an icon-only editor button at the bottom right. The editor uses two independent scrollable columns, without the game's list/detail component. Controls have fixed heights; only the scroll areas expand. Rename/move preserves the saved view. Preferences sit below the columns and are hidden while adding. See [Teleporter guide](Teleporter/README.md).
@@ -16,15 +10,13 @@ Hybrid native DLL and Relay mod. The main window shows groups and destination-ic
 
 Selected native port: next-interchange Sleep, wagon speed/oil, metric distances and train length, camera-only fault HUD buttons, Manual/Road/Yard controls (none selected in AEWP), roster Shift-follow, a default 6-MPH manual pushing cap, and crew/repair-destination copying. JSON settings control each feature, oil threshold, and manual-push cap; no settings UI is added. See the [full included/excluded list and configuration](Tweaks/README.md).
 
-## WaybillMap 1.2.0
+## WaybillMap 1.3.0
 
-Standalone native mod displaying all non-locomotive cars on the map as numbered, oriented badges using native destination/waybill tag colors and #ddd for cars without a waybill. Distant parked cars are included without loading their detailed models. Map > Display > Waybill cars toggles the layer and persists through the game's map preferences. See the [WaybillMap guide](WaybillMap/README.md).
+Native map mod with fixed-size vehicle markers, destination colors (including locomotive repair/depot destinations), gentle spotted dimming, three vehicle filters and zoom-dependent wagon sampling. Upper-right map controls provide switch Save/Restore and Follow selected car. SwitchNormalizer is merged into this mod; its existing profile is retained and the separate mod should be disabled/removed. See the [WaybillMap guide](WaybillMap/README.md).
 
 Build from the repository root:
 
 ```powershell
-dotnet publish SwitchNormalizer/SwitchNormalizer.csproj -c Release
-dotnet run --project tests/SwitchNormalizer.Tests -c Release -- SwitchNormalizer/bin/Release/CzBuCHi.SwitchNormalizer.dll
 dotnet publish Teleporter/Teleporter.csproj -c Release
 dotnet run --project tests/Teleporter.Tests -c Release -- Teleporter/Scripts/Main.rl "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" Teleporter/bin/Release/CzBuCHi.Teleporter.dll
 dotnet publish Tweaks/Tweaks.csproj -c Release
@@ -35,12 +27,10 @@ dotnet run --project tests/WaybillMap.Tests -c Release -- "C:/Steam/steamapps/co
 
 Default game location: `C:\Steam\steamapps\common\Railroader`. Override `GameDir` in an untracked `Paths.user` MSBuild project or pass `-p:GameDir="D:\path\Railroader"`.
 
-SwitchNormalizer targets .NET Framework 4.7.2; Teleporter and Tweaks target 4.8 to match the game's bundled Harmony assembly. All use C# 9 and the installed game's framework references because Unity 6 exposes newer framework types. Game DLLs are not distributed.
-
-ZIP output: `bin/CzBuCHi.SwitchNormalizer_3.0.0.zip`. Publishing only builds the package; it does not install or launch the game.
+All current mods target .NET Framework 4.8 with C# 9 and the installed game's framework references. Game DLLs are not distributed. Publishing only creates packages; it does not install or launch the game.
 
 Teleporter ZIP output: `bin/CzBuCHi.Teleporter_3.0.5.zip`. The game already supplies its Harmony dependency; no separate loader or bundled Harmony copy is needed.
 
 Tweaks ZIP output: `bin/CzBuCHi.Tweaks_3.0.10.zip`.
 
-WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.2.0.zip`.
+WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.3.0.zip`.

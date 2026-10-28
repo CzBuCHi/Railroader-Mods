@@ -4,7 +4,7 @@ namespace WaybillMap
 {
     internal readonly struct MarkerGeometry
     {
-        internal const int BatchSize = 2048; // Eight vertices per outlined marker, well below Unity UI's 16-bit limit.
+        internal const int BatchSize = 2048; // At most ten vertices per outlined marker, below Unity UI's 16-bit limit.
         internal readonly double X, Y, AxisX, AxisY, HalfLength, HalfWidth;
 
         private MarkerGeometry(double x, double y, double axisX, double axisY, double length, double width)
@@ -27,9 +27,9 @@ namespace WaybillMap
             var x = (ax + bx) * 0.5; var y = (ay + by) * 0.5;
             var axisX = length > 1e-6 ? dx / length : 1;
             var axisY = length > 1e-6 ? dy / length : 0;
-            // Follow vehicle length, leaving a coupler gap instead of enlarging badges for text.
-            var halfLength = Math.Max(0.75, length * 0.45);
-            var halfWidth = Math.Max(0.65, length / carLength * 1.8);
+            // Fixed UI dimensions: 12-point baseline width +20%, independent of camera zoom.
+            var halfLength = Math.Max(7.2, carLength * 1.2);
+            var halfWidth = 7.2;
             var extentX = Math.Abs(axisX) * (halfLength + 0.75) + Math.Abs(axisY) * (halfWidth + 0.75);
             var extentY = Math.Abs(axisY) * (halfLength + 0.75) + Math.Abs(axisX) * (halfWidth + 0.75);
             if (x + extentX < left || x - extentX > left + width || y + extentY < bottom || y - extentY > bottom + height)
@@ -39,9 +39,6 @@ namespace WaybillMap
         }
 
         private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
-
-        internal bool ShowLabel => HalfLength * 2 >= 14 && HalfWidth * 2 >= 9;
-        internal bool ShowNumber => HalfLength * 2 >= 14 && HalfWidth * 2 >= 5;
 
         internal double ReadableAngle
         {

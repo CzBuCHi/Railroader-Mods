@@ -11,8 +11,9 @@ namespace WaybillMap
         internal readonly Color Color;
         internal readonly string Number;
         internal readonly string Label;
-        internal MapMarker(MarkerGeometry geometry, Color color, string label, string number)
-        { Geometry = geometry; Color = color; Label = label; Number = number; }
+        internal readonly bool IsLocomotive;
+        internal MapMarker(MarkerGeometry geometry, Color color, string label, string number, bool engine = false)
+        { Geometry = geometry; Color = color; Label = label; Number = number; IsLocomotive = engine; }
     }
 
     internal sealed class CarMapGraphic : MaskableGraphic
@@ -35,12 +36,12 @@ namespace WaybillMap
             for (var i = start; i < end; i++)
             {
                 var marker = markers[i];
-                Quad(mesh, marker.Geometry, 0.75, new Color32(24, 24, 20, 255));
-                Quad(mesh, marker.Geometry, 0, marker.Color);
+                Quad(mesh, marker.Geometry, 0.75, new Color32(24, 24, 20, 255), marker.IsLocomotive);
+                Quad(mesh, marker.Geometry, 0, marker.Color, marker.IsLocomotive);
             }
         }
 
-        private static void Quad(VertexHelper mesh, MarkerGeometry g, double padding, Color color)
+        private static void Quad(VertexHelper mesh, MarkerGeometry g, double padding, Color color, bool engine)
         {
             var along = new Vector2((float)g.AxisX, (float)g.AxisY) * (float)(g.HalfLength + padding);
             var across = new Vector2((float)-g.AxisY, (float)g.AxisX) * (float)(g.HalfWidth + padding);
@@ -50,6 +51,17 @@ namespace WaybillMap
             mesh.AddVert(center - along + across, color, Vector2.zero);
             mesh.AddVert(center + along + across, color, Vector2.zero);
             mesh.AddVert(center + along - across, color, Vector2.zero);
+            if (engine)
+            {
+                var tip = center + along;
+                var shoulder = along.normalized * Math.Min((float)g.HalfWidth * 0.7f, (float)g.HalfLength * 0.5f);
+                // Replace front corners with shoulders and add a pointed nose inside the same bounds.
+                var vertex = new UIVertex { color = color, uv0 = Vector2.zero };
+                vertex.position = center + along + across - shoulder; mesh.SetUIVertex(vertex, start + 2);
+                vertex.position = center + along - across - shoulder; mesh.SetUIVertex(vertex, start + 3);
+                mesh.AddVert(tip, color, Vector2.zero);
+                mesh.AddTriangle(start + 2, start + 4, start + 3);
+            }
             mesh.AddTriangle(start, start + 1, start + 2);
             mesh.AddTriangle(start, start + 2, start + 3);
         }

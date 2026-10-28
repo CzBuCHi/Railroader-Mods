@@ -6,5 +6,9 @@
   <ItemGroup>
     <Compile Include="..\..\WaybillMap\MarkerGeometry.cs" Link="MarkerGeometry.cs" />
     <Compile Include="..\..\WaybillMap\MarkerStyle.cs" Link="MarkerStyle.cs" />
+    <Compile Include="..\..\WaybillMap\MapVisibility.cs" Link="MapVisibility.cs" />
+    <Compile Include="..\..\WaybillMap\SwitchSettings.cs" Link="SwitchSettings.cs" />
+    <Compile Include="..\..\WaybillMap\SwitchProfileStore.cs" Link="SwitchProfileStore.cs" />
+    <Reference Include="Newtonsoft.Json"><HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath></Reference>
   </ItemGroup>
 </Project>

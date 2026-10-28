@@ -1,4 +1,4 @@
-﻿# Teleporter 3.0.4 - Relay UI + native DLL
+﻿# Teleporter 3.0.5 - Relay UI + native DLL
 
 For Railroader 0.6.x. Identifier: `czbuchi/teleporter`.
 
@@ -39,7 +39,7 @@ First-person bookmarks restore player position and viewing direction. Tracking/o
 
 Teleportation requests terrain loading before restoring the camera. Native loading progress appears only if the load takes long enough. Repeated jumps cancel the previous pending jump. World unload and mod disable cancel loading and remove the toolbar button.
 
-## Saved data and migration
+## Saved data
 
 Local file, shared between maps:
 
@@ -47,35 +47,7 @@ Local file, shared between maps:
 
 The DLL reads only its own profile. It does not scan, import, or depend on RailForge configuration.
 
-For a one-time migration, use the standalone `Migrate-RailForgeProfile.ps1` included beside the DLL. Requires **PowerShell 7.3 or later** (`pwsh`). Close Railroader first. Open PowerShell in the extracted mod folder and run:
-
-```powershell
-pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1
-```
-
-Default source: `C:\Steam\steamapps\common\Railroader\Mods\RTM.RailForge\LegacySettings\CzBuCHi.Teleporter--CzBuCHi.Teleporter.json`. Default destination: the local profile path shown above, using your Windows Documents folder.
-
-Preview and validate without writing:
-
-```powershell
-pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1 -WhatIf
-```
-
-If the game is installed elsewhere:
-
-```powershell
-pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1 -GameDir 'D:\SteamLibrary\steamapps\common\Railroader'
-```
-
-For a backed-up RF file or a custom destination:
-
-```powershell
-pwsh -NoProfile -File .\Migrate-RailForgeProfile.ps1 -SourcePath 'D:\backup\Teleporter.json' -DestinationPath 'D:\profiles\teleporter.json'
-```
-
-If a new-mod profile already exists, the script stops. Add `-Force` only when you intend to replace it; this creates a uniquely named `teleporter.json.migration-<id>.bak` beside it. The script replaces the profile, rather than merging locations. The RF source is never changed. On success it prints the source, destination, group/location counts, and backup path if applicable.
-
-The converter preserves group order, names (including case-sensitive names), positions, rotations, zoom, camera mode, and the auto-open preference. Missing legacy `FirstPerson` defaults to tracking view; a missing auto-open preference defaults to false. Invalid data is rejected before writing. Restart/load the game after migration. Absolute coordinates still depend on the map.
+Create new bookmarks in the current map; old RailForge coordinates are not imported.
 
 Edits write immediately using atomic replacement; `.bak` holds the previous file. A failed write does not commit in-memory changes. Invalid profiles stop mod initialization and are not silently replaced with empty data. Native profile files use UTF-8 with BOM and CRLF.
 
@@ -93,7 +65,7 @@ Selection callbacks retain both group and location names so identical names in d
 
 ## Validation and remaining in-game checks
 
-The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers groups and icon-row targets, duplicate names, repeated teleport requests, separate editor columns and scroll areas, the icon footer after content (including an empty profile), rename/move, collision rejection, confirmation, refreshes, preference placement, and world cleanup. Storage and installed API members are checked too. A separate PowerShell test covers migration. These tests do not measure Unity rectangles or verify rendered layout.
+The test suite executes the shipped Main.rl in the installed game's actual Relay VM with simulated UI controls and native actions. It covers groups and icon-row targets, duplicate names, repeated teleport requests, separate editor columns and scroll areas, the icon footer after content (including an empty profile), rename/move, collision rejection, confirmation, refreshes, preference placement, and world cleanup. Storage and installed API members are checked too. These tests do not measure Unity rectangles or verify rendered layout.
 
 These tests do not run Unity. Check in game:
 

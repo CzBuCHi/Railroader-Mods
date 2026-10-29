@@ -23,7 +23,7 @@ namespace Tweaks
             try
             {
                 harmony.PatchAll(typeof(TweaksPlugin).Assembly);
-                context.Log.Info("Loaded selected Tweaks 3.0.11 features.");
+                context.Log.Info("Loaded selected Tweaks 3.0.12 features.");
             }
             catch { harmony.UnpatchAll(HarmonyId); harmony = null; throw; }
         }

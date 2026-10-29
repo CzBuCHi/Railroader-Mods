@@ -7,7 +7,6 @@ using UI.Builder;
 using UI.EngineControls;
 using UI.Tooltips;
 using UI.Windows;
-using Track;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -83,15 +82,13 @@ namespace Tweaks
         private void ShowAirProblem()
         {
             var camera = CameraSelector.shared;
-            var graph = Graph.Shared;
-            if (camera == null || graph == null) return;
+            if (camera == null) return;
             // Resolve again at click time; never write anglecocks or gladhands.
             foreach (var car in CurrentCars())
             foreach (var end in new[] { Car.LogicalEnd.A, Car.LogicalEnd.B })
             {
                 if (!NeedsAir(car, end)) continue;
-                var location = end == Car.LogicalEnd.A ? car.LocationA : car.LocationB;
-                camera.ZoomToPoint(graph.Current.GetPosition(location));
+                camera.FollowCar(car);
                 return;
             }
         }
@@ -146,7 +143,7 @@ namespace Tweaks
                 buttons[i] = rect.GetComponent<Button>();
                 tooltips[i] = rect.GetComponent<UITooltipProvider>() ?? rect.gameObject.AddComponent<UITooltipProvider>();
             }
-            tooltips[0].TooltipInfo = new TooltipInfo("Find air problem", "Show the coupler/anglecock end that needs attention. Hoses and valves are not changed.");
+            tooltips[0].TooltipInfo = new TooltipInfo("Find air problem", "Follow the car with a hose or anglecock needing attention, including while moving. Hoses and valves are not changed.");
             nextScan = 0f;
             return true;
         }

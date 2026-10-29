@@ -84,7 +84,7 @@ internal static class Program
         Check(adapterFields.Contains("modeDropdown") && adapterFields.Contains("speedLabel"), "HUD field names match injection targets");
         Check(type("WindowManager").GetFields().Any(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name) == "builderAssets"), "Current UI button assets exist");
         Check(method("Car", "get_EnableOiling", 0) && method("Car", "get_Oiled", 0) && method("Car", "get_HasHotbox", 0), "Native oil feature/car support and warning APIs exist");
-        Check(method("CameraSelector", "ZoomToPoint", 1) && method("CameraSelector", "ZoomToCar", 2), "Native camera navigation methods exist");
+        Check(method("CameraSelector", "FollowCar", 1) && method("CameraSelector", "ZoomToCar", 2), "Native moving-car follow and camera navigation methods exist");
         Check(method("Car", "get_LocationA", 0) && method("Car", "get_LocationB", 0), "Logical coupler-end positions exist");
         Check(method("EngineRosterRow", "ActionJumpTo", 0) && method("EngineRosterPanel", "SelectEngine", 2), "Shift-follow roster targets exist");
         var rowFields = type("EngineRosterRow").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();
@@ -141,6 +141,6 @@ internal static class Program
             "Air/handbrake controls still have no brake/air mutation calls");
         Check(members.Contains("CheckAuthorizedToSendMessage") && members.Contains("IsWriteAuthorized") && members.Contains("SetOverrideDestination"),
             "Copy features retain native authorization and destination APIs");
-        Check(members.Contains("ZoomToPoint") && members.Contains("ZoomToCar"), "HUD navigation targets camera APIs");
+        Check(members.Contains("FollowCar") && members.Contains("ZoomToCar") && !members.Contains("ZoomToPoint"), "Air HUD follows a moving car instead of a fixed track point");
     }
 }

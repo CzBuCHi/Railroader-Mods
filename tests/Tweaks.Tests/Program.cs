@@ -61,6 +61,7 @@ internal static class Program
         TutorialDistanceTests.Run(args[0]);
         InspectInstalledGame(args[0], args[1]);
         ManualPushTests.Run(args[0]);
+        FollowAnchorTests.Run();
         Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");
     }
 
@@ -85,6 +86,14 @@ internal static class Program
         Check(type("WindowManager").GetFields().Any(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name) == "builderAssets"), "Current UI button assets exist");
         Check(method("Car", "get_EnableOiling", 0) && method("Car", "get_Oiled", 0) && method("Car", "get_HasHotbox", 0), "Native oil feature/car support and warning APIs exist");
         Check(method("CameraSelector", "FollowCar", 1) && method("CameraSelector", "ZoomToCar", 2), "Native moving-car follow and camera navigation methods exist");
+        Check(method("StrategyCameraController", "UpdateCameraPosition", 1) && method("StrategyCameraController", "set_FollowCar", 1) &&
+            method("Car", "GetMoverTargetPositionRotation", 0) && method("Car", "get_TruckLocationA", 0),
+            "Maintenance focus targets native follow updates, reset and truck position APIs");
+        Check(type("StrategyCameraController").GetFields().Select(metadata.GetFieldDefinition)
+            .Any(f => metadata.GetString(f.Name) == "_targetHeight"), "Native follow height is available for wheel/coupler focus");
+        var followUpdate = type("StrategyCameraController").GetMethods().Select(metadata.GetMethodDefinition)
+            .Single(m => metadata.GetString(m.Name) == "UpdateCameraPosition");
+        FollowAnchorTests.InspectNative(pe.GetMethodBody(followUpdate.RelativeVirtualAddress).GetILBytes()!, metadata);
         Check(method("Car", "get_LocationA", 0) && method("Car", "get_LocationB", 0), "Logical coupler-end positions exist");
         Check(method("EngineRosterRow", "ActionJumpTo", 0) && method("EngineRosterPanel", "SelectEngine", 2), "Shift-follow roster targets exist");
         var rowFields = type("EngineRosterRow").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();

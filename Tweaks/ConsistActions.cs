@@ -88,7 +88,7 @@ namespace Tweaks
             foreach (var end in new[] { Car.LogicalEnd.A, Car.LogicalEnd.B })
             {
                 if (!NeedsAir(car, end)) continue;
-                camera.FollowCar(car);
+                MaintenanceCameraFocus.FollowAir(car, end);
                 return;
             }
         }
@@ -101,7 +101,7 @@ namespace Tweaks
         {
             // Resolve the current consist at click time, not a stale selection.
             var car = FindWarningCar(CurrentCars());
-            if (car != null && CameraSelector.shared != null) CameraSelector.shared.ZoomToCar(car);
+            if (car != null && CameraSelector.shared != null) MaintenanceCameraFocus.FollowOil(car);
         }
         private static Car? FindWarningCar(Car[] cars) =>
             HudRules.FindWarning(cars, car => car.EnableOiling, car => car.HasHotbox, car => car.Oiled);
@@ -143,7 +143,7 @@ namespace Tweaks
                 buttons[i] = rect.GetComponent<Button>();
                 tooltips[i] = rect.GetComponent<UITooltipProvider>() ?? rect.gameObject.AddComponent<UITooltipProvider>();
             }
-            tooltips[0].TooltipInfo = new TooltipInfo("Find air problem", "Follow the car with a hose or anglecock needing attention, including while moving. Hoses and valves are not changed.");
+            tooltips[0].TooltipInfo = new TooltipInfo("Find air problem", "Follow the affected coupler end while the car moves. Hoses and valves are not changed.");
             nextScan = 0f;
             return true;
         }

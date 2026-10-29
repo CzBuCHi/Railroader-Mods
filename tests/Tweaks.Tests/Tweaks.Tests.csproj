@@ -13,6 +13,7 @@
     <Compile Include="..\..\Tweaks\TutorialDistanceSource.cs" Link="TutorialDistanceSource.cs" />
     <Reference Include="Relay"><HintPath>$(GameManagedDir)\Relay.dll</HintPath></Reference>
     <Compile Include="..\..\Tweaks\ManualPushSpeed.cs" Link="ManualPushSpeed.cs" />
+    <Compile Include="..\..\Tweaks\FollowAnchorRewrite.cs" Link="FollowAnchorRewrite.cs" />
     <Reference Include="0Harmony"><HintPath>$(GameManagedDir)\0Harmony.dll</HintPath></Reference>
   </ItemGroup>
 </Project>

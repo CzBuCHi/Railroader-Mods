@@ -1,4 +1,4 @@
-﻿# Tweaks 3.0.12 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.13 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
 
@@ -26,12 +26,12 @@ Conditional icons sit beside the selected locomotive's speed display and inspect
 
 | Icon | Visible when | Click action |
 | --- | --- | --- |
-| Air hose / valve | An internal hose is disconnected, an internal anglecock is not fully open, or an outer anglecock is open | Follow the first car with a hose/anglecock problem, including while the train is moving. |
+| Air hose / valve | An internal hose is disconnected, an internal anglecock is not fully open, or an outer anglecock is open | Follow the affected coupler end of the first car with a hose/anglecock problem, including while moving. |
 | White handbrake wheel | A car has an applied handbrake | Show a car with an applied handbrake. |
-| Orange oil warning | A lubrication-enabled car has less than 50% oil | Show the eligible car with the lowest oil. |
-| Red oil warning | An eligible car has a hotbox | Show a hotbox car, ahead of ordinary low-oil warnings, including a hotbox on a car refilled to 100%. |
+| Orange oil warning | A lubrication-enabled car has less than 50% oil | Follow a bearing oiling point on the eligible car with the lowest oil. |
+| Red oil warning | An eligible car has a hotbox | Follow a bearing oiling point on a hotbox car, ahead of ordinary low-oil warnings, including a hotbox on a car refilled to 100%. |
 
-These are navigation tools. They do not connect hoses, turn anglecocks, release brakes, refill oil, or clear hotboxes. Repair the problem manually; the icon scan updates about twice per second and a subsequent click finds the next remaining problem. Air uses the native car-follow camera, so the camera stays with the affected vehicle while it moves and hoses can be repaired manually. It also works before the detailed model loads. Current camera zoom is retained.
+These are navigation tools. They do not connect hoses, turn anglecocks, release brakes, refill oil, or clear hotboxes. Repair the problem manually; the icon scan updates about twice per second and a subsequent click finds the next remaining problem. Air follows the affected logical coupler end, about 0.9 m above the rail. Oil follows the nearest actual bearing oiling hitbox; before its model loads, it follows the first truck about 0.5 m above the rail. Both use a scoped native follow-anchor adjustment, so the camera stays with that point while the vehicle moves. Zoom and orbit remain unchanged. Starting ordinary camera follow or manual panning clears the maintenance focus; mod/world unload also clears it. Hoses and bearings still need manual interaction.
 
 ### Manual / AE Road / AE Yard
 
@@ -134,7 +134,7 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.12.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.13.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
 Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, metric train-length formatting and native length API, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed tutorial source is transformed and executed in the real Relay VM with stub world/UI/math bindings: both rounding helpers, scope, changed-helper rejection and unchanged file contents are checked. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 

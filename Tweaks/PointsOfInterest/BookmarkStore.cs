@@ -5,7 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Teleporter
+namespace Tweaks.PointsOfInterest
 {
     internal sealed class BookmarkStore
     {
@@ -22,8 +22,8 @@ namespace Teleporter
         private static Settings Read(string path)
         {
             var json = JObject.Parse(File.ReadAllText(path));
-            if (!(json["Groups"] is JArray)) throw new InvalidDataException("Teleporter profile has no Groups array.");
-            var settings = json.ToObject<Settings>() ?? throw new InvalidDataException("Empty Teleporter profile.");
+            if (!(json["Groups"] is JArray)) throw new InvalidDataException("points of interest profile has no Groups array.");
+            var settings = json.ToObject<Settings>() ?? throw new InvalidDataException("Empty points of interest profile.");
             Validate(settings);
             return settings;
         }
@@ -119,7 +119,7 @@ namespace Teleporter
             settings.Groups.RemoveAt(index); settings.Groups.Insert(next, group);
         });
 
-        internal void SetAutoOpen(bool enabled) => Change(settings => settings.AutoOpenTeleporterWindow = enabled);
+        internal void SetAutoOpen(bool enabled) => Change(settings => settings.AutoOpenPointsOfInterestWindow = enabled);
 
         private void Change(Action<Settings> action)
         {

@@ -13,6 +13,7 @@ namespace Tweaks
     {
         private const string HarmonyId = "CzBuCHi.Tweaks.Native";
         private Harmony? harmony;
+        private readonly PointsOfInterest.PointsOfInterestFeature points = new PointsOfInterest.PointsOfInterestFeature();
 
         public void OnModLoad(IModContext context)
         {
@@ -23,21 +24,26 @@ namespace Tweaks
             try
             {
                 harmony.PatchAll(typeof(TweaksPlugin).Assembly);
-                context.Log.Info("Loaded selected Tweaks 3.0.13 features.");
+                points.OnModLoad(context);
+                PointsOfInterest.PointsOfInterestBinding.InstallExisting();
+                context.Log.Info("Loaded Tweaks 3.0.14 features.");
             }
-            catch { harmony.UnpatchAll(HarmonyId); harmony = null; throw; }
+            catch { OnModUnload(); throw; }
         }
 
         public void OnWorldLoad()
         {
+            points.OnWorldLoad();
             // Also handle HUDs enabled before the mod's world-load hook.
             foreach (var adapter in Object.FindObjectsByType<LocomotiveControlsUIAdapter>(FindObjectsSortMode.None))
                 HudPatch.Install(adapter);
         }
 
-        public void OnWorldUnload() => CleanupHud();
+        public void OnWorldUnload() { points.OnWorldUnload(); CleanupHud(); }
         public void OnModUnload()
         {
+            PointsOfInterest.PointsOfInterestBinding.Disable();
+            points.OnModUnload();
             harmony?.UnpatchAll(HarmonyId); harmony = null;
             CleanupHud();
         }

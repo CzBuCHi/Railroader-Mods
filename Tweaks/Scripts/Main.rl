@@ -1,5 +1,5 @@
 ﻿from railroader import ui, WindowPosition
-import teleporter as tp
+import pointsOfInterest as tp
 
 var mainWindow = null
 var editorWindow = null
@@ -16,11 +16,11 @@ var confirmation = ""
 var status = ""
 
 func onWorldLoad(ctx) {
-    mainWindow = ui.createWindow("czbuchi.teleporter.main", "Teleporter", buildMain)
+    mainWindow = ui.createWindow("czbuchi.tweaks.poi.main", "Points of interest", buildMain)
         .size(392, 350).position(WindowPosition.lowerRight).resizable(300, 220, 1000, 1000)
-    editorWindow = ui.createWindow("czbuchi.teleporter.editor", "Teleporter - Edit locations", buildEditor)
+    editorWindow = ui.createWindow("czbuchi.tweaks.poi.editor", "Edit points of interest", buildEditor)
         .size(720, 480).position(WindowPosition.center).resizable(600, 360, 1400, 1000)
-    ui.registerCommand("/teleporter", "Open saved camera views", (args) => { mainWindow.toggle() })
+    ui.registerCommand("/poi", "Open saved camera views", (args) => { mainWindow.toggle() })
     if tp.autoOpen() { mainWindow.show() }
 }
 
@@ -105,7 +105,7 @@ func buildEditor(b) {
     tp.editorColumns(b, buildLocationList, buildEditorForm)
     if !creating {
         b.section("Preferences")
-        b.fieldToggle("Open Teleporter on world load", () => tp.autoOpen(), (enabled) => {
+        b.fieldToggle("Open Points of interest on world load", () => tp.autoOpen(), (enabled) => {
             completed(tp.setAutoOpen(enabled), "Preference saved.")
         })
     }

@@ -1,22 +1,20 @@
 ﻿using System;
 using System.IO;
-using HarmonyLib;
 using Railroader.Modding;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Teleporter
+namespace Tweaks.PointsOfInterest
 {
-    public sealed class TeleporterPlugin : IModEntryPoint, IWorldLifecycle
+    internal sealed class PointsOfInterestFeature
     {
-        internal const string Identifier = "czbuchi/teleporter";
-        internal const string MainWindow = "czbuchi.teleporter.main";
-        internal const string EditorWindow = "czbuchi.teleporter.editor";
-        internal static TeleporterPlugin? Active { get; private set; }
+        internal const string Identifier = "czbuchi/tweaks";
+        internal const string MainWindow = "czbuchi.tweaks.poi.main";
+        internal const string EditorWindow = "czbuchi.tweaks.poi.editor";
+        internal static PointsOfInterestFeature? Active { get; private set; }
         internal BookmarkStore Store { get; private set; } = null!;
-        internal TeleporterRuntime Runtime { get; private set; } = null!;
+        internal PointsOfInterestRuntime Runtime { get; private set; } = null!;
         internal IModContext Context { get; private set; } = null!;
-        private Harmony? harmony;
 
         public void OnModLoad(IModContext context)
         {
@@ -29,13 +27,11 @@ namespace Teleporter
                 RelayBridge.Validate();
                 CameraBookmarks.Validate();
                 Active = this;
-                harmony = new Harmony("CzBuCHi.Teleporter.Native");
-                harmony.PatchAll(typeof(TeleporterPlugin).Assembly);
-                var host = new GameObject("CzBuCHi.Teleporter.Runtime");
+                var host = new GameObject("CzBuCHi.Tweaks.PointsOfInterest.Runtime");
                 Object.DontDestroyOnLoad(host);
-                Runtime = host.AddComponent<TeleporterRuntime>();
+                Runtime = host.AddComponent<PointsOfInterestRuntime>();
                 Runtime.Initialize(this);
-                context.Log.Info("Loaded Teleporter 3.0.5 with Relay UI.");
+                context.Log.Info("Loaded Points of interest with Relay UI.");
             }
             catch
             {
@@ -55,11 +51,9 @@ namespace Teleporter
                 Object.Destroy(Runtime.gameObject);
                 Runtime = null!;
             }
-            harmony?.UnpatchAll("CzBuCHi.Teleporter.Native");
-            harmony = null;
             if (Active == this) Active = null;
         }
 
-        internal static TeleporterPlugin RequireActive() => Active ?? throw new InvalidOperationException("Teleporter is disabled.");
+        internal static PointsOfInterestFeature RequireActive() => Active ?? throw new InvalidOperationException("Points of interest is disabled.");
     }
 }

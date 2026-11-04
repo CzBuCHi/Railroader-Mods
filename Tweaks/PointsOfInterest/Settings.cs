@@ -1,12 +1,15 @@
 ﻿﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
-namespace Teleporter
+namespace Tweaks.PointsOfInterest
 {
 
     public sealed class Settings
     {
         public List<LocationGroup> Groups { get; set; } = new List<LocationGroup>();
-        public bool AutoOpenTeleporterWindow { get; set; }
+        // Retain the saved profile key used before this feature joined Tweaks.
+        [JsonProperty("AutoOpenTeleporterWindow")]
+        public bool AutoOpenPointsOfInterestWindow { get; set; }
     }
 
     public sealed class LocationGroup

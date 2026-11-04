@@ -6,33 +6,29 @@ using UI.Common;
 using UI.Windows;
 using UnityEngine;
 
-namespace Teleporter
+namespace Tweaks.PointsOfInterest
 {
-    internal sealed class TeleporterRuntime : MonoBehaviour
+    internal sealed class PointsOfInterestRuntime : MonoBehaviour
     {
-        private TeleporterPlugin plugin = null!;
-        private ToolbarButton toolbar = null!;
+        private PointsOfInterestFeature plugin = null!;
         private bool mapLoaded;
         private Coroutine? jump;
         private ProgressScope? progress;
 
-        internal void Initialize(TeleporterPlugin owner)
+        internal void Initialize(PointsOfInterestFeature owner)
         {
             plugin = owner;
-            toolbar = gameObject.AddComponent<ToolbarButton>();
-            toolbar.Initialize(Toggle);
         }
 
         internal void SetMapLoaded(bool loaded)
         {
             mapLoaded = loaded;
-            if (toolbar != null) toolbar.SetMapLoaded(loaded);
             if (!loaded)
             {
                 StopAllCoroutines(); jump = null;
                 progress?.Dispose(); progress = null;
-                CloseWindow(TeleporterPlugin.MainWindow);
-                CloseWindow(TeleporterPlugin.EditorWindow);
+                CloseWindow(PointsOfInterestFeature.MainWindow);
+                CloseWindow(PointsOfInterestFeature.EditorWindow);
             }
         }
 
@@ -41,10 +37,10 @@ namespace Teleporter
             if (WindowManager.Shared != null && CustomWindowHandle.Exists(id)) CustomWindowHandle.Create(id).Close();
         }
 
-        private void Toggle()
+        internal void Toggle()
         {
-            if (mapLoaded && WindowManager.Shared != null && CustomWindowHandle.Exists(TeleporterPlugin.MainWindow))
-                CustomWindowHandle.Create(TeleporterPlugin.MainWindow).Toggle();
+            if (mapLoaded && WindowManager.Shared != null && CustomWindowHandle.Exists(PointsOfInterestFeature.MainWindow))
+                CustomWindowHandle.Create(PointsOfInterestFeature.MainWindow).Toggle();
         }
 
         internal void Teleport(TeleportLocation location)
@@ -57,7 +53,7 @@ namespace Teleporter
 
         private IEnumerator Jump(TeleportLocation location)
         {
-            progress = ProgressScope.BeginDelayed("Loading...", 0.18f, "Teleporter");
+            progress = ProgressScope.BeginDelayed("Loading...", 0.18f, "Points of interest");
             try
             {
                 yield return MapManager.Instance.RequestPriorityLoad(CameraBookmarks.GamePosition(location));

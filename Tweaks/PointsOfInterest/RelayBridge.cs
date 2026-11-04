@@ -16,7 +16,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Value = Relay.Value;
 
-namespace Teleporter
+namespace Tweaks.PointsOfInterest
 {
     [HarmonyPatch(typeof(ScriptInterpreterFactory), nameof(ScriptInterpreterFactory.CreatePackScopedBuilder))]
     internal static class RelayBridge
@@ -38,13 +38,13 @@ namespace Teleporter
         private static void Postfix(string packIdentifier, ScriptCapabilityTier tier, ref IInterpreterBuilderFluent __result)
         {
             // Expose the native bridge only to this pack's full runtime scripts.
-            if (packIdentifier == TeleporterPlugin.Identifier && tier == ScriptCapabilityTier.Full && TeleporterPlugin.Active != null)
+            if (packIdentifier == PointsOfInterestFeature.Identifier && tier == ScriptCapabilityTier.Full && PointsOfInterestFeature.Active != null)
                 __result = __result.RegisterNamedModule(CreateModule());
         }
 
         internal static NativeModule CreateModule()
         {
-            var module = new NativeModule("teleporter");
+            var module = new NativeModule("pointsOfInterest");
             module.DefineFunction("groups", 0, _ => Strings(Plugin.Store.Current.Groups.Select(group => group.Name)));
             module.DefineFunction("locations", 1, args => Strings(Plugin.Store.Current.Groups
                 .FirstOrDefault(group => group.Name == args[0].AsString())?.Locations.Keys
@@ -54,7 +54,7 @@ namespace Teleporter
             module.DefineFunction("remove", 2, args => Action(() => Plugin.Store.Delete(args[0].AsString(), args[1].AsString())));
             module.DefineFunction("rename", 4, args => Action(() => Plugin.Store.Rename(args[0].AsString(), args[1].AsString(), args[2].AsString(), args[3].AsString())));
             module.DefineFunction("moveGroup", 2, args => Action(() => Plugin.Store.MoveGroup(args[0].AsString(), args[1].AsInt())));
-            module.DefineFunction("autoOpen", 0, _ => Value.Bool(Plugin.Store.Current.AutoOpenTeleporterWindow));
+            module.DefineFunction("autoOpen", 0, _ => Value.Bool(Plugin.Store.Current.AutoOpenPointsOfInterestWindow));
             module.DefineFunction("setAutoOpen", 1, args => Action(() => Plugin.Store.SetAutoOpen(args[0].AsBool())));
             module.DefineFunction("clipWindow", 1, args =>
             {
@@ -124,7 +124,7 @@ namespace Teleporter
             {
                 var context = Interpreter.CurrentCallContext; var closure = args[4].AsClosure();
                 var control = Builder(args[0]).AddButtonSelectable(args[2].AsString(), args[3].AsBool(), () => Invoke(context, closure));
-                control.RectTransform.gameObject.name = "Teleporter.Location." + new BookmarkCatalog.Entry(args[1].AsString(), args[2].AsString()).Id;
+                control.RectTransform.gameObject.name = "PointsOfInterest.Location." + new BookmarkCatalog.Entry(args[1].AsString(), args[2].AsString()).Id;
                 FixedHeight(control.RectTransform, 25);
                 var label = control.RectTransform.GetComponentInChildren<TMP_Text>();
                 label.textWrappingMode = TextWrappingModes.NoWrap; label.overflowMode = TextOverflowModes.Ellipsis;
@@ -143,7 +143,7 @@ namespace Teleporter
                     control.RectTransform.Square(28);
                     var layout = control.RectTransform.GetComponent<LayoutElement>();
                     layout.minWidth = 28; layout.preferredWidth = 28; layout.flexibleWidth = 0;
-                    control.Tooltip("Edit locations", "Open the location editor.");
+                    control.Tooltip("Edit points of interest", "Open the points of interest editor.");
                 });
                 ConfigureBar(footer, true);
                 return Value.Null();
@@ -193,7 +193,7 @@ namespace Teleporter
             return module;
         }
 
-        private static TeleporterPlugin Plugin => TeleporterPlugin.RequireActive();
+        private static PointsOfInterestFeature Plugin => PointsOfInterestFeature.RequireActive();
         private static void ConfigureVertical(RectTransform root)
         {
             var vertical = root.GetComponent<VerticalLayoutGroup>();
@@ -244,7 +244,7 @@ namespace Teleporter
         private static void Report(Exception error)
         {
             UI.Common.Toast.Present(error.Message);
-            TeleporterPlugin.Active?.Context.Log.Error(error, "Teleporter action failed.");
+            PointsOfInterestFeature.Active?.Context.Log.Error(error, "Points of interest action failed.");
         }
     }
 }

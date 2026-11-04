@@ -4,7 +4,7 @@ using Cameras;
 using Helpers;
 using UnityEngine;
 
-namespace Teleporter
+namespace Tweaks.PointsOfInterest
 {
     internal static class CameraBookmarks
     {

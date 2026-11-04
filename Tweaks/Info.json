@@ -1,10 +1,10 @@
 ﻿{
   "identifier": "czbuchi/tweaks",
-  "version": "3.0.13",
+  "version": "3.0.14",
   "name": "Tweaks",
   "author": "CzBuCHi",
   "license": "MIT",
-  "description": "Interchange sleep, metric distances/train length, car/HUD tools, roster Shift-follow, 6-MPH pushing and crew/repair destination copy.",
+  "description": "Points of interest, interchange sleep, metric distances/train length, car/HUD tools, roster Shift-follow, 6-MPH pushing and crew/repair destination copy.",
   "scope": "optional",
   "assemblies": ["CzBuCHi.Tweaks.dll"],
   "dependencies": { "required": ["rr/game >=0.6.0 <0.7.0"] }

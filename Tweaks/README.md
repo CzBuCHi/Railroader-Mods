@@ -1,6 +1,11 @@
-﻿# Tweaks 3.0.13 - selected Railroader 0.6 features
+﻿# Tweaks 3.0.14 - selected Railroader 0.6 features
 
 Native DLL mod. Identifier: `czbuchi/tweaks`. Requires Railroader 0.6.x and its bundled Harmony; no RailForge or UMM is required.
+
+
+## Points of interest
+
+Teleporter is merged into Tweaks. Disable/remove the standalone Teleporter mod. Open **Points of interest** with **Alt+T**; configure its shortcut using the last entry in vanilla **Bindings > Camera**. The toolbar portal icon is removed. The editor is titled **Edit points of interest**. Existing `teleporter.json` bookmarks and auto-open preference remain in use. Keep `Scripts/Main.rl` with the DLL. See the [Points of interest guide](PointsOfInterest.md).
 
 ## Install
 
@@ -134,7 +139,7 @@ dotnet publish Tweaks/Tweaks.csproj -c Release
 dotnet run --project tests/Tweaks.Tests -c Release -- 'C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed' Tweaks/bin/Release/CzBuCHi.Tweaks.dll
 ```
 
-Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.13.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
+Set GameDir via Paths.user or `-p:GameDir=...` when needed. Target: .NET Framework 4.8 / C# 9 using installed Unity/game framework assemblies. Publishing creates `bin/CzBuCHi.Tweaks_3.0.14.zip`; it does not deploy or launch the game. No game or Harmony DLLs are distributed.
 
 Tests cover JSON defaults, partial overrides, all feature switches, invalid-file preservation, numeric validation, encoding, configured oil/push limits, metric train-length formatting and native length API, service selection, mode highlights including no selection in waypoint mode, air/oil conditions, installed patch and permission APIs, native lifecycle interfaces, omitted features, and the absence of brake/air mutation calls. The installed tutorial source is transformed and executed in the real Relay VM with stub world/UI/math bindings: both rounding helpers, scope, changed-helper rejection and unchanged file contents are checked. The installed manual-push IL is decoded and passed through the actual transpiler: exactly one speed-cap operand may change; all other opcodes and operands stay intact. Missing/duplicate/changed limit patterns are rejected. These tests do not run Unity.
 

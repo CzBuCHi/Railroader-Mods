@@ -1,155 +1,184 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using Tweaks;
+using System;
+using Tweaks.Hud;
+using Tweaks.Tests.Camera;
+using Tweaks.Tests.Hud;
+using Tweaks.Tests.Configuration;
+using Tweaks.Tests.ManualPushing;
+using Tweaks.Tests.Units;
+using Tweaks.Time;
+using Settings = global::Tweaks.Configuration.Settings;
 
-internal static class Program
+namespace Tweaks.Tests
 {
-    private static int checks;
-    internal static void Check(bool value, string name)
+    internal static class Program
     {
-        if (!value) throw new Exception(name);
-        checks++;
-    }
-    private sealed class WarningCar
-    {
-        internal bool Enabled = true;
-        internal bool Hotbox;
-        internal float Oil;
-    }
-    private static WarningCar? Warning(params WarningCar[] cars) =>
-        HudRules.FindWarning(cars, car => car.Enabled, car => car.Hotbox, car => car.Oil);
-
-    private static void Main(string[] args)
-    {
-        Check(NextServiceSelection.Find(100, Array.Empty<double>()) == null, "No interchange falls back to native sleep");
-        Check(NextServiceSelection.Find(100, new[] { 200d, 150d }) == 150, "Earliest enabled service wins");
-        Check(NextServiceSelection.Find(100, new[] { 500d, 200d, 350d }) == 200, "Extra service before daily service wins");
-        Check(NextServiceSelection.Find(100, new[] { 101d, 400d }) == 101, "One-second future service is retained");
-        Check(NextServiceSelection.Find(100, new[] { 50d, 200d }) == 101, "Overdue service advances one second");
-        Check(NextServiceSelection.Find(100, new[] { 100d }) == 101, "Due-now service advances one second");
-        Check(NextServiceSelection.Find(86300, new[] { 90000d, 86410d }) == 86410, "Services across midnight use absolute time");
-        Check(NextServiceSelection.Find(100, new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity }) == null, "Invalid service times ignored");
-        Check(NextServiceSelection.Find(100, new[] { double.NaN, 300d }) == 300, "A valid service survives invalid alternatives");
-        for (var mode = 0; mode < 3; mode++) Check(HudRules.HighlightedMode(mode) == mode, "Manual/Road/Yard highlight their matching button");
-        Check(HudRules.HighlightedMode(3) == -1, "AE Waypoint highlights no button");
-        Check(HudRules.HighlightedMode(-1) == -1 && HudRules.HighlightedMode(99) == -1, "Unknown modes do not select a button");
-        Check(!HudRules.NeedsAir(false, true, false, 0), "No car set means no air repair action");
-        Check(HudRules.NeedsAir(true, true, false, 1), "Coupled disconnected gladhands need repair");
-        Check(HudRules.NeedsAir(true, true, true, 0), "Coupled closed anglecock needs opening");
-        Check(HudRules.NeedsAir(true, true, true, 0.5f), "Partially open internal anglecock needs opening");
-        Check(!HudRules.NeedsAir(true, true, true, 1), "Healthy coupled end needs no action");
-        Check(HudRules.NeedsAir(true, false, false, 1), "Outer open anglecock needs closing");
-        Check(!HudRules.NeedsAir(true, false, false, 0), "Outer closed anglecock is correct");
-        var low = new WarningCar { Oil = 0.1f };
-        var medium = new WarningCar { Oil = 0.4f };
-        var threshold = new WarningCar { Oil = 0.5f };
-        var hot = new WarningCar { Oil = 1, Hotbox = true };
-        var disabled = new WarningCar { Oil = 0, Hotbox = true, Enabled = false };
-        Check(Warning() == null, "No consist means no oil warning");
-        Check(Warning(threshold) == null, "Oil at threshold produces no warning");
-        Check(Warning(medium, low) == low, "Lowest oil below threshold wins");
-        Check(Warning(low, hot) == hot, "Hotbox takes priority over low oil even at 100 percent oil");
-        Check(Warning(disabled) == null, "Disabled lubrication suppresses oil/hotbox button");
-        Check(Warning(disabled, medium) == medium, "Unsupported/disabled cars do not hide a real oil warning");
-        SettingsTests.Run();
-        TrainLengthTests.Run();
-        TutorialDistanceTests.Run(args[0]);
-        InspectInstalledGame(args[0], args[1]);
-        ManualPushTests.Run(args[0]);
-        FollowAnchorTests.Run();
-        Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");
-    }
-
-    private static void InspectInstalledGame(string managed, string modPath)
-    {
-        using var stream = File.OpenRead(Path.Combine(managed, "Railroader.dll"));
-        using var pe = new PEReader(stream);
-        var metadata = pe.GetMetadataReader();
-        Func<string, TypeDefinition> type = name => metadata.TypeDefinitions.Select(handle => metadata.GetTypeDefinition(handle))
-            .Single(item => item.GetDeclaringType().IsNil && metadata.GetString(item.Name) == name &&
-                (name != "Car" || metadata.GetString(item.Namespace) == "Model"));
-        Func<string, string, int, bool> method = (owner, name, count) => type(owner).GetMethods()
-            .Select(handle => metadata.GetMethodDefinition(handle))
-            .Any(item => metadata.GetString(item.Name) == name && item.GetParameters()
-                .Count(handle => metadata.GetParameter(handle).SequenceNumber > 0) == count);
-        Check(method("TimeWindow", "GetSleepValues", 3), "Native sleep patch target exists");
-        Check(method("Interchange", "GetNextServiceTime", 3), "Interchange daily/extra-aware service API exists");
-        Check(method("CarInspector", "PopulateCarPanel", 1), "Native car inspector patch target exists");
-        Check(method("LocomotiveControlsUIAdapter", "OnEnable", 0) && method("LocomotiveControlsUIAdapter", "DropdownDidChange", 1), "HUD patch target and native mode handler exist");
-        var adapterFields = type("LocomotiveControlsUIAdapter").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();
-        Check(adapterFields.Contains("modeDropdown") && adapterFields.Contains("speedLabel"), "HUD field names match injection targets");
-        Check(type("WindowManager").GetFields().Any(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name) == "builderAssets"), "Current UI button assets exist");
-        Check(method("Car", "get_EnableOiling", 0) && method("Car", "get_Oiled", 0) && method("Car", "get_HasHotbox", 0), "Native oil feature/car support and warning APIs exist");
-        Check(method("CameraSelector", "FollowCar", 1) && method("CameraSelector", "ZoomToCar", 2), "Native moving-car follow and camera navigation methods exist");
-        Check(method("StrategyCameraController", "UpdateCameraPosition", 1) && method("StrategyCameraController", "set_FollowCar", 1) &&
-            method("Car", "GetMoverTargetPositionRotation", 0) && method("Car", "get_TruckLocationA", 0),
-            "Maintenance focus targets native follow updates, reset and truck position APIs");
-        Check(type("StrategyCameraController").GetFields().Select(metadata.GetFieldDefinition)
-            .Any(f => metadata.GetString(f.Name) == "_targetHeight"), "Native follow height is available for wheel/coupler focus");
-        var followUpdate = type("StrategyCameraController").GetMethods().Select(metadata.GetMethodDefinition)
-            .Single(m => metadata.GetString(m.Name) == "UpdateCameraPosition");
-        FollowAnchorTests.InspectNative(pe.GetMethodBody(followUpdate.RelativeVirtualAddress).GetILBytes()!, metadata);
-        Check(method("Car", "get_LocationA", 0) && method("Car", "get_LocationB", 0), "Logical coupler-end positions exist");
-        Check(method("EngineRosterRow", "ActionJumpTo", 0) && method("EngineRosterPanel", "SelectEngine", 2), "Shift-follow roster targets exist");
-        var rowFields = type("EngineRosterRow").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();
-        Check(rowFields.Contains("_parent") && rowFields.Contains("_engine"), "Roster injection fields match installed game");
-        Check(method("GameInput", "get_IsShiftDown", 0), "Native Shift state API exists");
-        Check(method("TrainController", "HandleManualMoveCar", 2), "Host manual pushing target exists");
-        Check(method("BuilderExtensions", "AddTrainCrewDropdown", 2) && method("BuilderExtensions", "AddRepairDestination", 2), "Crew and repair-destination UI targets exist");
-        Check(method("Car", "get_SupportsTrainCrew", 0) && method("OverrideDestinationExtensions", "IsWriteAuthorized", 2), "Native crew eligibility and destination authorization APIs exist");
-        var tooltipTargets = 0;
-        foreach (var handle in type("TimeWindow").GetMethods())
+        private static int checks;
+        internal static void Check(bool value, string name)
         {
-            var item = metadata.GetMethodDefinition(handle);
-            if (item.RelativeVirtualAddress == 0) continue;
-            var bytes = pe.GetMethodBody(item.RelativeVirtualAddress).GetILBytes()!;
-            for (var i = 0; i + 4 < bytes.Length; i++)
-            {
-                if (bytes[i] != 0x72) continue;
-                try
-                {
-                    var token = BitConverter.ToInt32(bytes, i + 1);
-                    if ((token & unchecked((int)0xff000000)) != 0x70000000) continue;
-                    if (metadata.GetUserString(MetadataTokens.UserStringHandle(token & 0x00ffffff)) ==
-                        "Let time pass until the first scheduled interchange service of the day.") { tooltipTargets++; break; }
-                }
-                catch (BadImageFormatException) { }
-                catch (ArgumentException) { }
-            }
+            if (!value) throw new Exception(name);
+            checks++;
         }
-        Check(tooltipTargets == 1, "Exactly one installed sleep tooltip literal is patched");
+        private sealed class WarningCar
+        {
+            internal bool Enabled = true;
+            internal bool Hotbox;
+            internal float Oil;
+        }
+        private static WarningCar? Warning(params WarningCar[] cars) =>
+            HudRules.FindWarning(cars, car => car.Enabled, car => car.Hotbox, car => car.Oil);
 
-        using var mod = File.OpenRead(modPath);
-        using var modPe = new PEReader(mod);
-        var modMetadata = modPe.GetMetadataReader();
-        var refs = modMetadata.AssemblyReferences.Select(handle => modMetadata.GetString(modMetadata.GetAssemblyReference(handle).Name)).ToArray();
-        Check(refs.Contains("Railroader.Modding") && refs.Contains("0Harmony"), "Native loader and game's Harmony referenced");
-        Check(!refs.Any(name => name.Contains("RailForge") || name.Contains("UnityModManager")), "No legacy loader dependency");
-        var entry = modMetadata.TypeDefinitions.Select(handle => modMetadata.GetTypeDefinition(handle)).Single(item => modMetadata.GetString(item.Name) == "TweaksPlugin");
-        var interfaces = entry.GetInterfaceImplementations().Select(handle => modMetadata.GetInterfaceImplementation(handle).Interface)
-            .Select(handle => modMetadata.GetString(modMetadata.GetTypeReference((TypeReferenceHandle)handle).Name)).ToArray();
-        Check(interfaces.Contains("IModEntryPoint") && interfaces.Contains("IWorldLifecycle"), "Native lifecycle hooks present");
-        var names = modMetadata.TypeDefinitions.Select(handle => modMetadata.GetString(modMetadata.GetTypeDefinition(handle).Name)).ToArray();
-        Check(!names.Any(name => new[] { "Autosave", "RepairSounds", "Prank", "BleedAll", "WaypointShortcut" }.Any(name.Contains)), "Unrequested legacy features are absent from the compiled mod");
-        Check(method("LocomotiveControlsHoverArea", "SummaryText", 0) && method("ConsistLength", "OfCars", 1),
-            "Native train summary and precise metric consist length API exist");
-        Check(names.Contains("TrainLengthPatch"), "Requested metric train-length patch is compiled");
-        Check(method("Units", "DistanceText", 1) && method("LocationIndicatorController", "DirectionalText", 2),
-            "Shared distance formatter and directional marker API exist");
-        Check(names.Contains("DistanceTextPatch"), "Metric distance formatter patch is compiled");
-        Check(names.Contains("TutorialDistancePatch") && refs.Contains("Relay"), "Tutorial Relay loader patch is compiled");
-        Check(new[] { "FollowAndSelectPatch", "FastStrongManPatch", "CopyCrewPatch", "RepairDestinationPatch" }.All(names.Contains), "All four newly requested additions compiled");
-        Check(names.Contains("ControlModeButtons") && names.Contains("ConsistActions") && names.Contains("CarPanelPatch") && names.Contains("SleepUntilInterchangePatch"), "All four requested feature groups compiled");
-        var members = modMetadata.MemberReferences.Select(handle => modMetadata.GetString(modMetadata.GetMemberReference(handle).Name)).ToArray();
-        Check(!members.Any(name => new[] { "SetHandbrake", "ApplyEndGearChange", "set_AnglecockSetting", "SetGladhandsConnected" }.Contains(name)),
-            "Air/handbrake controls still have no brake/air mutation calls");
-        Check(members.Contains("CheckAuthorizedToSendMessage") && members.Contains("IsWriteAuthorized") && members.Contains("SetOverrideDestination"),
-            "Copy features retain native authorization and destination APIs");
-        Check(members.Contains("FollowCar") && members.Contains("ZoomToCar") && !members.Contains("ZoomToPoint"), "Air HUD follows a moving car instead of a fixed track point");
+        private static void Main(string[] args)
+        {
+            if (args.Length == 2 && (args[0] == "--validate-settings" || args[0] == "--initialize-settings"))
+            {
+                var settings = args[0] == "--initialize-settings"
+                    ? Settings.Load(args[1], message => throw new Exception(message))
+                    : Settings.Parse(Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(args[1])));
+                Console.WriteLine("VALID: " + settings.PointsOfInterest.Groups.Count + " points of interest groups, "
+                    + settings.PointsOfInterest.Groups.Sum(group => group.Locations.Count) + " saved views.");
+                return;
+            }
+            Check(NextServiceSelection.Find(100, Array.Empty<double>()) == null, "No interchange falls back to native sleep");
+            Check(NextServiceSelection.Find(100, new[] { 200d, 150d }) == 150, "Earliest enabled service wins");
+            Check(NextServiceSelection.Find(100, new[] { 500d, 200d, 350d }) == 200, "Extra service before daily service wins");
+            Check(NextServiceSelection.Find(100, new[] { 101d, 400d }) == 101, "One-second future service is retained");
+            Check(NextServiceSelection.Find(100, new[] { 50d, 200d }) == 101, "Overdue service advances one second");
+            Check(NextServiceSelection.Find(100, new[] { 100d }) == 101, "Due-now service advances one second");
+            Check(NextServiceSelection.Find(86300, new[] { 90000d, 86410d }) == 86410, "Services across midnight use absolute time");
+            Check(NextServiceSelection.Find(100, new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity }) == null, "Invalid service times ignored");
+            Check(NextServiceSelection.Find(100, new[] { double.NaN, 300d }) == 300, "A valid service survives invalid alternatives");
+            for (var mode = 0; mode < 3; mode++) Check(HudRules.HighlightedMode(mode) == mode, "Manual/Road/Yard highlight their matching button");
+            Check(HudRules.HighlightedMode(3) == -1, "AE Waypoint highlights no button");
+            Check(HudRules.HighlightedMode(-1) == -1 && HudRules.HighlightedMode(99) == -1, "Unknown modes do not select a button");
+            Check(!HudRules.NeedsAir(false, true, false, 0), "No car set means no air repair action");
+            Check(HudRules.NeedsAir(true, true, false, 1), "Coupled disconnected gladhands need repair");
+            Check(HudRules.NeedsAir(true, true, true, 0), "Coupled closed anglecock needs opening");
+            Check(HudRules.NeedsAir(true, true, true, 0.5f), "Partially open internal anglecock needs opening");
+            Check(!HudRules.NeedsAir(true, true, true, 1), "Healthy coupled end needs no action");
+            Check(HudRules.NeedsAir(true, false, false, 1), "Outer open anglecock needs closing");
+            Check(!HudRules.NeedsAir(true, false, false, 0), "Outer closed anglecock is correct");
+            var low = new WarningCar { Oil = 0.1f };
+            var medium = new WarningCar { Oil = 0.4f };
+            var threshold = new WarningCar { Oil = 0.5f };
+            var hot = new WarningCar { Oil = 1, Hotbox = true };
+            var disabled = new WarningCar { Oil = 0, Hotbox = true, Enabled = false };
+            Check(Warning() == null, "No consist means no oil warning");
+            Check(Warning(threshold) == null, "Oil at threshold produces no warning");
+            Check(Warning(medium, low) == low, "Lowest oil below threshold wins");
+            Check(Warning(low, hot) == hot, "Hotbox takes priority over low oil even at 100 percent oil");
+            Check(Warning(disabled) == null, "Disabled lubrication suppresses oil/hotbox button");
+            Check(Warning(disabled, medium) == medium, "Unsupported/disabled cars do not hide a real oil warning");
+            Check(HudRules.CanFillOil(0.25f, 0) && HudRules.CanFillOil(0.99f, 5), "Oil refill accepts incomplete bearings through the native speed boundary");
+            Check(!HudRules.CanFillOil(0.25f, 5.01f) && !HudRules.CanFillOil(1, 0), "Oil refill skips moving-too-fast and already full cars");
+            Check(!HudRules.CanFillOil(float.NaN, 0) && !HudRules.CanFillOil(0.25f, float.NaN), "Invalid maintenance values do not create oil requests");
+            SettingsTests.Run();
+            TrainLengthTests.Run();
+            TutorialDistanceTests.Run(args[0]);
+            InspectInstalledGame(args[0], args[1]);
+            ManualPushTests.Run(args[0], args[1]);
+            FollowAnchorTests.Run(args[0], args[1]);
+            ConsistActionTests.Run(args[0], args[1]);
+            Console.WriteLine("PASS: " + checks + " timing, HUD policy, installed API and compiled-mod checks.");
+        }
+
+        private static void InspectInstalledGame(string managed, string modPath)
+        {
+            using var stream = File.OpenRead(Path.Combine(managed, "Railroader.dll"));
+            using var pe = new PEReader(stream);
+            var metadata = pe.GetMetadataReader();
+            Func<string, TypeDefinition> type = name => metadata.TypeDefinitions.Select(handle => metadata.GetTypeDefinition(handle))
+                .Single(item => item.GetDeclaringType().IsNil && metadata.GetString(item.Name) == name &&
+                    (name != "Car" || metadata.GetString(item.Namespace) == "Model"));
+            Func<string, string, int, bool> method = (owner, name, count) => type(owner).GetMethods()
+                .Select(handle => metadata.GetMethodDefinition(handle))
+                .Any(item => metadata.GetString(item.Name) == name && item.GetParameters()
+                    .Count(handle => metadata.GetParameter(handle).SequenceNumber > 0) == count);
+            Check(method("TimeWindow", "GetSleepValues", 3), "Native sleep patch target exists");
+            Check(method("Interchange", "GetNextServiceTime", 3), "Interchange daily/extra-aware service API exists");
+            Check(method("CarInspector", "PopulateCarPanel", 1), "Native car inspector patch target exists");
+            Check(method("LocomotiveControlsUIAdapter", "OnEnable", 0) && method("LocomotiveControlsUIAdapter", "DropdownDidChange", 1), "HUD patch target and native mode handler exist");
+            var adapterFields = type("LocomotiveControlsUIAdapter").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();
+            Check(adapterFields.Contains("modeDropdown") && adapterFields.Contains("speedLabel"), "HUD field names match injection targets");
+            Check(type("WindowManager").GetFields().Any(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name) == "builderAssets"), "Current UI button assets exist");
+            Check(method("Car", "get_EnableOiling", 0) && method("Car", "get_Oiled", 0) && method("Car", "get_HasHotbox", 0), "Native oil feature/car support and warning APIs exist");
+            Check(method("CameraSelector", "FollowCar", 1) && method("CameraSelector", "ZoomToCar", 2), "Native moving-car follow and camera navigation methods exist");
+            Check(method("StrategyCameraController", "UpdateCameraPosition", 1) && method("StrategyCameraController", "set_FollowCar", 1) &&
+                method("Car", "GetMoverTargetPositionRotation", 0) && method("Car", "get_TruckLocationA", 0),
+                "Maintenance focus targets native follow updates, reset and truck position APIs");
+            Check(type("StrategyCameraController").GetFields().Select(metadata.GetFieldDefinition)
+                .Any(f => metadata.GetString(f.Name) == "_targetHeight"), "Native follow height is available for wheel/coupler focus");
+            var followUpdate = type("StrategyCameraController").GetMethods().Select(metadata.GetMethodDefinition)
+                .Single(m => metadata.GetString(m.Name) == "UpdateCameraPosition");
+            FollowAnchorTests.InspectNative(pe.GetMethodBody(followUpdate.RelativeVirtualAddress).GetILBytes()!, metadata);
+            Check(method("Car", "get_LocationA", 0) && method("Car", "get_LocationB", 0), "Logical coupler-end positions exist");
+            Check(method("EngineRosterRow", "ActionJumpTo", 0) && method("EngineRosterPanel", "SelectEngine", 2), "Shift-follow roster targets exist");
+            var rowFields = type("EngineRosterRow").GetFields().Select(handle => metadata.GetString(metadata.GetFieldDefinition(handle).Name)).ToArray();
+            Check(rowFields.Contains("_parent") && rowFields.Contains("_engine"), "Roster injection fields match installed game");
+            Check(method("GameInput", "get_IsShiftDown", 0), "Native Shift state API exists");
+            Check(method("TrainController", "HandleManualMoveCar", 2), "Host manual pushing target exists");
+            Check(method("BuilderExtensions", "AddTrainCrewDropdown", 2) && method("BuilderExtensions", "AddRepairDestination", 2), "Crew and repair-destination UI targets exist");
+            Check(method("Car", "get_SupportsTrainCrew", 0) && method("OverrideDestinationExtensions", "IsWriteAuthorized", 2), "Native crew eligibility and destination authorization APIs exist");
+            var tooltipTargets = 0;
+            foreach (var handle in type("TimeWindow").GetMethods())
+            {
+                var item = metadata.GetMethodDefinition(handle);
+                if (item.RelativeVirtualAddress == 0) continue;
+                var bytes = pe.GetMethodBody(item.RelativeVirtualAddress).GetILBytes()!;
+                for (var i = 0; i + 4 < bytes.Length; i++)
+                {
+                    if (bytes[i] != 0x72) continue;
+                    try
+                    {
+                        var token = BitConverter.ToInt32(bytes, i + 1);
+                        if ((token & unchecked((int)0xff000000)) != 0x70000000) continue;
+                        if (metadata.GetUserString(MetadataTokens.UserStringHandle(token & 0x00ffffff)) ==
+                            "Let time pass until the first scheduled interchange service of the day.") { tooltipTargets++; break; }
+                    }
+                    catch (BadImageFormatException) { }
+                    catch (ArgumentException) { }
+                }
+            }
+            Check(tooltipTargets == 1, "Exactly one installed sleep tooltip literal is patched");
+
+            using var mod = File.OpenRead(modPath);
+            using var modPe = new PEReader(mod);
+            var modMetadata = modPe.GetMetadataReader();
+            var refs = modMetadata.AssemblyReferences.Select(handle => modMetadata.GetString(modMetadata.GetAssemblyReference(handle).Name)).ToArray();
+            Check(refs.Contains("Railroader.Modding") && refs.Contains("0Harmony"), "Native loader and game's Harmony referenced");
+            Check(!refs.Any(name => name.Contains("RailForge") || name.Contains("UnityModManager")), "No legacy loader dependency");
+            var entry = modMetadata.TypeDefinitions.Select(handle => modMetadata.GetTypeDefinition(handle)).Single(item => modMetadata.GetString(item.Name) == "TweaksPlugin");
+            var interfaces = entry.GetInterfaceImplementations().Select(handle => modMetadata.GetInterfaceImplementation(handle).Interface)
+                .Select(handle => modMetadata.GetString(modMetadata.GetTypeReference((TypeReferenceHandle)handle).Name)).ToArray();
+            Check(interfaces.Contains("IModEntryPoint") && interfaces.Contains("IWorldLifecycle"), "Native lifecycle hooks present");
+            var names = modMetadata.TypeDefinitions.Select(handle => modMetadata.GetString(modMetadata.GetTypeDefinition(handle).Name)).ToArray();
+            Check(!names.Any(name => new[] { "Autosave", "RepairSounds", "Prank", "BleedAll", "WaypointShortcut" }.Any(name.Contains)), "Unrequested legacy features are absent from the compiled mod");
+            Check(method("LocomotiveControlsHoverArea", "SummaryText", 0) && method("ConsistLength", "OfCars", 1),
+                "Native train summary and precise metric consist length API exist");
+            Check(names.Contains("TrainLengthPatch"), "Requested metric train-length patch is compiled");
+            Check(method("Units", "DistanceText", 1) && method("LocationIndicatorController", "DirectionalText", 2),
+                "Shared distance formatter and directional marker API exist");
+            Check(names.Contains("DistanceTextPatch"), "Metric distance formatter patch is compiled");
+            Check(names.Contains("TutorialDistancePatch") && refs.Contains("Relay"), "Tutorial Relay loader patch is compiled");
+            Check(new[] { "FollowAndSelectPatch", "FastStrongManPatch", "CopyCrewPatch", "RepairDestinationPatch" }.All(names.Contains), "All four newly requested additions compiled");
+            Check(names.Contains("ControlModeButtons") && names.Contains("ConsistActions") && names.Contains("CarPanelPatch") && names.Contains("SleepUntilInterchangePatch"), "All four requested feature groups compiled");
+            var members = modMetadata.MemberReferences.Select(handle => modMetadata.GetString(modMetadata.GetMemberReference(handle).Name)).ToArray();
+            var memberTypes = modMetadata.TypeReferences.Select(handle => modMetadata.GetString(modMetadata.GetTypeReference(handle).Name)).ToArray();
+            Check(memberTypes.Contains("SetGladhandsConnected") && memberTypes.Contains("RequestOilCar") && memberTypes.Contains("PropertyChange"),
+                "Shift-click maintenance uses native hose, oil and property request messages");
+            Check(!members.Contains("OffsetOiled") && !members.Contains("set_AnglecockSetting") && !members.Contains("ApplyEndGearChange"),
+                "Maintenance does not bypass request authorization by directly mutating oil or end-gear state");
+            Check(method("StateManager", "CheckAuthorizedToSendMessage", 1) && method("StateManager", "ApplyLocal", 1)
+                && method("Car", "LogicalToEnd", 1) && method("TrainController", "HandleRequestOilCar", 2),
+                "Native maintenance authorization, physical-end mapping and oil request handler exist");
+            Check(members.Contains("CheckAuthorizedToSendMessage") && members.Contains("IsWriteAuthorized") && members.Contains("SetOverrideDestination"),
+                "Copy features retain native authorization and destination APIs");
+            Check(members.Contains("FollowCar") && members.Contains("ZoomToCar") && !members.Contains("ZoomToPoint"), "Air HUD follows a moving car instead of a fixed track point");
+        }
     }
 }

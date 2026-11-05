@@ -20,7 +20,6 @@ func onWorldLoad(ctx) {
         .size(392, 350).position(WindowPosition.lowerRight).resizable(300, 220, 1000, 1000)
     editorWindow = ui.createWindow("czbuchi.tweaks.poi.editor", "Edit points of interest", buildEditor)
         .size(720, 480).position(WindowPosition.center).resizable(600, 360, 1400, 1000)
-    ui.registerCommand("/poi", "Open saved camera views", (args) => { mainWindow.toggle() })
     if tp.autoOpen() { mainWindow.show() }
 }
 

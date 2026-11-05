@@ -1,6 +1,9 @@
 ﻿using System;
-using System.IO;
+using Tweaks.PointsOfInterest.Input;
 using Railroader.Modding;
+using Tweaks.PointsOfInterest.Bookmarks;
+using Tweaks.PointsOfInterest.Camera;
+using Tweaks.PointsOfInterest.UI;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -22,8 +25,7 @@ namespace Tweaks.PointsOfInterest
             Context = context;
             try
             {
-                Store = new BookmarkStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "Railroader", "ModSettings", "czbuchi", "teleporter.json"));
+                Store = new BookmarkStore(global::Tweaks.Configuration.Settings.FilePath);
                 RelayBridge.Validate();
                 CameraBookmarks.Validate();
                 Active = this;
@@ -31,6 +33,7 @@ namespace Tweaks.PointsOfInterest
                 Object.DontDestroyOnLoad(host);
                 Runtime = host.AddComponent<PointsOfInterestRuntime>();
                 Runtime.Initialize(this);
+                PointsOfInterestBinding.Enable(Store.Current);
                 context.Log.Info("Loaded Points of interest with Relay UI.");
             }
             catch
@@ -45,6 +48,7 @@ namespace Tweaks.PointsOfInterest
 
         public void OnModUnload()
         {
+            PointsOfInterestBinding.Disable();
             if (Runtime != null)
             {
                 Runtime.SetMapLoaded(false);

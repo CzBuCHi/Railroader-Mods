@@ -2,7 +2,7 @@
   <PropertyGroup>
     <AssemblyName>CzBuCHi.Tweaks</AssemblyName>
     <TargetFramework>net48</TargetFramework>
-    <Version>3.0.14</Version>
+    <Version>3.0.21</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <NoStdLib>true</NoStdLib>
     <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
@@ -28,7 +28,7 @@
     <Error Condition="!$([System.String]::Copy('$(PackageRoot)').StartsWith('$(MSBuildProjectDirectory)\obj\'))" Text="Package staging must stay inside the project obj directory." />
     <RemoveDir Directories="$(PackageRoot)" />
     <MakeDir Directories="$(PackageDir)\Scripts;$(MSBuildProjectDirectory)\..\bin" />
-    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\README.md;$(MSBuildProjectDirectory)\PointsOfInterest.md;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
+    <Copy SourceFiles="$(TargetPath);$(MSBuildProjectDirectory)\Info.json;$(MSBuildProjectDirectory)\..\LICENSE" DestinationFolder="$(PackageDir)" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)\Scripts\Main.rl" DestinationFolder="$(PackageDir)\Scripts" />
     <ZipDirectory SourceDirectory="$(PackageRoot)" DestinationFile="$(PackageZip)" Overwrite="true" />
     <Message Importance="high" Text="Package: $(PackageZip)" />

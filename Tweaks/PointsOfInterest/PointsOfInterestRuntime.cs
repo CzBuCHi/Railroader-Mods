@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
+using System;
 using Game.State;
 using Map.Runtime;
+using Tweaks.PointsOfInterest.Camera;
+using Tweaks.PointsOfInterest.Configuration;
 using UI.Common;
 using UI.Windows;
 using UnityEngine;

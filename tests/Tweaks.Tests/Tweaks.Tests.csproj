@@ -4,16 +4,19 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\Tweaks\NextServiceSelection.cs" Link="NextServiceSelection.cs" />
-    <Compile Include="..\..\Tweaks\Settings.cs" Link="Settings.cs" />
+    <Compile Include="..\..\Tweaks\Time\NextServiceSelection.cs" Link="NextServiceSelection.cs" />
+    <Compile Include="..\..\Tweaks\Configuration\Settings.cs" Link="Settings.cs" />
+    <Compile Include="..\..\Tweaks\PointsOfInterest\Configuration\Settings.cs" Link="PointsOfInterestSettings.cs" />
+    <Compile Include="..\..\Tweaks\PointsOfInterest\Bookmarks\BookmarkStore.cs" Link="BookmarkStore.cs" />
+    <Compile Include="..\..\Tweaks\MapTweaks\Configuration\Settings.cs" Link="MapSettings.cs" />
+    <Reference Include="Unity.InputSystem"><HintPath>$(GameManagedDir)\Unity.InputSystem.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameManagedDir)\UnityEngine.CoreModule.dll</HintPath></Reference>
     <Reference Include="Newtonsoft.Json"><HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath></Reference>
-    <Compile Include="..\..\Tweaks\HudRules.cs" Link="HudRules.cs" />
-    <Compile Include="..\..\Tweaks\TrainLengthDisplay.cs" Link="TrainLengthDisplay.cs" />
-    <Compile Include="..\..\Tweaks\DistanceDisplay.cs" Link="DistanceDisplay.cs" />
-    <Compile Include="..\..\Tweaks\TutorialDistanceSource.cs" Link="TutorialDistanceSource.cs" />
+    <Compile Include="..\..\Tweaks\Hud\HudRules.cs" Link="HudRules.cs" />
+    <Compile Include="..\..\Tweaks\Units\TrainLengthDisplay.cs" Link="TrainLengthDisplay.cs" />
+    <Compile Include="..\..\Tweaks\Units\DistanceDisplay.cs" Link="DistanceDisplay.cs" />
+    <Compile Include="..\..\Tweaks\Units\TutorialDistanceSource.cs" Link="TutorialDistanceSource.cs" />
     <Reference Include="Relay"><HintPath>$(GameManagedDir)\Relay.dll</HintPath></Reference>
-    <Compile Include="..\..\Tweaks\ManualPushSpeed.cs" Link="ManualPushSpeed.cs" />
-    <Compile Include="..\..\Tweaks\FollowAnchorRewrite.cs" Link="FollowAnchorRewrite.cs" />
     <Reference Include="0Harmony"><HintPath>$(GameManagedDir)\0Harmony.dll</HintPath></Reference>
   </ItemGroup>
 </Project>

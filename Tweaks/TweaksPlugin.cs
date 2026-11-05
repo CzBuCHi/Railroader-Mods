@@ -1,11 +1,11 @@
-﻿using System;
-using System.IO;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Railroader.Modding;
-using TMPro;
+using Tweaks.Camera;
+using Tweaks.Hud;
 using UI.EngineControls;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using Settings = global::Tweaks.Configuration.Settings;
 
 namespace Tweaks
 {
@@ -15,18 +15,19 @@ namespace Tweaks
         private Harmony? harmony;
         private readonly PointsOfInterest.PointsOfInterestFeature points = new PointsOfInterest.PointsOfInterestFeature();
 
+        private readonly MapTweaks.MapTweaksFeature map = new MapTweaks.MapTweaksFeature();
+
         public void OnModLoad(IModContext context)
         {
             if (harmony != null) return;
-            Settings.Current = Settings.Load(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Railroader", "ModSettings", "czbuchi", "tweaks.json"), context.Log.Warning);
+            Settings.Current = Settings.Load(Settings.FilePath, context.Log.Warning);
             harmony = new Harmony(HarmonyId);
             try
             {
                 harmony.PatchAll(typeof(TweaksPlugin).Assembly);
                 points.OnModLoad(context);
-                PointsOfInterest.PointsOfInterestBinding.InstallExisting();
-                context.Log.Info("Loaded Tweaks 3.0.14 features.");
+                map.OnModLoad(context);
+                context.Log.Info("Loaded Tweaks 3.0.21 features.");
             }
             catch { OnModUnload(); throw; }
         }
@@ -34,15 +35,16 @@ namespace Tweaks
         public void OnWorldLoad()
         {
             points.OnWorldLoad();
+            map.OnWorldLoad();
             // Also handle HUDs enabled before the mod's world-load hook.
             foreach (var adapter in Object.FindObjectsByType<LocomotiveControlsUIAdapter>(FindObjectsSortMode.None))
                 HudPatch.Install(adapter);
         }
 
-        public void OnWorldUnload() { points.OnWorldUnload(); CleanupHud(); }
+        public void OnWorldUnload() { points.OnWorldUnload(); map.OnWorldUnload(); CleanupHud(); }
         public void OnModUnload()
         {
-            PointsOfInterest.PointsOfInterestBinding.Disable();
+            map.OnModUnload();
             points.OnModUnload();
             harmony?.UnpatchAll(HarmonyId); harmony = null;
             CleanupHud();
@@ -58,20 +60,4 @@ namespace Tweaks
         }
     }
 
-    [HarmonyPatch(typeof(LocomotiveControlsUIAdapter), "OnEnable")]
-    internal static class HudPatch
-    {
-        [HarmonyPostfix]
-        private static void Postfix(LocomotiveControlsUIAdapter __instance) => Install(__instance);
-
-        internal static void Install(LocomotiveControlsUIAdapter adapter)
-        {
-            var dropdown = (TMP_Dropdown)AccessTools.Field(typeof(LocomotiveControlsUIAdapter), "modeDropdown").GetValue(adapter);
-            var speed = (TMP_Text)AccessTools.Field(typeof(LocomotiveControlsUIAdapter), "speedLabel").GetValue(adapter);
-            var modes = adapter.GetComponent<ControlModeButtons>() ?? adapter.gameObject.AddComponent<ControlModeButtons>();
-            modes.enabled = Settings.Current.ShowControlModeButtons; if (modes.enabled) modes.Initialize(adapter, dropdown);
-            var actions = adapter.GetComponent<ConsistActions>() ?? adapter.gameObject.AddComponent<ConsistActions>();
-            actions.enabled = true; actions.Initialize(adapter, speed);
-        }
-    }
 }

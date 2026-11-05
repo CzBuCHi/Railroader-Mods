@@ -1,31 +1,75 @@
-﻿# Railroader Mods - experimental
+﻿# Tweaks for Railroader
 
-This orphan branch contains native mods for Railroader 0.6. Legacy RailForge mods and their history remain on `master` (checkpoint `575e7e2`). The empty root of this branch is `7ea4503`.
+HUD, camera, map, and gameplay tweaks for **Railroader 0.6.x**.
 
-## Tweaks 3.0.14
+## Locomotive controls
 
-Includes **Points of interest** (merged Teleporter): Alt+T opens saved camera views; configure the last entry in vanilla Bindings > Camera. The toolbar portal icon is removed; existing bookmarks remain in use. Disable/remove standalone Teleporter. See the [Points of interest guide](Tweaks/PointsOfInterest.md).
+- **Control modes:** Manual, AE Road, AE Yard buttons replace dropdown.
+- **Roster Shift-click:** follow locomotive and select it for control HUD.
 
-Selected native port: next-interchange Sleep, wagon speed/oil, metric distances and train length, camera-only fault HUD buttons, Manual/Road/Yard controls (none selected in AEWP), roster Shift-follow, a default 6-MPH manual pushing cap, and crew/repair-destination copying. JSON settings control each feature, oil threshold, and manual-push cap; no settings UI is added. See the [full included/excluded list and configuration](Tweaks/README.md).
+## Train maintenance
 
-## WaybillMap 1.5.2
+Buttons beside speed display appear when selected train needs attention.
 
-Native map mod with native MapEnhancer-style vehicle markers and combined steam/tender icons, destination colors (including locomotive repair/depot destinations), gentle spotted dimming, three vehicle filters and zoom-dependent wagon sampling. Upper-right map controls provide switch Save/Restore and Follow selected car. SwitchNormalizer is merged into this mod; its existing profile is retained and the separate mod should be disabled/removed. See the [WaybillMap guide](WaybillMap/README.md).
+| Button | Click | Shift-click: whole coupled train |
+| --- | --- | --- |
+| Air problem | Follow faulty coupler, even while moving. | Connect hoses, open internal anglecocks, close free ends. |
+| Handbrake | Show car with applied handbrake. | Release handbrakes. |
+| Low oil / hotbox | Follow bearing oiling point. | Refill eligible cars to 100%. |
 
-Build from the repository root:
+- Orange: oil below **50%** by default. Red: hotbox; takes priority.
+- Oil refill: **5 MPH maximum**. Hotboxes still need repair.
 
-```powershell
-dotnet publish Tweaks/Tweaks.csproj -c Release
-dotnet run --project tests/PointsOfInterest.Tests -c Release -- Tweaks/Scripts/Main.rl "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" Tweaks/bin/Release/CzBuCHi.Tweaks.dll
-dotnet run --project tests/Tweaks.Tests -c Release -- "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" Tweaks/bin/Release/CzBuCHi.Tweaks.dll
-dotnet publish WaybillMap/WaybillMap.csproj -c Release
-dotnet run --project tests/WaybillMap.Tests -c Release -- "C:/Steam/steamapps/common/Railroader/Railroader_Data/Managed" WaybillMap/bin/Release/CzBuCHi.WaybillMap.dll
-```
+## Car inspection and assignments
 
-Default game location: `C:\Steam\steamapps\common\Railroader`. Override `GameDir` in an untracked `Paths.user` MSBuild project or pass `-p:GameDir="D:\path\Railroader"`.
+- Live wagon speed in MPH.
+- Live bearing oil percentage on supported vehicles.
+- Copy crew to eligible coupled vehicles. None clears assignments.
+- Copy repair destination to eligible coupled cars.
 
-All current mods target .NET Framework 4.8 with C# 9 and the installed game's framework references. Game DLLs are not distributed. Publishing only creates packages; it does not install or launch the game.
+## Map
 
-Tweaks ZIP output: `bin/CzBuCHi.Tweaks_3.0.14.zip`.
+### Vehicle display
 
-WaybillMap ZIP output: `bin/CzBuCHi.WaybillMap_1.5.2.zip`.
+Select mode in upper-right **Render** dropdown:
+
+| Mode | Vehicles shown |
+| --- | --- |
+| Locomotives only | Locomotives. Default. |
+| Locomotives and cabooses | Locomotives + cabooses. |
+| All vehicles | All vehicles, including detached tenders. |
+
+- Destination colors, including locomotive repair/depot destinations. Spotted cars darker; unassigned gray.
+- Number labels on locomotives only.
+- Steam locomotive + attached rear tender share one icon.
+
+### Navigation
+
+- **Follow selected car:** track selected vehicle. Map drag stops following.
+- **Shift-click vehicle:** open car inspector.
+- **Shift-click station:** open station window and refresh freight list, even from far away.
+
+### Switch positions
+
+- **Save:** record reversed switches.
+- **Restore:** apply saved positions; unlisted switches become normal.
+- Occupancy, CTC locks, and permissions respected.
+
+## Points of interest
+
+- **Alt+T:** open saved camera views (Shortcut configurable).
+- Save first-person position/direction or tracking-camera position/rotation/zoom. Following a train still saves a fixed location.
+- Group bookmarks. Add, rename, move, replace, delete. Reorder groups.
+- Replace/delete require confirmation. Rename/move preserve saved view.
+- Resizable main window and separate editor. Optional auto-open on world load.
+- Distant jumps load terrain first.
+
+## Distances, time, and pushing
+
+- **Metric distances:** meters below 150 m; kilometers from 150 m, up to two decimals. Includes tutorial distance helpers and train length. Speed stays MPH.
+- **Sleep:** advance to next enabled interchange service, including extra service.
+- **Manual pushing:** default cap **6 MPH** instead of 3 MPH. Multiplayer: host needs Tweaks.
+
+## License
+
+[MIT](LICENSE).
